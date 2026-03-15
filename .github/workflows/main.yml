@@ -11,49 +11,41 @@ jobs:
       contents: write
 
     steps:
-      - name: checkout repo
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: configure git
+      - name: Configure git
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
 
-      - name: fetch branches
-        run: |
-          git fetch --all --prune
+      - name: Fetch branches
+        run: git fetch --all --prune
 
-      - name: merge branches into main
+      - name: Merge everything into master
         run: |
-          TARGET=main
+          TARGET=master
 
           git checkout $TARGET
           git pull origin $TARGET
 
-          for b in $(git branch -r | grep origin/ | grep -v HEAD | sed 's/origin\///'); do
-            if [ "$b" = "$TARGET" ]; then
+          for branch in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | sed 's/origin\///'); do
+
+            if [ "$branch" = "$TARGET" ]; then
               continue
             fi
 
-            echo "Attempting merge: $b"
+            echo "Attempting merge: $branch"
 
-            if git merge origin/$b --no-edit; then
-              echo "Merged $b"
+            if git merge origin/$branch --no-edit; then
+              echo "Merged $branch"
             else
-              echo "Conflict in $b"
+              echo "Conflict in $branch — skipping"
               git merge --abort || true
             fi
+
           done
 
-      - name: push result
-        run: |
-          git push origin main
-
-      - name: delete merged branches
-        run: |
-          for b in $(git branch -r --merged origin/main | grep origin/ | grep -v origin/main | sed 's/origin\///'); do
-            echo "Deleting $b"
-            git push origin --delete $b
-          done
+      - name: Push merged master
+        run: git push origin master
