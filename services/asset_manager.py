@@ -226,11 +226,19 @@ class AssetManager:
         count = 0
         for tree in runes:
             # Tree Icon
-            self._ensure_rune_icon(tree["icon"])
+            self._ensure_rune_icon(tree.get("icon"))
             # Slots
-            for slot in tree["slots"]:
-                for rune in slot["runes"]:
-                    self._ensure_rune_icon(rune["icon"])
+            slots = tree.get("slots")
+            if not slots:
+                continue
+
+            for slot in slots:
+                slot_runes = slot.get("runes")
+                if not slot_runes:
+                    continue
+
+                for rune in slot_runes:
+                    self._ensure_rune_icon(rune.get("icon"))
                     count += 1
         self.log(f"Pre-checked {count} rune icons.")
 
@@ -1021,25 +1029,37 @@ class AssetManager:
         # --- 2. Rune Icons ---
         runes = self.get_runes_data()
         if runes:
+            join_path = os.path.join
+            path_exists = os.path.exists
+            base_url = "https://ddragon.leagueoflegends.com/cdn/img/"
+
             for tree in runes:
                 # Tree icon
-                icon_path = tree.get("icon", "")
+                icon_path = tree.get("icon")
                 if icon_path:
                     safe_name = icon_path.replace("/", "_").replace("\\", "_")
-                    path = os.path.join(ASSETS_DIR, f"rune_{safe_name}")
-                    if not os.path.exists(path):
-                        url = f"https://ddragon.leagueoflegends.com/cdn/img/{icon_path}"
+                    path = join_path(ASSETS_DIR, f"rune_{safe_name}")
+                    if not path_exists(path):
+                        url = f"{base_url}{icon_path}"
                         download_queue.append((url, path, f"Rune Tree: {tree.get('name', '?')}"))
 
                 # Slot runes
-                for slot in tree.get("slots", []):
-                    for rune in slot.get("runes", []):
-                        r_icon = rune.get("icon", "")
+                slots = tree.get("slots")
+                if not slots:
+                    continue
+
+                for slot in slots:
+                    slot_runes = slot.get("runes")
+                    if not slot_runes:
+                        continue
+
+                    for rune in slot_runes:
+                        r_icon = rune.get("icon")
                         if r_icon:
                             safe_name = r_icon.replace("/", "_").replace("\\", "_")
-                            path = os.path.join(ASSETS_DIR, f"rune_{safe_name}")
-                            if not os.path.exists(path):
-                                url = f"https://ddragon.leagueoflegends.com/cdn/img/{r_icon}"
+                            path = join_path(ASSETS_DIR, f"rune_{safe_name}")
+                            if not path_exists(path):
+                                url = f"{base_url}{r_icon}"
                                 download_queue.append((url, path, f"Rune: {rune.get('name', '?')}"))
 
         roles = ("top", "jungle", "middle", "bottom", "utility", "fill")
