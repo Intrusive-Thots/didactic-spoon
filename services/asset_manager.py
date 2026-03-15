@@ -590,51 +590,6 @@ class AssetManager:
         self._download_queue.put(_worker)
 
 
-    def get_gamemode_icon(self, mode: str, size=(30, 30)) -> Optional[ctk.CTkImage]:
-        """Get icon for game mode (SR, ARAM, ARENA). Uses Data Dragon map assets."""
-        # Map modes to DDragon map IDs
-        # SR = 11, ARAM = 12, Arena = 30 (or fallback)
-        mode_map = {
-            "SUMMONER'S RIFT": "map11",
-            "ARAM MODE": "map12",
-            "ARENA MODE": "map30", # Arena typically map 30
-            "TFT": "map22" 
-        }
-        
-        fname = f"mode_{mode_map.get(mode, 'unknown')}.png"
-        path = os.path.join(ASSETS_DIR, fname)
-        
-        # Check Cache
-        cache_key = f"gamemode_{mode}_{size[0]}"
-        if cache_key in self.icons:
-            return self.icons[cache_key]
-            
-        if os.path.exists(path):
-            try:
-                pil_img = Image.open(path)
-                img = ctk.CTkImage(pil_img, size=size)
-                self.icons[cache_key] = img
-                return img
-            except Exception as e:
-                Logger.error("asset_manager.py", f"Handled exception: {type(e).__name__}: {e}")
-        
-        # Download Logic (Data Dragon)
-        # Fallback to Community Dragon for Arena if DDragon fails (often DDragon only has main maps)
-        dd_base = f"https://ddragon.leagueoflegends.com/cdn/{self.ddragon_ver}/img/map/"
-        
-        key = mode_map.get(mode)
-        if key:
-            url = f"{dd_base}{key}.png"
-            # Arena fallback to CDragon if needed (DDragon sometimes lags on rotator modes)
-            if mode == "ARENA MODE":
-                # Arena specific fallback if DDragon fails (or use CDragon directly)
-                # But let's verify DDragon first. If it fails, the file won't exist next time.
-                pass 
-
-            self._start_download(url, path)
-            
-        return None
-
     def get_rune_shard_icon(self, shard_name: str, size=(24, 24)) -> Optional[ctk.CTkImage]:
         """
         Get icon for a stat shard (Health, Adaptive, etc).
