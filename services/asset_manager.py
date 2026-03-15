@@ -1022,6 +1022,7 @@ class AssetManager:
         runes = self.get_runes_data()
         if runes:
             for tree in runes:
+                tree_name = tree.get("name", "?")
                 # Tree icon
                 icon_path = tree.get("icon", "")
                 if icon_path:
@@ -1029,18 +1030,19 @@ class AssetManager:
                     path = os.path.join(ASSETS_DIR, f"rune_{safe_name}")
                     if not os.path.exists(path):
                         url = f"https://ddragon.leagueoflegends.com/cdn/img/{icon_path}"
-                        download_queue.append((url, path, f"Rune Tree: {tree.get('name', '?')}"))
+                        download_queue.append((url, path, f"Rune Tree: {tree_name}"))
 
                 # Slot runes
                 for slot in tree.get("slots", []):
                     for rune in slot.get("runes", []):
-                        r_icon = rune.get("icon", "")
+                        rune_get = rune.get
+                        r_icon = rune_get("icon", "")
                         if r_icon:
                             safe_name = r_icon.replace("/", "_").replace("\\", "_")
                             path = os.path.join(ASSETS_DIR, f"rune_{safe_name}")
                             if not os.path.exists(path):
                                 url = f"https://ddragon.leagueoflegends.com/cdn/img/{r_icon}"
-                                download_queue.append((url, path, f"Rune: {rune.get('name', '?')}"))
+                                download_queue.append((url, path, f"Rune: {rune_get('name', '?')}"))
 
         roles = ("top", "jungle", "middle", "bottom", "utility", "fill")
         for r_name in roles:
