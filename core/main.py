@@ -168,8 +168,8 @@ class LeagueLoopApp(ctk.CTk):
     def _bind_hotkeys(self):
         try:
             keyboard.unhook_all()
-        except:
-            pass
+        except Exception as e:
+            Logger.debug("SYS", f"Failed to unhook hotkeys: {e}")
             
         self._compact_hotkey = self.config.get("hotkey_compact_mode", "ctrl+shift+m")
         self._launch_hotkey = self.config.get("hotkey_launch_client", "ctrl+shift+l")
@@ -195,7 +195,7 @@ class LeagueLoopApp(ctk.CTk):
             self.overrideredirect(True)
             try:
                 self.attributes("-transparentcolor", "")
-            except Exception:
+            except tkinter.TclError:
                 pass
 
             self.sidebar.grid()
@@ -244,7 +244,7 @@ class LeagueLoopApp(ctk.CTk):
             self.overrideredirect(True)
             try:
                 self.attributes("-transparentcolor", trans_color)
-            except Exception:
+            except tkinter.TclError:
                 pass
 
             self._compact_frame.bind("<ButtonPress-1>", self.on_drag_start)
@@ -310,14 +310,15 @@ class LeagueLoopApp(ctk.CTk):
                     last_hwnd = 0
                     time.sleep(2.0)
             except Exception as e:
-                time.sleep(2.0)
+                Logger.debug("SYS", f"Docking loop error: {e}")
+            time.sleep(0.5)
 
     def _on_close(self):
         self.running = False
         try:
             keyboard.unhook_all()
-        except:
-            pass
+        except Exception as e:
+            Logger.debug("SYS", f"Failed to unhook hotkeys: {e}")
         self._stop_event.set()
         self.destroy()
 
