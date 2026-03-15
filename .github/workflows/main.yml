@@ -1,4 +1,4 @@
-name: Merge All Branches
+name: merge-all-branches
 
 on:
   workflow_dispatch:
@@ -12,49 +12,56 @@ jobs:
   merge:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Configure Git
+      - name: Configure git
         run: |
-          git config user.name "auto-merge-bot"
-          git config user.email "bot@users.noreply.github.com"
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@users.noreply.github.com"
 
       - name: Fetch all branches
         run: |
           git fetch --all --prune
 
-      - name: Merge all branches into main
+      - name: Merge branches
         run: |
-          git checkout main
-          git pull origin main
+          TARGET=main
 
-          for branch in $(git branch -r | grep origin/ | grep -v 'origin/main' | grep -v 'origin/HEAD'); do
-            b=${branch#origin/}
+          git checkout $TARGET
+          git pull origin $TARGET
 
-            echo "Attempting merge: $b"
+          for branch in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | sed 's/origin\///'); do
 
-            git checkout main
+            if [ "$branch" = "$TARGET" ]; then
+              continue
+            fi
 
-            if git merge origin/$b --no-edit; then
-              echo "Merged $b"
+            echo "Trying merge: $branch"
+
+            if git merge origin/$branch --no-edit; then
+              echo "Merged $branch"
             else
-              echo "Conflict in $b — skipping"
+              echo "Conflict in $branch — skipping"
               git merge --abort || true
             fi
+
           done
 
-      - name: Push merged main
+      - name: Push updated main
         run: |
           git push origin main
 
       - name: Delete merged branches
         run: |
           git fetch -p
-          for branch in $(git branch -r --merged origin/main | grep origin/ | grep -v 'origin/main' | grep -v 'origin/HEAD'); do
-            b=${branch#origin/}
-            echo "Deleting merged branch $b"
-            git push origin --delete $b
+          for branch in $(git branch -r --merged origin/main | grep origin/ | grep -v origin/main | sed 's/origin\///'); do
+            echo "Deleting $branch"
+            git push origin --delete $branch
           done
