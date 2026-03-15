@@ -187,7 +187,7 @@ class AssetManager:
                         self._items_cache = None
                         self._runes_cache = None
                         self._summoner_icons_cache = None
-                        for filename in ["champion.json", "item.json", "summoner.json", "runesReforged.json"]:
+                        for filename in ("champion.json", "item.json", "summoner.json", "runesReforged.json"):
                             path = os.path.join(CACHE_DIR, filename)
                             if os.path.exists(path):
                                 try:
