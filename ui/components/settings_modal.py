@@ -114,24 +114,30 @@ class SettingsModal(ctk.CTkToplevel):
         
         self.config = config
         self.on_save_callback = on_save_callback
+        self.recorders = {}
         
         self.title("Global Settings")
         self.geometry("360x480")
         self.resizable(False, False)
-        self.transient(master)
-        self.grab_set()
         self.attributes("-topmost", True)
         
         self.configure(fg_color=get_color("colors.background.app"))
         
-        # Center the window relative to master
+        # Center relative to master
         self.update_idletasks()
         x = master.winfo_rootx() + (master.winfo_width() // 2) - (self.winfo_width() // 2)
         y = master.winfo_rooty() + (master.winfo_height() // 2) - (self.winfo_height() // 2)
         self.geometry(f"+{x}+{y}")
         
-        self._setup_ui()
         self.protocol("WM_DELETE_WINDOW", self._close)
+        
+        # Delay UI setup — CTkToplevel has a rendering bug with overrideredirect parents
+        self.after(150, self._deferred_init)
+
+    def _deferred_init(self):
+        self._setup_ui()
+        self.lift()
+        self.focus_force()
 
     def _setup_ui(self):
         # ── Title ──
