@@ -108,13 +108,6 @@ class Omnibar(ctk.CTkFrame):
         self._visible = False
         self.place_forget()
 
-    def toggle(self):
-        """Toggle visibility."""
-        if self._visible:
-            self.hide()
-        else:
-            self.show()
-
     # --- Logic ---
 
     def _on_search(self, event):
