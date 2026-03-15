@@ -4,6 +4,7 @@ Manages communication with the League of Legends Client Update (LCU).
 """
 import base64
 import os
+import sys
 import threading
 import time
 from typing import Dict, Optional
@@ -16,6 +17,15 @@ from utils.logger import Logger
 
 # Disable SSL warnings for LCU (self-signed cert)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+def get_riotgames_pem_path() -> str:
+    """Returns the path to the riotgames.pem certificate file."""
+    if hasattr(sys, "_MEIPASS"):
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS # pylint: disable=protected-access, no-member
+    else:
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, "assets", "certs", "riotgames.pem")
 
 
 class LCUClient:
@@ -33,7 +43,13 @@ class LCUClient:
         self.is_connected = False
         self.headers = {}
         self.session = requests.Session()
-        self.session.verify = False
+        # Verify using the local riotgames.pem file for better security
+        self.cert_path = get_riotgames_pem_path()
+        if os.path.exists(self.cert_path):
+            self.session.verify = self.cert_path
+        else:
+            self.session.verify = False
+            Logger.warning("LCU", f"Could not find riotgames.pem at {self.cert_path}, falling back to verify=False")
         self._client_pid = None
 
         # Do NOT connect immediately to avoid blocking UI startup.
@@ -177,7 +193,6 @@ class LCUClient:
                 url=url,
                 # headers=self.headers, # Already in session
                 json=data,
-                verify=False,
                 timeout=2,  # Prevent blocking UI
             )
 
