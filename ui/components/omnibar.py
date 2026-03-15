@@ -38,7 +38,7 @@ class Omnibar(ctk.CTkFrame):
         self._visible = False
 
         # State
-        self._all_commands = []
+        self._all_commands = ()
         self._filtered_commands = []
         self._selected_index = 0
         self._result_widgets = []
@@ -93,7 +93,7 @@ class Omnibar(ctk.CTkFrame):
         self._visible = True
 
         # Refresh commands on open
-        self._all_commands = self.command_provider()
+        self._all_commands = tuple(self.command_provider())
         self.search_input.delete(0, "end")
         self._filter_results("")
 
@@ -119,7 +119,7 @@ class Omnibar(ctk.CTkFrame):
 
     def _filter_results(self, query):
         if not query:
-            self._filtered_commands = self._all_commands[:]
+            self._filtered_commands = list(self._all_commands)
         else:
             # Simple fuzzy/substring search
             exact_matches = []
