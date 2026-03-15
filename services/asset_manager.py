@@ -1021,26 +1021,31 @@ class AssetManager:
         # --- 2. Rune Icons ---
         runes = self.get_runes_data()
         if runes:
+            d_get = dict.get
+            join = os.path.join
+            exists = os.path.exists
+            replace = str.replace
+
             for tree in runes:
                 # Tree icon
-                icon_path = tree.get("icon", "")
+                icon_path = d_get(tree, "icon", "")
                 if icon_path:
-                    safe_name = icon_path.replace("/", "_").replace("\\", "_")
-                    path = os.path.join(ASSETS_DIR, f"rune_{safe_name}")
-                    if not os.path.exists(path):
+                    safe_name = replace(replace(icon_path, "/", "_"), "\\", "_")
+                    path = join(ASSETS_DIR, f"rune_{safe_name}")
+                    if not exists(path):
                         url = f"https://ddragon.leagueoflegends.com/cdn/img/{icon_path}"
-                        download_queue.append((url, path, f"Rune Tree: {tree.get('name', '?')}"))
+                        download_queue.append((url, path, f"Rune Tree: {d_get(tree, 'name', '?')}"))
 
                 # Slot runes
-                for slot in tree.get("slots", []):
-                    for rune in slot.get("runes", []):
-                        r_icon = rune.get("icon", "")
+                for slot in d_get(tree, "slots", []):
+                    for rune in d_get(slot, "runes", []):
+                        r_icon = d_get(rune, "icon", "")
                         if r_icon:
-                            safe_name = r_icon.replace("/", "_").replace("\\", "_")
-                            path = os.path.join(ASSETS_DIR, f"rune_{safe_name}")
-                            if not os.path.exists(path):
+                            safe_name = replace(replace(r_icon, "/", "_"), "\\", "_")
+                            path = join(ASSETS_DIR, f"rune_{safe_name}")
+                            if not exists(path):
                                 url = f"https://ddragon.leagueoflegends.com/cdn/img/{r_icon}"
-                                download_queue.append((url, path, f"Rune: {rune.get('name', '?')}"))
+                                download_queue.append((url, path, f"Rune: {d_get(rune, 'name', '?')}"))
 
         roles = ("top", "jungle", "middle", "bottom", "utility", "fill")
         for r_name in roles:
