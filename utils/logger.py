@@ -74,6 +74,7 @@ class Logger:
         """Log a warning message."""
         _logger.warning(f"[{tag}] {msg}")
 
+# Kept for backward compatibility — routes to Logger.debug
 def log(tag, msg):
-    """Module-level log helper function."""
+    """Module-level log helper function. Prefer Logger.debug() directly."""
     Logger.debug(tag, msg)

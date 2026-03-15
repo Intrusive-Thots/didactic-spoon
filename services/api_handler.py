@@ -26,15 +26,15 @@ class LCUClient:
 
     def __init__(self):
         self._lock = threading.Lock()
-        self.port = None
-        self.auth_token = None
-        self.protocol = "https"
-        self.base_url = None
-        self.is_connected = False
-        self.headers = {}
+        self.port: Optional[str] = None
+        self.auth_token: Optional[str] = None
+        self.protocol: str = "https"
+        self.base_url: Optional[str] = None
+        self.is_connected: bool = False
+        self.headers: Dict[str, str] = {}
         self.session = requests.Session()
         self.session.verify = False
-        self._client_pid = None
+        self._client_pid: Optional[int] = None
 
         # Do NOT connect immediately to avoid blocking UI startup.
         # Connection is handled by the background loop in main.py.
@@ -109,9 +109,11 @@ class LCUClient:
                             self.port = arg.split("=")[1]
                         if "--remoting-auth-token=" in arg:
                             self.auth_token = arg.split("=")[1]
-                except (psutil.AccessDenied, Exception):  # pylint: disable=broad-exception-caught
+                except psutil.AccessDenied:
                     # Access Denied on cmdline is common if running non-admin. Fallback to lockfile.
-                    Logger.debug("LCU", "Could not read process command line. Falling back to lockfile scan.")
+                    Logger.warning("LCU", "Access denied reading process cmdline. Falling back to lockfile.")
+                except Exception as e:  # pylint: disable=broad-exception-caught
+                    Logger.debug("LCU", f"Could not read process cmdline: {e}. Falling back to lockfile.")
 
                 # Fallback: Check for 'lockfile' in the process directory if we miss port/token
                 if not self.port or not self.auth_token:
@@ -130,7 +132,9 @@ class LCUClient:
                                     Logger.debug(
                                         "LCU", f"Extracted from lockfile: Port {self.port}"
                                     )
-                    except (psutil.AccessDenied, Exception) as e:  # pylint: disable=broad-exception-caught
+                    except psutil.AccessDenied:
+                        Logger.warning("LCU", "Access denied reading lockfile.")
+                    except Exception as e:  # pylint: disable=broad-exception-caught
                         Logger.debug("LCU", f"Lockfile check failed: {e}")
 
                 if self.port and self.auth_token:

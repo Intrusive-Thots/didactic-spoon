@@ -36,7 +36,7 @@
     "always_on_top": true,
     "aram_mode": "ARAM Mayhem",
     "priority_picker": {
-        "enabled": false,
+        "enabled": true,
         "list": [
             "Fizz",
             "Singed",
@@ -73,7 +73,8 @@
             "Chogath",
             "Gangplank",
             "Ekko",
-            "Akshan"
+            "Akshan",
+            "Jax"
         ]
     }
 }

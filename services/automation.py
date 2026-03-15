@@ -3,10 +3,16 @@ import threading
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
+from typing import Optional, Callable, List
 
 from .api_handler import LCUClient
 from .asset_manager import AssetManager, ConfigManager
 from utils.logger import Logger
+from core.constants import (
+    QUEUE_ARENA, TICK_SLEEP_DEFAULT, TICK_SLEEP_CHAMPSELECT,
+    TICK_SLEEP_READYCHECK, TICK_SLEEP_LOBBY, TICK_SLEEP_INGAME,
+    PRIORITY_SWAP_COOLDOWN,
+)
 
 class AutomationEngine:
     def __init__(
@@ -25,22 +31,24 @@ class AutomationEngine:
         self.stop_func = stop_func
         self.stats_func = kwargs.get("stats_func")
         self.window_func = kwargs.get("window_func")
-        self.running = False
-        self.paused = False
-        self.thread = None
+        self.running: bool = False
+        self.paused: bool = False
+        self.thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self.executor = ThreadPoolExecutor(max_workers=5)
-        self.setup_done = False
-        self.last_phase = "None"
-        self.current_queue_id = None
+        self.setup_done: bool = False
+        self.last_phase: str = "None"
+        self.current_queue_id: Optional[int] = None
 
-        self.ready_check_start = None
-        self.ready_check_delay = None
-        self.ready_check_accepted = False
-        self._last_countdown_log = None
+        self.ready_check_start: Optional[float] = None
+        self.ready_check_delay: Optional[float] = None
+        self.ready_check_accepted: bool = False
+        self._last_countdown_log: Optional[float] = None
 
-        self._last_disconnect_log = 0
-        self._requeue_handled = False
+        self._last_disconnect_log: float = 0.0
+        self._requeue_handled: bool = False
+        self._skin_equipped: bool = False
+        self._last_priority_swap: float = 0.0
 
     def start(self, start_paused=False):
         if self.running: return
@@ -127,7 +135,7 @@ class AutomationEngine:
                     lobby_data = l_req.json()
                     self.current_queue_id = lobby_data.get("gameConfig", {}).get("queueId")
             except Exception as e:
-                pass
+                Logger.debug("AutoLoop", f"Lobby data fetch error: {e}")
 
         session_data = None
         if f_session:
@@ -136,17 +144,17 @@ class AutomationEngine:
                 if sess_req and sess_req.status_code == 200:
                     session_data = sess_req.json()
             except Exception as e:
-                pass
+                Logger.debug("AutoLoop", f"Session data fetch error: {e}")
 
         self._handle_ready_check(phase)
         self._handle_champ_select(phase, session_data)
         self._handle_auto_queue(phase)
 
-        sleep_time = 3.0
-        if phase == "ChampSelect": sleep_time = 1.0
-        elif phase == "ReadyCheck": sleep_time = 1.0
-        elif phase in ("Lobby", "Matchmaking"): sleep_time = 2.0
-        elif phase == "InProgress": sleep_time = 30.0
+        sleep_time = TICK_SLEEP_DEFAULT
+        if phase == "ChampSelect": sleep_time = TICK_SLEEP_CHAMPSELECT
+        elif phase == "ReadyCheck": sleep_time = TICK_SLEEP_READYCHECK
+        elif phase in ["Lobby", "Matchmaking"]: sleep_time = TICK_SLEEP_LOBBY
+        elif phase == "InProgress": sleep_time = TICK_SLEEP_INGAME
 
         self._stop_event.wait(sleep_time)
 
@@ -208,7 +216,7 @@ class AutomationEngine:
             self.stats_func(my_team, bench)
 
         has_bench = len(bench) > 0
-        is_arena = self.current_queue_id == 1700
+        is_arena = self.current_queue_id == QUEUE_ARENA
 
         if has_bench and not is_arena:
             # ARAM logic
@@ -297,7 +305,7 @@ class AutomationEngine:
         if best_bench_idx < my_priority_idx:
             now = time.time()
             if not hasattr(self, "_last_priority_swap"): self._last_priority_swap = 0
-            if now - self._last_priority_swap < 1.0: return
+            if now - self._last_priority_swap < PRIORITY_SWAP_COOLDOWN: return
             
             self._log(f"Sniper: Found {best_bench_champ}! Swapping...")
             self.lcu.request("POST", f"/lol-champ-select/v1/session/bench/swap/{best_bench_id}")

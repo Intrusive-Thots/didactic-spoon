@@ -223,3 +223,7 @@ class StatsScraper:
         clean = champ_name.replace("'", "").replace(" ", "").replace(".", "").lower()
         return self.win_rates.get(clean, 50.0)
 
+    @property
+    def is_offline(self) -> bool:
+        """True when all fetch sources failed and we're using pure baseline data."""
+        return not self._fetched and not self._fetching

@@ -3,7 +3,8 @@ import customtkinter as ctk
 import os
 from PIL import Image
 
-from utils.path_utils import get_asset_path
+from utils.logger import Logger
+from utils.path_utils import resource_path, get_asset_path
 from ui.components.factory import get_color, get_font, get_radius, TOKENS, make_button
 from ui.ui_shared import CTkTooltip
 from ui.components.priority_grid import PriorityIconGrid
@@ -205,6 +206,7 @@ class SidebarWidget(ctk.CTkFrame):
 
     # ── Callbacks ──
     def _load_icons_async(self):
+        if not self.winfo_exists(): return
         try:
             idle_path = get_asset_path("assets/icon_idle.png")
             active_path = get_asset_path("assets/icon_active.png")
@@ -213,7 +215,7 @@ class SidebarWidget(ctk.CTkFrame):
             if os.path.exists(active_path):
                 self.img_on = ctk.CTkImage(Image.open(active_path), size=(56, 56))
 
-            if self.img_off:
+            if self.img_off and self.winfo_exists():
                 self.btn_power.configure(image=self.img_off if not self.power_state else self.img_on, text="")
         except Exception as e:
             print(f"Icon load error: {e}")
@@ -257,8 +259,11 @@ class SidebarWidget(ctk.CTkFrame):
                 pass
 
     # ── Handlers ──
-    def _on_power_click(self):
-        self.power_state = not self.power_state
+    def set_power_state(self, state: bool):
+        """Pure visual/logical toggle without user-cancel side effects."""
+        if self.power_state == state: return
+        self.power_state = state
+        
         if self.power_state:
             if self.img_on: self.btn_power.configure(image=self.img_on, text="")
             else: self.btn_power.configure(text="▶")
@@ -272,6 +277,12 @@ class SidebarWidget(ctk.CTkFrame):
 
         if self.toggle_callback:
             self.toggle_callback(self.power_state)
+
+    def _on_power_click(self):
+        """User clicks power button (may cancel search if active)."""
+        self.set_power_state(not self.power_state)
+
+        if self.toggle_callback:
             state_req = self.lcu.request("GET", "/lol-lobby/v2/lobby/matchmaking/search-state")
             state_data = state_req.json() if state_req and state_req.status_code == 200 else {}
             
@@ -280,7 +291,7 @@ class SidebarWidget(ctk.CTkFrame):
                 self.lcu.request("DELETE", "/lol-lobby/v2/lobby/matchmaking/search")
                 self.update_action_log("Matchmaking Cancelled.")
                 if self.power_state:
-                    self._on_power_click()
+                    self.set_power_state(False)
                 return
 
     def _get_queue_id_for_mode(self, mode):
@@ -302,50 +313,50 @@ class SidebarWidget(ctk.CTkFrame):
         return 450 # Default to ARAM
 
     def _find_match(self):
+        """Aggressive matchmaking: Stay in the lobby tab, just change the queue."""
         if not self.lcu: return
 
-        # 1. Check if already searching
-        state_req = self.lcu.request("GET", "/lol-lobby/v2/lobby/matchmaking/search-state")
-        state_data = state_req.json() if state_req and state_req.status_code == 200 else {}
-        
-        if state_data.get("searchState") == "Searching":
-            self.lcu.request("DELETE", "/lol-lobby/v2/lobby/matchmaking/search")
-            self.update_action_log("Matchmaking Cancelled.")
-            if self.power_state:
-                self._on_power_click()
-            return
-
-        # 2. Resolve Queue ID
         mode = self.config.get("aram_mode", "ARAM")
-        self.update_action_log(f"Resolving {mode}...")
-        queue_id = self._get_queue_id_for_mode(mode)
+        target_q_id = self._get_queue_id_for_mode(mode)
+        self.update_action_log(f"Initiating {mode}...")
 
-        # 3. Handle Lobby State
-        lobby_req = self.lcu.request("GET", "/lol-lobby/v2/lobby")
-        if lobby_req and lobby_req.status_code == 200:
-            lobby_data = lobby_req.json()
-            current_id = lobby_data.get("gameConfig", {}).get("queueId")
-            if current_id != queue_id:
-                self.update_action_log("Resetting Lobby...")
-                self.lcu.request("DELETE", "/lol-lobby/v2/lobby")
-                # Create and search after a short delay
-                self.after(400, lambda: self._finalize_matchmaking(queue_id, mode))
-                return
-        
-        self._finalize_matchmaking(queue_id, mode)
+        def _execute_sync():
+            import time
+            # Phase 1: Clear any existing search (Required to switch lobbies safely)
+            self.lcu.request("DELETE", "/lol-lobby/v2/lobby/matchmaking/search")
+            
+            # Phase 2: Check if we need to switch lobby
+            lobby_req = self.lcu.request("GET", "/lol-lobby/v2/lobby")
+            in_lobby = lobby_req and lobby_req.status_code == 200
+            
+            needs_switch = True
+            if in_lobby:
+                try:
+                    curr_qid = lobby_req.json().get("gameConfig", {}).get("queueId")
+                    if curr_qid == target_q_id:
+                        needs_switch = False
+                except Exception:
+                    pass
+            
+            if needs_switch:
+                # Directly POST the new lobby — DO NOT DELETE it first (prevents Home screen jump)
+                self.lcu.request("POST", "/lol-lobby/v2/lobby", data={"queueId": target_q_id})
+                time.sleep(1.2) # Wait for client to process lobby creation
 
-    def _finalize_matchmaking(self, queue_id, mode):
-        # Create Lobby (Safe to call POST even if in lobby, but we deleted if wrong ID)
-        self.lcu.request("POST", "/lol-lobby/v2/lobby", data={"queueId": queue_id})
-        
-        # Start Search
-        res = self.lcu.request("POST", "/lol-lobby/v2/lobby/matchmaking/search")
-        if res and res.status_code in [200, 204]:
-            self.update_action_log(f"Searching ({mode})...")
-            if not self.power_state:
-                self._on_power_click()
-        else:
-            self.update_action_log("Search failed - Check lobby.")
+            # Phase 3: Start Search
+            res = self.lcu.request("POST", "/lol-lobby/v2/lobby/matchmaking/search")
+            
+            def _update_ui():
+                if res and res.status_code in [200, 204]:
+                    self.update_action_log(f"Searching ({mode})...")
+                    self.set_power_state(True)
+                else:
+                    self.update_action_log("Matchmaking failed — check client.")
+
+            self.after(0, _update_ui)
+
+        import threading
+        threading.Thread(target=_execute_sync, daemon=True).start()
 
     def _on_toggle_accept(self):
         self.config.set("auto_accept", self.var_accept.get())
@@ -359,10 +370,12 @@ class SidebarWidget(ctk.CTkFrame):
         self.config.set("priority_picker", cfg)
 
     def update_action_log(self, text):
-        self.lbl_action.configure(text=text)
+        if self.winfo_exists():
+            self.lbl_action.configure(text=text)
 
     def update_lobby_stats(self, team, bench):
         """Called from AutomationEngine during ChampSelect to show winrate stats."""
+        if not self.winfo_exists(): return
         if not team and not bench:
             self.stats_frame.pack_forget()
             self._last_stats_hash = None

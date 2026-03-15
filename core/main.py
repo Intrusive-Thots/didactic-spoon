@@ -12,6 +12,8 @@ import customtkinter as ctk
 import keyboard
 from PIL import Image
 
+from typing import Optional, TYPE_CHECKING
+
 from services.api_handler import LCUClient
 from services.asset_manager import AssetManager, ConfigManager
 from services.automation import AutomationEngine
@@ -19,11 +21,20 @@ from services.stats_scraper import StatsScraper
 from utils.logger import Logger
 from utils.path_utils import get_asset_path
 from core.version import __version__
+from core.constants import (
+    SIDEBAR_WIDTH, SIDEBAR_HEIGHT, COMPACT_SIZE, COMPACT_BUTTON_SIZE,
+    COMPACT_GLOW_SIZE, DOCKING_POLL_INTERVAL, DOCKING_IDLE_INTERVAL,
+    CONNECTION_POLL_INTERVAL, CONNECTION_ERROR_INTERVAL,
+    GEOMETRY_THRESHOLD,
+)
 
 from ui.app_sidebar import SidebarWidget
 from ui.components.factory import get_color, get_font, TOKENS
 from ui.ui_shared import show_toast
 from ui.components.toast import ToastManager
+
+if TYPE_CHECKING:
+    import ctypes.wintypes
 
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("dark-blue")
@@ -36,7 +47,7 @@ class LeagueLoopApp(ctk.CTk):
         self._process_ui_queue()
         
         self.title("League Loop")
-        self.geometry("200x400") # Small footprint sidebar
+        self.geometry(f"{SIDEBAR_WIDTH}x{SIDEBAR_HEIGHT}") # Small footprint sidebar
         self.overrideredirect(True) # Borderless for docking
         self.attributes("-topmost", True)
         
@@ -52,12 +63,28 @@ class LeagueLoopApp(ctk.CTk):
         self.lcu = LCUClient()
         self.scraper = StatsScraper(mode=self.config.get("aram_mode", "ARAM"))
         
-        self.automation = None
         self.running = True
         self._stop_event = threading.Event()
         self._drag_data = {"x": 0, "y": 0}
 
+        # Initialize automation before UI to avoid NoneType in callbacks
+        self.automation: Optional[AutomationEngine] = AutomationEngine(
+            self.lcu,
+            self.assets,
+            self.config,
+            log_func=None, # Will be set after sidebar is created
+            stop_func=lambda: self.after(0, lambda: self.sidebar._on_power_click()) if hasattr(self, "sidebar") else None,
+            stats_func=lambda team, bench: self.after(0, lambda: self.sidebar.update_lobby_stats(team, bench)) if hasattr(self, "sidebar") else None,
+            window_func=lambda state: self.after(0, lambda: self._handle_window_state(state))
+        )
+
         self.setup_ui()
+        
+        # Link automation to sidebar log
+        auto = self.automation
+        if auto is not None and hasattr(self, "sidebar"):
+            auto.log = self.sidebar.update_action_log
+
         self._setup_window_dragging()
 
         # Keyboard shortcuts
@@ -69,17 +96,8 @@ class LeagueLoopApp(ctk.CTk):
         self._queue_hotkey = None
         self._bind_hotkeys()
 
-        # Automation Engine
-        self.automation = AutomationEngine(
-            self.lcu,
-            self.assets,
-            self.config,
-            log_func=self.sidebar.update_action_log,
-            stop_func=lambda: self.after(0, lambda: self.sidebar._on_power_click()),
-            stats_func=lambda team, bench: self.after(0, lambda: self.sidebar.update_lobby_stats(team, bench)),
-            window_func=lambda state: self.after(0, lambda: self._handle_window_state(state))
-        )
-        self.automation.start(start_paused=True)
+        if self.automation:
+            self.automation.start(start_paused=True)
 
         self.assets.start_loading()
         threading.Thread(target=self.connection_loop, daemon=True).start()
@@ -150,15 +168,31 @@ class LeagueLoopApp(ctk.CTk):
                 candidates = [
                     r"C:\Riot Games\Riot Client\RiotClientServices.exe",
                     r"D:\Riot Games\Riot Client\RiotClientServices.exe",
-                    r"E:\Riot Games\Riot Client\RiotClientServices.exe"
+                    r"E:\Riot Games\Riot Client\RiotClientServices.exe",
+                    r"C:\Program Files (x86)\Riot Games\Riot Client\RiotClientServices.exe"
                 ]
+                
+                # Proactive Registry Lookup
+                try:
+                    import winreg
+                    for hkey in [winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE]:
+                        try:
+                            key = winreg.OpenKey(hkey, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Riot Game league_of_legends.live")
+                            val, _ = winreg.QueryValueEx(key, "UninstallString")
+                            # Typically "C:\Riot Games\Riot Client\RiotClientServices.exe" --uninstall-product=...
+                            if val and "RiotClientServices.exe" in val:
+                                path = val.split('"')[1] if '"' in val else val.split(' ')[0]
+                                if os.path.exists(path): candidates.insert(0, path)
+                        except: pass
+                except: pass
+
             for c in candidates:
                 if os.path.exists(c):
-                    if self.sidebar:
+                    if hasattr(self, "sidebar") and self.sidebar.winfo_exists():
                         self.sidebar.update_action_log("Launching Riot Client...")
                     subprocess.Popen([c, "--launch-product=league_of_legends", "--launch-patchline=live"])
                     return
-            if self.sidebar:
+            if hasattr(self, "sidebar") and self.sidebar.winfo_exists():
                 self.sidebar.update_action_log("Error: Could not find Riot Client.")
         self.after(0, _launch)
 
@@ -205,7 +239,7 @@ class LeagueLoopApp(ctk.CTk):
             if self._full_geometry:
                 self.geometry(self._full_geometry)
             else:
-                self.geometry("200x400")
+                self.geometry(f"{SIDEBAR_WIDTH}x{SIDEBAR_HEIGHT}")
 
             if self.sidebar:
                 self.sidebar.update_action_log("Restored Full Mode")
@@ -239,7 +273,7 @@ class LeagueLoopApp(ctk.CTk):
             )
             btn_compact.place(relx=0.5, rely=0.5, anchor="center")
 
-            self.geometry("90x90")
+            self.geometry(f"{COMPACT_SIZE}x{COMPACT_SIZE}")
             self.attributes("-topmost", True)
             self.overrideredirect(True)
             try:
@@ -254,10 +288,11 @@ class LeagueLoopApp(ctk.CTk):
 
     def toggle_power(self, power_state):
         Logger.info("SYS", f"Power Toggled: {power_state}")
-        if power_state:
-            self.automation.resume()
-        else:
-            self.automation.pause()
+        if self.automation:
+            if power_state:
+                self.automation.resume()
+            else:
+                self.automation.pause()
 
     def connection_loop(self):
         while self.running and not self._stop_event.is_set():
@@ -269,59 +304,129 @@ class LeagueLoopApp(ctk.CTk):
                         self.after(0, lambda: self.sidebar.lbl_action.configure(text="Connected!"))
                     else:
                         self.after(0, lambda: self.sidebar.lbl_action.configure(text="Waiting for Client..."))
-                time.sleep(2)
+                time.sleep(CONNECTION_POLL_INTERVAL)
             except Exception as e:
                 Logger.error("SYS", f"Connection loop error: {e}")
-                time.sleep(5)
+                time.sleep(CONNECTION_ERROR_INTERVAL)
 
     def docking_loop(self):
         """Finds League of Legends client and clips to the right side of it."""
         last_hwnd = 0
+        last_geom = (0, 0, 0, 0) # x, y, w, h
+        
         while self.running and not self._stop_event.is_set():
             try:
                 hwnd = 0
-                if last_hwnd != 0 and ctypes.windll.user32.IsWindow(last_hwnd):
+                windll = getattr(ctypes, "windll", None)
+                user32 = getattr(windll, "user32", None) if windll else None
+                
+                if not user32:
+                    time.sleep(2.0)
+                    continue
+
+                if last_hwnd != 0 and user32.IsWindow(last_hwnd):
                     hwnd = last_hwnd
                 else:
-                    # We can check for standard Riot Client or League Client
-                    hwnd = ctypes.windll.user32.FindWindowW(None, "League of Legends")
+                    hwnd = user32.FindWindowW(None, "League of Legends")
                     if hwnd == 0:
-                        hwnd = ctypes.windll.user32.FindWindowW(None, "Riot Client")
+                        hwnd = user32.FindWindowW(None, "Riot Client")
 
                 if hwnd != 0:
                     last_hwnd = hwnd
                     rect = ctypes.wintypes.RECT()
-                    ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rect))
+                    user32.GetWindowRect(hwnd, ctypes.byref(rect))
                     
-                    # Window placement: attach to the right side of the client
                     client_x = rect.left
                     client_y = rect.top
                     client_w = rect.right - rect.left
                     client_h = rect.bottom - rect.top
                     
-                    # Ignore minimized windows or invalid states
                     if client_w > 100:
-                        my_w = 200 # Sidebar width
-                        my_h = min(client_h, 800) # Max height
-                        # Snap to the right
-                        self.after(0, lambda x=client_x + client_w, y=client_y, h=my_h: self.geometry(f"{my_w}x{h}+{x}+{y}"))
-                    time.sleep(0.5)
+                        my_w = 200
+                        my_h = min(client_h, 800)
+                        target_x = client_x + client_w
+                        target_y = client_y
+                        
+                        curr_geom = (target_x, target_y, my_w, my_h)
+                        if any(abs(curr_geom[i] - last_geom[i]) > GEOMETRY_THRESHOLD for i in range(4)):
+                            self.after(0, lambda x=target_x, y=target_y, h=my_h: self.geometry(f"{my_w}x{h}+{x}+{y}"))
+                            last_geom = curr_geom
+                        
+                    time.sleep(DOCKING_POLL_INTERVAL)
                 else:
                     last_hwnd = 0
-                    time.sleep(2.0)
+                    last_geom = (0, 0, 0, 0)
+                    time.sleep(DOCKING_IDLE_INTERVAL)
             except Exception as e:
                 Logger.debug("SYS", f"Docking loop error: {e}")
-            time.sleep(0.5)
+            time.sleep(DOCKING_POLL_INTERVAL)
 
     def _on_close(self):
+        """Robust shutdown: stop all subsystems, then force-exit."""
+        Logger.info("SYS", "Exit requested — shutting down...")
         self.running = False
+        self._stop_event.set()
+
+        # 1. Stop the automation engine
+        try:
+            if hasattr(self, 'engine') and self.engine:
+                self.engine.stop()
+        except Exception as e:
+            Logger.debug("SYS", f"Engine stop error: {e}")
+
+        # 2. Unhook keyboard hotkeys
         try:
             keyboard.unhook_all()
         except Exception as e:
-            Logger.debug("SYS", f"Failed to unhook hotkeys: {e}")
-        self._stop_event.set()
-        self.destroy()
+            Logger.debug("SYS", f"Unhook error: {e}")
+
+        # 3. Destroy the Tk window
+        try:
+            self.destroy()
+        except Exception as e:
+            Logger.debug("SYS", f"Destroy error: {e}")
+
+        # 4. Force-exit to kill any lingering daemon threads
+        Logger.info("SYS", "Shutdown complete.")
+        os._exit(0)
+
+def _kill_other_instances():
+    """Terminate any other running instances of LeagueLoop."""
+    import psutil
+    my_pid = os.getpid()
+    # Also protect the parent (e.g. the shell that launched us)
+    try:
+        my_parent_pid = psutil.Process(my_pid).ppid()
+    except Exception:
+        my_parent_pid = -1
+    
+    safe_pids = {my_pid, my_parent_pid}
+    killed = 0
+    
+    for proc in psutil.process_iter(["pid", "name"]):
+        try:
+            if proc.pid in safe_pids:
+                continue
+            pname = (proc.info.get("name") or "").lower()
+            if "python" not in pname:
+                continue
+            # Only read cmdline for python processes (expensive call)
+            try:
+                cmdline = proc.cmdline()
+            except (psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+            cmdline_str = " ".join(cmdline).lower()
+            if "core.main" in cmdline_str or "core\\main" in cmdline_str:
+                Logger.info("SYS", f"Killing stale instance PID {proc.pid}")
+                proc.kill()
+                killed += 1
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue
+    if killed:
+        Logger.info("SYS", f"Terminated {killed} stale instance(s).")
+        time.sleep(0.3)
 
 if __name__ == "__main__":
+    _kill_other_instances()
     app = LeagueLoopApp()
     app.mainloop()
