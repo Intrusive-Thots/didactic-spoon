@@ -169,36 +169,6 @@ def make_panel(parent, title=None, fg_color=None, pad=None, corner_radius=None, 
     return outer
 
 
-def make_card(parent, fg_color=None, corner_radius=None, hover=True, **kw):
-    """
-    Create a card-level frame with raised surface.
-    """
-    def_bg = get_color("colors.background.card")
-    def_radius = get_radius("md")
-    def_border_w, def_border_c = parse_border("soft")
-    
-    bg_color = kw.pop("fg_color", fg_color or def_bg)
-    radius = kw.pop("corner_radius", corner_radius or def_radius)
-    border_w = kw.pop("border_width", def_border_w)
-    border_c = kw.pop("border_color", def_border_c)
-    
-    card = ctk.CTkFrame(
-        parent,
-        fg_color=bg_color,
-        corner_radius=radius,
-        border_width=border_w,
-        border_color=border_c,
-        **kw
-    )
-    
-    if hover:
-        apply_hover_brightness(card, bg_color)
-
-    return card
-
-
-
-
 def make_button(parent, text, style="primary", width=None, command=None, icon=None, **kw):
     """
     Create a standardized button.
