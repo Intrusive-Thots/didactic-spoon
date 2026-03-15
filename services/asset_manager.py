@@ -816,10 +816,6 @@ class AssetManager:
 
 
 
-    def get_spell_name(self, key: int):
-        """Get spell name by key."""
-        return self.spell_data.get(key, None)
-
     def get_champ_id(self, name: str) -> Optional[int]:
         """Get champion ID by name."""
         if not name:
