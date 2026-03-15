@@ -203,7 +203,3 @@ class DraggableList(ctk.CTkScrollableFrame):
                 self.after(50, lambda idx=new_idx: self._highlight_row(idx))
                 
         self._drag_data = {"y": 0, "item": None, "index": -1}
-
-    def update_items(self, new_items):
-        self.items = new_items
-        self.render()
