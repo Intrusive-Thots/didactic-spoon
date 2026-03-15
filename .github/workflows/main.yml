@@ -1,9 +1,12 @@
-name: Auto Merge And Prune
+name: Merge All Branches
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: "0 */6 * * *"
-  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   merge:
@@ -11,17 +14,47 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Setup Git
+      - name: Configure Git
         run: |
           git config user.name "auto-merge-bot"
           git config user.email "bot@users.noreply.github.com"
 
-      - name: Run merge script
+      - name: Fetch all branches
         run: |
-          chmod +x ./scripts/auto_merge_and_prune.sh
-          ./scripts/auto_merge_and_prune.sh
+          git fetch --all --prune
 
-      - name: Push changes
+      - name: Merge all branches into main
         run: |
-          git push origin main --prune
+          git checkout main
+          git pull origin main
+
+          for branch in $(git branch -r | grep origin/ | grep -v 'origin/main' | grep -v 'origin/HEAD'); do
+            b=${branch#origin/}
+
+            echo "Attempting merge: $b"
+
+            git checkout main
+
+            if git merge origin/$b --no-edit; then
+              echo "Merged $b"
+            else
+              echo "Conflict in $b — skipping"
+              git merge --abort || true
+            fi
+          done
+
+      - name: Push merged main
+        run: |
+          git push origin main
+
+      - name: Delete merged branches
+        run: |
+          git fetch -p
+          for branch in $(git branch -r --merged origin/main | grep origin/ | grep -v 'origin/main' | grep -v 'origin/HEAD'); do
+            b=${branch#origin/}
+            echo "Deleting merged branch $b"
+            git push origin --delete $b
+          done
