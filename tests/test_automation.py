@@ -8,7 +8,7 @@ except ImportError:
     class AutomationEngine:
         pass
 
-class TestAutomationLogicReadyCheck(unittest.TestCase):
+class TestAutomationEngineReadyCheck(unittest.TestCase):
     def setUp(self):
         # Instantiate without calling __init__ in case the signature is unknown
         self.logic = AutomationEngine.__new__(AutomationEngine)
