@@ -257,7 +257,7 @@ class SidebarWidget(ctk.CTkFrame):
                 pass
 
     # ── Handlers ──
-    def _on_power_click(self):
+    def _on_power_click(self, check_search=True):
         self.power_state = not self.power_state
         if self.power_state:
             if self.img_on: self.btn_power.configure(image=self.img_on, text="")
@@ -272,16 +272,17 @@ class SidebarWidget(ctk.CTkFrame):
 
         if self.toggle_callback:
             self.toggle_callback(self.power_state)
-            state_req = self.lcu.request("GET", "/lol-lobby/v2/lobby/matchmaking/search-state")
-            state_data = state_req.json() if state_req and state_req.status_code == 200 else {}
-            
-            if state_data.get("searchState") == "Searching":
-                # Cancel search if already searching
-                self.lcu.request("DELETE", "/lol-lobby/v2/lobby/matchmaking/search")
-                self.update_action_log("Matchmaking Cancelled.")
-                if self.power_state:
-                    self._on_power_click()
-                return
+            if check_search:
+                state_req = self.lcu.request("GET", "/lol-lobby/v2/lobby/matchmaking/search-state")
+                state_data = state_req.json() if state_req and state_req.status_code == 200 else {}
+
+                if state_data.get("searchState") == "Searching":
+                    # Cancel search if already searching
+                    self.lcu.request("DELETE", "/lol-lobby/v2/lobby/matchmaking/search")
+                    self.update_action_log("Matchmaking Cancelled.")
+                    if self.power_state:
+                        self._on_power_click(check_search=False)
+                    return
 
     def _get_queue_id_for_mode(self, mode):
         """Dynamically resolve the queue ID from the client."""
@@ -312,7 +313,7 @@ class SidebarWidget(ctk.CTkFrame):
             self.lcu.request("DELETE", "/lol-lobby/v2/lobby/matchmaking/search")
             self.update_action_log("Matchmaking Cancelled.")
             if self.power_state:
-                self._on_power_click()
+                self._on_power_click(check_search=False)
             return
 
         # 2. Resolve Queue ID
@@ -343,7 +344,7 @@ class SidebarWidget(ctk.CTkFrame):
         if res and res.status_code in [200, 204]:
             self.update_action_log(f"Searching ({mode})...")
             if not self.power_state:
-                self._on_power_click()
+                self._on_power_click(check_search=False)
         else:
             self.update_action_log("Search failed - Check lobby.")
 
