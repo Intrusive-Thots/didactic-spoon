@@ -49,6 +49,7 @@ class SidebarWidget(ctk.CTkFrame):
             command=self.master._on_close
         )
         self.btn_close.pack(side="right", padx=(0, 2))
+        CTkTooltip(self.btn_close, "Close Application")
 
         # ⚙ Settings
         self.btn_settings = ctk.CTkButton(
@@ -60,6 +61,7 @@ class SidebarWidget(ctk.CTkFrame):
             command=self._open_settings
         )
         self.btn_settings.pack(side="right", padx=(0, 1))
+        CTkTooltip(self.btn_settings, "Open Settings")
 
         # ▼ Collapse
         self._body_expanded = True
@@ -72,6 +74,7 @@ class SidebarWidget(ctk.CTkFrame):
             command=self._toggle_body_collapse,
         )
         self.btn_collapse.pack(side="right", padx=(0, 1))
+        self.tooltip_collapse = CTkTooltip(self.btn_collapse, "Collapse Sidebar")
 
         self.drag_widgets = [self, self.header, self.lbl_title]
 
@@ -226,10 +229,14 @@ class SidebarWidget(ctk.CTkFrame):
             self.main_body.pack(fill="both", expand=True)
             self.btn_collapse.configure(text="▼")
             self.master.geometry("200x400")
+            if hasattr(self, 'tooltip_collapse'):
+                self.tooltip_collapse.text = "Collapse Sidebar"
         else:
             self.main_body.pack_forget()
             self.btn_collapse.configure(text="▶")
             self.master.geometry("200x44")
+            if hasattr(self, 'tooltip_collapse'):
+                self.tooltip_collapse.text = "Expand Sidebar"
     # ── Quick Toggle Logic ──
     def _get_status_text(self):
         state = "▶ Active" if self.power_state else "⏸ Paused"
@@ -259,11 +266,16 @@ class SidebarWidget(ctk.CTkFrame):
                 pass
 
     # ── Handlers ──
+<<<<<<< HEAD
     def set_power_state(self, state: bool):
         """Pure visual/logical toggle without user-cancel side effects."""
         if self.power_state == state: return
         self.power_state = state
         
+=======
+    def _on_power_click(self, check_search=True):
+        self.power_state = not self.power_state
+>>>>>>> 1f242f23a9324e28bf6e81300da10da3c4b3b97f
         if self.power_state:
             if self.img_on: self.btn_power.configure(image=self.img_on, text="")
             else: self.btn_power.configure(text="▶")
@@ -277,6 +289,7 @@ class SidebarWidget(ctk.CTkFrame):
 
         if self.toggle_callback:
             self.toggle_callback(self.power_state)
+<<<<<<< HEAD
 
     def _on_power_click(self):
         """User clicks power button (may cancel search if active)."""
@@ -293,6 +306,19 @@ class SidebarWidget(ctk.CTkFrame):
                 if self.power_state:
                     self.set_power_state(False)
                 return
+=======
+            if check_search:
+                state_req = self.lcu.request("GET", "/lol-lobby/v2/lobby/matchmaking/search-state")
+                state_data = state_req.json() if state_req and state_req.status_code == 200 else {}
+
+                if state_data.get("searchState") == "Searching":
+                    # Cancel search if already searching
+                    self.lcu.request("DELETE", "/lol-lobby/v2/lobby/matchmaking/search")
+                    self.update_action_log("Matchmaking Cancelled.")
+                    if self.power_state:
+                        self._on_power_click(check_search=False)
+                    return
+>>>>>>> 1f242f23a9324e28bf6e81300da10da3c4b3b97f
 
     def _get_queue_id_for_mode(self, mode):
         """Dynamically resolve the queue ID from the client."""
@@ -316,6 +342,21 @@ class SidebarWidget(ctk.CTkFrame):
         """Aggressive matchmaking: Stay in the lobby tab, just change the queue."""
         if not self.lcu: return
 
+<<<<<<< HEAD
+=======
+        # 1. Check if already searching
+        state_req = self.lcu.request("GET", "/lol-lobby/v2/lobby/matchmaking/search-state")
+        state_data = state_req.json() if state_req and state_req.status_code == 200 else {}
+        
+        if state_data.get("searchState") == "Searching":
+            self.lcu.request("DELETE", "/lol-lobby/v2/lobby/matchmaking/search")
+            self.update_action_log("Matchmaking Cancelled.")
+            if self.power_state:
+                self._on_power_click(check_search=False)
+            return
+
+        # 2. Resolve Queue ID
+>>>>>>> 1f242f23a9324e28bf6e81300da10da3c4b3b97f
         mode = self.config.get("aram_mode", "ARAM")
         target_q_id = self._get_queue_id_for_mode(mode)
         self.update_action_log(f"Initiating {mode}...")
@@ -343,6 +384,7 @@ class SidebarWidget(ctk.CTkFrame):
                 self.lcu.request("POST", "/lol-lobby/v2/lobby", data={"queueId": target_q_id})
                 time.sleep(1.2) # Wait for client to process lobby creation
 
+<<<<<<< HEAD
             # Phase 3: Start Search
             res = self.lcu.request("POST", "/lol-lobby/v2/lobby/matchmaking/search")
             
@@ -357,6 +399,20 @@ class SidebarWidget(ctk.CTkFrame):
 
         import threading
         threading.Thread(target=_execute_sync, daemon=True).start()
+=======
+    def _finalize_matchmaking(self, queue_id, mode):
+        # Create Lobby (Safe to call POST even if in lobby, but we deleted if wrong ID)
+        self.lcu.request("POST", "/lol-lobby/v2/lobby", data={"queueId": queue_id})
+        
+        # Start Search
+        res = self.lcu.request("POST", "/lol-lobby/v2/lobby/matchmaking/search")
+        if res and res.status_code in [200, 204]:
+            self.update_action_log(f"Searching ({mode})...")
+            if not self.power_state:
+                self._on_power_click(check_search=False)
+        else:
+            self.update_action_log("Search failed - Check lobby.")
+>>>>>>> 1f242f23a9324e28bf6e81300da10da3c4b3b97f
 
     def _on_toggle_accept(self):
         self.config.set("auto_accept", self.var_accept.get())

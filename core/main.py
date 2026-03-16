@@ -20,6 +20,7 @@ from services.automation import AutomationEngine
 from services.stats_scraper import StatsScraper
 from utils.logger import Logger
 from utils.path_utils import get_asset_path
+<<<<<<< HEAD
 from core.version import __version__
 from core.constants import (
     SIDEBAR_WIDTH, SIDEBAR_HEIGHT, COMPACT_SIZE, COMPACT_BUTTON_SIZE,
@@ -27,6 +28,8 @@ from core.constants import (
     CONNECTION_POLL_INTERVAL, CONNECTION_ERROR_INTERVAL,
     GEOMETRY_THRESHOLD,
 )
+=======
+>>>>>>> 1f242f23a9324e28bf6e81300da10da3c4b3b97f
 
 from ui.app_sidebar import SidebarWidget
 from ui.components.factory import get_color, get_font, TOKENS
@@ -120,10 +123,7 @@ class LeagueLoopApp(ctk.CTk):
             if ms == 0:
                 self._ui_queue.put((func, args, {}))
             else:
-                def _delayed():
-                    time.sleep(ms / 1000.0)
-                    self._ui_queue.put((func, args, {}))
-                threading.Thread(target=_delayed, daemon=True).start()
+                self._ui_queue.put((super().after, (ms, func) + args, {}))
             return "queued"
 
     def setup_ui(self):
