@@ -20,7 +20,6 @@ from services.automation import AutomationEngine
 from services.stats_scraper import StatsScraper
 from utils.logger import Logger
 from utils.path_utils import get_asset_path
-<<<<<<< HEAD
 from core.version import __version__
 from core.constants import (
     SIDEBAR_WIDTH, SIDEBAR_HEIGHT, COMPACT_SIZE, COMPACT_BUTTON_SIZE,
@@ -28,8 +27,6 @@ from core.constants import (
     CONNECTION_POLL_INTERVAL, CONNECTION_ERROR_INTERVAL,
     GEOMETRY_THRESHOLD,
 )
-=======
->>>>>>> 1f242f23a9324e28bf6e81300da10da3c4b3b97f
 
 from ui.app_sidebar import SidebarWidget
 from ui.components.factory import get_color, get_font, TOKENS
@@ -42,16 +39,28 @@ if TYPE_CHECKING:
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("dark-blue")
 
+def global_exception_handler(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    err_str = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    Logger.error("SYS", f"Uncaught exception:\n{err_str}")
+
+sys.excepthook = global_exception_handler
+
 class LeagueLoopApp(ctk.CTk):
     def __init__(self):
         super().__init__()
+        self.report_callback_exception = self._on_tk_error
         
         self._ui_queue = queue.Queue()
         self._process_ui_queue()
-        
+
+
         self.title("League Loop")
-        self.geometry(f"{SIDEBAR_WIDTH}x{SIDEBAR_HEIGHT}") # Small footprint sidebar
+        self.geometry(f"{SIDEBAR_WIDTH}x{SIDEBAR_HEIGHT}+100+100") # Spawn visibly on screen
         self.overrideredirect(True) # Borderless for docking
+        self.attributes("-topmost", True) # Keep visible until docked
         self.attributes("-topmost", True)
         
         self.configure(fg_color=get_color("colors.background.app"))
@@ -106,6 +115,10 @@ class LeagueLoopApp(ctk.CTk):
         threading.Thread(target=self.connection_loop, daemon=True).start()
         threading.Thread(target=self.docking_loop, daemon=True).start()
         
+    def _on_tk_error(self, exc, val, tb):
+        err_str = "".join(traceback.format_exception(exc, val, tb))
+        Logger.error("UI", f"Tkinter Error:\n{err_str}")
+
     def _process_ui_queue(self):
         try:
             for _ in range(100):
@@ -127,8 +140,10 @@ class LeagueLoopApp(ctk.CTk):
             return "queued"
 
     def setup_ui(self):
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
         self.sidebar = SidebarWidget(self, self.toggle_power, self.config, lcu=self.lcu, assets=self.assets, scraper=self.scraper)
-        self.sidebar.pack(fill="both", expand=True)
+        self.sidebar.grid(row=0, column=0, sticky="nsew")
 
     def _setup_window_dragging(self):
         for widget in self.sidebar.drag_widgets:

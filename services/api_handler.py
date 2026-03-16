@@ -174,6 +174,11 @@ class LCUClient:
         try:
             if not silent:
                 Logger.debug("LCU", f"REQ -> {method} {endpoint}")
+            
+            # TRACE payload format
+            if endpoint == "/lol-lobby/v2/lobby" and method == "POST":
+                Logger.debug("LCU_TRACE", f"DATA TYPE: {type(data)} | RAW: {data}")
+                
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
                 response = self.session.request(

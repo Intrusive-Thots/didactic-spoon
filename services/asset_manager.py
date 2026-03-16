@@ -9,14 +9,18 @@ import customtkinter as ctk
 import requests
 from PIL import Image
 
+from utils.path_utils import get_asset_path
+
 # Constants
 CONFIG_FILE = "config.json"
-_DOCUMENTS = os.path.join(os.path.expanduser("~"), "Documents")
-CACHE_DIR = os.path.join(_DOCUMENTS, "LoLcache")
-ASSETS_DIR = os.path.join(CACHE_DIR, "assets")
+CACHE_DIR = get_asset_path("assets")
+ASSETS_DIR = get_asset_path("assets")
 
-# Ensure cache directories exist
-os.makedirs(ASSETS_DIR, exist_ok=True)
+# Ensure cache directories exist (only works in dev mode, fails silently in exe mode)
+try:
+    os.makedirs(ASSETS_DIR, exist_ok=True)
+except OSError:
+    pass
 
 DEFAULT_CONFIG = {
     "auto_accept": False,

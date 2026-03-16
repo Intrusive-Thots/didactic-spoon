@@ -27,10 +27,10 @@ class AutomationEngine:
         self.lcu = lcu
         self.assets = assets
         self.config = config
-        self.log = log_func
-        self.stop_func = stop_func
-        self.stats_func = kwargs.get("stats_func")
-        self.window_func = kwargs.get("window_func")
+        self.log: Optional[Callable] = log_func
+        self.stop_func: Optional[Callable] = stop_func
+        self.stats_func: Optional[Callable] = kwargs.get("stats_func")
+        self.window_func: Optional[Callable] = kwargs.get("window_func")
         self.running: bool = False
         self.paused: bool = False
         self.thread: Optional[threading.Thread] = None
@@ -49,6 +49,8 @@ class AutomationEngine:
         self._requeue_handled: bool = False
         self._skin_equipped: bool = False
         self._last_priority_swap: float = 0.0
+        self._last_search_state_time: float = 0.0
+        self._cached_search_state: Optional[dict] = None
 
     def start(self, start_paused=False):
         if self.running: return
@@ -69,7 +71,9 @@ class AutomationEngine:
         self.paused = False
 
     def _log(self, msg):
-        if self.log: self.log(msg)
+        log_hook = self.log
+        if log_hook is not None:
+            log_hook(msg)
         Logger.debug("Auto", msg)
 
     def _loop(self):
@@ -113,17 +117,19 @@ class AutomationEngine:
         if self.last_phase == "Matchmaking" and phase == "Lobby":
             if not self.config.get("auto_requeue"):
                 self._log("Queue Cancelled. Disabling System...")
-                if self.stop_func:
-                    self.stop_func()
-                    self.pause()
-                    return
+                stop = self.stop_func
+                if stop is not None:
+                    stop()
+                self.pause()
+                return
 
         # Auto-minimize/restore based on InProgress state
-        if self.window_func and phase != self.last_phase:
+        wf = self.window_func
+        if wf is not None and phase != self.last_phase:
             if phase == "InProgress":
-                self.window_func("minimize")
+                wf("minimize")
             elif self.last_phase == "InProgress" and phase in ["EndOfGame", "Lobby", "None"]:
-                self.window_func("restore")
+                wf("restore")
 
         self.last_phase = phase
 
@@ -176,6 +182,10 @@ class AutomationEngine:
             return
 
         target_delay = self.ready_check_delay if self.ready_check_delay is not None else 2.0
+        
+        if self.ready_check_start is None:
+            return
+            
         elapsed = time.time() - self.ready_check_start
 
         if elapsed >= target_delay:
@@ -213,15 +223,18 @@ class AutomationEngine:
         if phase != "ChampSelect":
             self.setup_done = False
             self._skin_equipped = False
-            if self.stats_func: self.stats_func([], [])
+            sf = self.stats_func
+            if sf is not None:
+                sf([], [])
             return
         if not session: return
 
         my_team = session.get("myTeam", [])
         bench = session.get("benchChampions", [])
         
-        if self.stats_func:
-            self.stats_func(my_team, bench)
+        sf2 = self.stats_func
+        if sf2 is not None:
+            sf2(my_team, bench)
 
         has_bench = len(bench) > 0
         is_arena = self.current_queue_id == QUEUE_ARENA

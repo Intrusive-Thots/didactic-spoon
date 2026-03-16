@@ -14,7 +14,7 @@ from ui.ui_shared import CTkTooltip
 
 
 ICON_SIZE = 28
-ICONS_PER_ROW = 6
+ICONS_PER_ROW = 4
 GRID_PAD = 1
 
 # Selection colours
@@ -47,9 +47,7 @@ class PriorityIconGrid(ctk.CTkFrame):
     # ───────────── helpers ─────────────
     def _scan_known_champions(self):
         known = set()
-        cache_dir = os.path.join("cache", "assets")
-        if not os.path.isdir(cache_dir):
-            cache_dir = get_asset_path(cache_dir)
+        cache_dir = get_asset_path("assets")
         if os.path.isdir(cache_dir):
             for f in os.listdir(cache_dir):
                 if f.startswith("champion_") and f.endswith(".png"):
@@ -58,9 +56,7 @@ class PriorityIconGrid(ctk.CTkFrame):
 
     def _resolve_champion_name(self, raw):
         normalized = raw.replace(" ", "").replace("'", "").lower()
-        cache_dir = os.path.join("cache", "assets")
-        if not os.path.isdir(cache_dir):
-            cache_dir = get_asset_path(cache_dir)
+        cache_dir = get_asset_path("assets")
         if os.path.isdir(cache_dir):
             for f in os.listdir(cache_dir):
                 if f.startswith("champion_") and f.endswith(".png"):
@@ -92,18 +88,14 @@ class PriorityIconGrid(ctk.CTkFrame):
     def _load_icon(self, champ_name):
         if champ_name in self._icon_cache:
             return self._icon_cache[champ_name]
-        paths = [
-            os.path.join("cache", "assets", f"champion_{champ_name}.png"),
-            get_asset_path(os.path.join("cache", "assets", f"champion_{champ_name}.png")),
-        ]
-        for p in paths:
-            if os.path.exists(p):
-                try:
-                    img = ctk.CTkImage(Image.open(p), size=(ICON_SIZE, ICON_SIZE))
-                    self._icon_cache[champ_name] = img
-                    return img
-                except Exception:
-                    pass
+        p = get_asset_path(os.path.join("assets", f"champion_{champ_name}.png"))
+        if os.path.exists(p):
+            try:
+                img = ctk.CTkImage(Image.open(p), size=(ICON_SIZE, ICON_SIZE))
+                self._icon_cache[champ_name] = img
+                return img
+            except Exception:
+                pass
         return None
 
     # ───────────── header ─────────────
