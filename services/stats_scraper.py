@@ -127,16 +127,13 @@ class StatsScraper:
                 champs = props.get("data", props.get("champions", {}))
                 if isinstance(champs, dict):
                     for cdata in champs.values():
-                        if isinstance(cdata, dict):
-                            try:
-                                wr = cdata["wr"]
-                            except KeyError:
-                                wr = cdata.get("winRate")
-
+                        if type(cdata) is dict:
                             try:
                                 name = cdata["name"]
+                                wr = cdata["wr"]
                             except KeyError:
-                                continue
+                                name = cdata.get("name", "")
+                                wr = cdata.get("wr") or cdata.get("winRate")
 
                             if wr and name:
                                 clean = name.replace("'", "").replace(" ", "").replace(".", "").lower()
@@ -231,3 +228,7 @@ class StatsScraper:
         clean = champ_name.replace("'", "").replace(" ", "").replace(".", "").lower()
         return self.win_rates.get(clean, 50.0)
 
+    @property
+    def is_offline(self) -> bool:
+        """True when all fetch sources failed and we're using pure baseline data."""
+        return not self._fetched and not self._fetching
