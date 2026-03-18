@@ -30,7 +30,6 @@ from core.constants import (
 
 from ui.app_sidebar import SidebarWidget
 from ui.components.factory import get_color, get_font, TOKENS
-from ui.ui_shared import show_toast
 from ui.components.toast import ToastManager
 
 if TYPE_CHECKING:
