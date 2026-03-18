@@ -29,7 +29,7 @@ class IconButton(ctk.CTkButton):
             text_color=text_color,
             font=font,
             corner_radius=corner_radius,
-            cursor=cursor,
+            cursor="hand2",
             **kwargs
         )
 
