@@ -10,6 +10,7 @@ from ui.ui_shared import CTkTooltip
 from ui.components.priority_grid import PriorityIconGrid
 from ui.components.settings_modal import SettingsModal
 from ui.components.lol_toggle import LolToggle
+from core.constants import SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL
 
 class SidebarWidget(ctk.CTkFrame):
     def __init__(self, master, toggle_callback, config, lcu=None, assets=None, scraper=None):
@@ -33,7 +34,7 @@ class SidebarWidget(ctk.CTkFrame):
     def _setup_ui(self):
         # ── Header / Drag Area ──
         self.header = ctk.CTkFrame(self, fg_color="transparent", height=36)
-        self.header.pack(fill="x", pady=(12, 0), padx=12)
+        self.header.pack(fill="x", pady=(SPACING_MD, SPACING_SM), padx=SPACING_MD)
         
         self.lbl_title = ctk.CTkLabel(
             self.header, text="League Loop", 
@@ -41,7 +42,7 @@ class SidebarWidget(ctk.CTkFrame):
             text_color=get_color("colors.text.primary"),
             anchor="w"
         )
-        self.lbl_title.pack(side="left", fill="x", expand=True, padx=4)
+        self.lbl_title.pack(side="left", fill="x", expand=True, padx=SPACING_XS)
 
         # ✕ Close
         self.btn_close = ctk.CTkButton(
@@ -82,11 +83,11 @@ class SidebarWidget(ctk.CTkFrame):
 
         # ── Collapsible Body ──
         self.main_body = ctk.CTkFrame(self, fg_color="transparent")
-        self.main_body.pack(fill="both", expand=True, padx=12, pady=12)
+        self.main_body.pack(fill="both", expand=True, padx=SPACING_MD, pady=SPACING_MD)
 
         # ── Status & Mode Selection ──
         status_frame = ctk.CTkFrame(self.main_body, fg_color="transparent")
-        status_frame.pack(fill="x", pady=(0, 8))
+        status_frame.pack(fill="x", pady=(0, SPACING_MD))
 
         self.btn_power_status = make_button(
             status_frame, 
@@ -134,12 +135,10 @@ class SidebarWidget(ctk.CTkFrame):
         )
         self.opt_game_mode.pack(side="left", fill="x", expand=True)
 
-        # ── Divider ──
-        ctk.CTkFrame(self.main_body, height=1, fg_color=get_color("colors.border.subtle")).pack(fill="x", padx=12, pady=4)
-
+        # Divider NOT here according to rules, instead replace with just action buttons
         # ── Action Buttons ──
         btn_frame = ctk.CTkFrame(self.main_body, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=12, pady=8)
+        btn_frame.pack(fill="x", padx=0, pady=(0, SPACING_LG))
 
         self.btn_find_match = make_button(
             btn_frame, 
@@ -151,58 +150,73 @@ class SidebarWidget(ctk.CTkFrame):
             border_color="#F0E6D2",
             command=self._find_match
         )
-        self.btn_find_match.pack(fill="x", pady=2)
+        self.btn_find_match.pack(fill="x", pady=0)
+        
+        # Divider after button
+        divider_btn = ctk.CTkFrame(self.main_body, height=1, fg_color="#1E2328")
+        divider_btn.pack(fill="x", pady=SPACING_MD)
 
         # ── Toggles Section ──
         toggles_label = ctk.CTkLabel(
             self.main_body, text="AUTOMATION", font=("Arial", 11, "bold"),
             text_color=get_color("colors.accent.gold", "#C8AA6E"), anchor="w"
         )
-        toggles_label.pack(fill="x", padx=14, pady=(8, 2))
+        toggles_label.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
         
-        ctk.CTkFrame(self.main_body, height=1, fg_color=get_color("colors.border.subtle")).pack(fill="x", padx=14, pady=(0, 8))
+        TOGGLE_ROW_HEIGHT = 28
+        automation_frame = ctk.CTkFrame(self.main_body, height=110, fg_color="transparent")
+        automation_frame.pack(fill="x", pady=(0, SPACING_LG))
+        automation_frame.pack_propagate(False)
 
         # Auto Accept
         self.var_accept = ctk.BooleanVar(value=self.config.get("auto_accept", True))
-        row1 = ctk.CTkFrame(self.main_body, fg_color="transparent")
-        row1.pack(fill="x", padx=14, pady=4)
+        row1 = ctk.CTkFrame(automation_frame, fg_color="transparent", height=TOGGLE_ROW_HEIGHT)
+        row1.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
+        row1.pack_propagate(False)
         ctk.CTkLabel(row1, text="Auto Accept", font=get_font("body"), width=120, anchor="w", text_color="#F0E6D2").pack(side="left")
         self.sw_accept = LolToggle(row1, variable=self.var_accept, command=self._on_toggle_accept)
         self.sw_accept.pack(side="right")
 
         # Auto Re-Queue
         self.var_requeue = ctk.BooleanVar(value=self.config.get("auto_requeue", False))
-        row2 = ctk.CTkFrame(self.main_body, fg_color="transparent")
-        row2.pack(fill="x", padx=14, pady=4)
+        row2 = ctk.CTkFrame(automation_frame, fg_color="transparent", height=TOGGLE_ROW_HEIGHT)
+        row2.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
+        row2.pack_propagate(False)
         ctk.CTkLabel(row2, text="Auto Re-Queue", font=get_font("body"), width=120, anchor="w", text_color="#F0E6D2").pack(side="left")
         self.sw_requeue = LolToggle(row2, variable=self.var_requeue, command=self._on_toggle_requeue)
         self.sw_requeue.pack(side="right")
 
         # Priority Picker
         self.var_priority = ctk.BooleanVar(value=self.config.get("priority_picker", {}).get("enabled", False))
-        row3 = ctk.CTkFrame(self.main_body, fg_color="transparent")
-        row3.pack(fill="x", padx=14, pady=4)
+        row3 = ctk.CTkFrame(automation_frame, fg_color="transparent", height=TOGGLE_ROW_HEIGHT)
+        row3.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
+        row3.pack_propagate(False)
         ctk.CTkLabel(row3, text="Priority Sniper", font=get_font("body"), width=120, anchor="w", text_color="#F0E6D2").pack(side="left")
         self.sw_priority = LolToggle(row3, variable=self.var_priority, command=self._on_toggle_priority)
         self.sw_priority.pack(side="right")
+        
+        # Divider after automation
+        divider_auto = ctk.CTkFrame(self.main_body, height=1, fg_color="#1E2328")
+        divider_auto.pack(fill="x", pady=SPACING_MD)
 
         # ── Priority Icon Grid ──
-        ctk.CTkFrame(self.main_body, height=1, fg_color=get_color("colors.border.subtle")).pack(fill="x", padx=12, pady=6)
-
+        # Let grid module handle spacing internally for right-pad and bottom pad
         self.priority_grid = PriorityIconGrid(self.main_body, self.config, self.assets)
-        self.priority_grid.pack(fill="x", padx=10, pady=2)
+        self.priority_grid.pack(fill="x", pady=(0, SPACING_MD), padx=(0, SPACING_SM)) # padx for scrollbar prevention
+
+        # Divider before status
+        divider_status = ctk.CTkFrame(self.main_body, height=1, fg_color="#1E2328")
+        divider_status.pack(fill="x", pady=SPACING_MD)
 
         # ── Status Readout (Bottom Area) ──
-        ctk.CTkFrame(self.main_body, height=1, fg_color=get_color("colors.border.subtle")).pack(fill="x", padx=14, pady=(2, 6))
-        
         status_info_frame = ctk.CTkFrame(self.main_body, fg_color="transparent")
-        status_info_frame.pack(fill="x", padx=14, pady=2)
+        status_info_frame.pack(fill="x", padx=SPACING_MD, pady=(SPACING_LG, SPACING_MD))
         
         self.lbl_match_status = ctk.CTkLabel(status_info_frame, text="Status: Connected", font=("Arial", 10), text_color="#6C757D", anchor="w")
-        self.lbl_match_status.pack(fill="x")
+        self.lbl_match_status.pack(fill="x", pady=(0, SPACING_XS))
         
         self.lbl_queue_timer = ctk.CTkLabel(status_info_frame, text="Queue: Idle", font=("Arial", 10), text_color="#6C757D", anchor="w")
-        self.lbl_queue_timer.pack(fill="x")
+        self.lbl_queue_timer.pack(fill="x", pady=(0, SPACING_XS))
 
         # ── Action Log (Bottom) ──
         self.spacer = ctk.CTkFrame(self.main_body, fg_color="transparent")

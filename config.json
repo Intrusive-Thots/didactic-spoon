@@ -1,6 +1,6 @@
 {
-    "auto_accept": true,
-    "auto_requeue": true,
+    "auto_accept": false,
+    "auto_requeue": false,
     "auto_pick": "",
     "auto_pick_backup": "",
     "auto_ban": "",
@@ -34,9 +34,9 @@
     "ban_BOTTOM": "",
     "ban_UTILITY": "",
     "always_on_top": true,
-    "aram_mode": "Ranked Solo/Duo",
+    "aram_mode": "ARAM Mayhem",
     "priority_picker": {
-        "enabled": true,
+        "enabled": false,
         "list": [
             "Fizz",
             "Singed",
@@ -71,7 +71,6 @@
             "Chogath",
             "Gangplank",
             "Ekko",
-            "Akshan",
             "Jax"
         ]
     },

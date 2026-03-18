@@ -11,11 +11,11 @@ from PIL import Image
 from utils.path_utils import get_asset_path
 from ui.components.factory import get_color, get_font, get_radius, TOKENS
 from ui.ui_shared import CTkTooltip
-
+from core.constants import SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL
 
 ICON_SIZE = 40
 ICONS_PER_ROW = 4
-GRID_PAD = 4
+GRID_GAP = SPACING_SM
 
 # Selection colours
 SEL_BORDER = "#C8AA6E"      # gold ring for single-select in edit mode
@@ -147,6 +147,16 @@ class PriorityIconGrid(ctk.CTkFrame):
         )
         self.scroll.pack(fill="x")
 
+        # Grid container enforcing 4 columns
+        self.grid_parent = ctk.CTkFrame(self.scroll, fg_color="transparent")
+        self.grid_parent.pack(pady=(0, SPACING_MD))
+        
+        self.grid_parent.grid_propagate(False)
+        self.grid_parent.configure(width=200)
+
+        for i in range(ICONS_PER_ROW):
+            self.grid_parent.grid_columnconfigure(i, weight=0, minsize=48)
+
         # Add-champion input row (hidden)
         self.add_row = ctk.CTkFrame(self.body, fg_color="transparent", height=28)
         self.add_entry = ctk.CTkEntry(
@@ -233,27 +243,31 @@ class PriorityIconGrid(ctk.CTkFrame):
 
     # ───────────── grid rendering ─────────────
     def _render_grid(self):
-        for w in self.scroll.winfo_children():
+        for w in self.grid_parent.winfo_children():
             w.destroy()
         self._icon_widgets.clear()
 
         names = self._get_priority_list()
-        row_frame = None
 
         for i, name in enumerate(names):
-            if i % ICONS_PER_ROW == 0:
-                row_frame = ctk.CTkFrame(self.scroll, fg_color="transparent")
-                row_frame.pack(fill="x", pady=GRID_PAD)
+            row = i // ICONS_PER_ROW
+            col = i % ICONS_PER_ROW
 
             # Slightly larger cell in edit mode to fit rank badge
             cell_size = ICON_SIZE + 4
             cell = ctk.CTkFrame(
-                row_frame, width=cell_size, height=cell_size,
+                self.grid_parent, width=cell_size, height=cell_size,
                 fg_color="transparent", corner_radius=4,
                 border_width=1,
                 border_color=get_color("colors.border.subtle")
             )
-            cell.pack(side="left", padx=GRID_PAD)
+            # Use grid with the requested GRID_GAP
+            cell.grid(
+                row=row,
+                column=col,
+                padx=GRID_GAP // 2,
+                pady=GRID_GAP // 2
+            )
             cell.pack_propagate(False)
 
             # Set a placeholder label first

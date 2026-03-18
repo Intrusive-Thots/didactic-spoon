@@ -58,6 +58,7 @@ class LeagueLoopApp(ctk.CTk):
 
         self.title("League Loop")
         self.geometry(f"{SIDEBAR_WIDTH}x{SIDEBAR_HEIGHT}+100+100") # Spawn visibly on screen
+        self.minsize(260, 520)
         self.overrideredirect(True) # Borderless for docking
         self.attributes("-topmost", True) # Keep visible until docked
         self.attributes("-topmost", True)
