@@ -226,11 +226,19 @@ class AssetManager:
         count = 0
         for tree in runes:
             # Tree Icon
-            self._ensure_rune_icon(tree["icon"])
+            self._ensure_rune_icon(tree.get("icon"))
             # Slots
-            for slot in tree["slots"]:
-                for rune in slot["runes"]:
-                    self._ensure_rune_icon(rune["icon"])
+            slots = tree.get("slots")
+            if not slots:
+                continue
+
+            for slot in slots:
+                slot_runes = slot.get("runes")
+                if not slot_runes:
+                    continue
+
+                for rune in slot_runes:
+                    self._ensure_rune_icon(rune.get("icon"))
                     count += 1
         self.log(f"Pre-checked {count} rune icons.")
 
