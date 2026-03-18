@@ -30,7 +30,6 @@ from core.constants import (
 
 from ui.app_sidebar import SidebarWidget
 from ui.components.factory import get_color, get_font, TOKENS
-from ui.ui_shared import show_toast
 from ui.components.toast import ToastManager
 
 if TYPE_CHECKING:
@@ -120,12 +119,12 @@ class LeagueLoopApp(ctk.CTk):
         Logger.error("UI", f"Tkinter Error:\n{err_str}")
 
     def _process_ui_queue(self):
-        # ⚡ Bolt: Checking queue.empty() before popping is ~3x faster
-        # than catching queue.Empty exceptions 60 times a second when idle.
-        for _ in range(100):
-            if self._ui_queue.empty():
-                break
-            try:
+        # Bolt optimization: checking .empty() is faster than catching queue.Empty
+        # in a 16ms polling loop where the queue is usually empty.
+        try:
+            for _ in range(100):
+                if self._ui_queue.empty():
+                    break
                 task, args, kwargs = self._ui_queue.get_nowait()
                 if task:
                     task(*args, **kwargs)
