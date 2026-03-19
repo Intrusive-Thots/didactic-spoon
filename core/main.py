@@ -90,7 +90,8 @@ class LeagueLoopApp(ctk.CTk):
             log_func=None, # Will be set after sidebar is created
             stop_func=lambda: self.after(0, lambda: self.sidebar._on_power_click()) if hasattr(self, "sidebar") else None,
             stats_func=lambda team, bench: self.after(0, lambda: self.sidebar.update_lobby_stats(team, bench)) if hasattr(self, "sidebar") else None,
-            window_func=lambda state: self.after(0, lambda: self._handle_window_state(state))
+            window_func=lambda state: self.after(0, lambda: self._handle_window_state(state)),
+            poro_snack_func=lambda: self.after(0, lambda: self.sidebar._poro_snack_earned()) if hasattr(self, "sidebar") else None
         )
 
         self.setup_ui()
