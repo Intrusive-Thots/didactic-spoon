@@ -21,7 +21,7 @@ class TestAutomationEngineReadyCheck(unittest.TestCase):
         self.logic._log = MagicMock()
         self.logic.ready_check_accepted = False
         self.logic.ready_check_start = None
-        self.logic.toast_func = None
+        self.logic.poro_snack_func = None
 
     def test_handle_ready_check_not_in_progress(self):
         # Call with a phase that is not "ReadyCheck"
