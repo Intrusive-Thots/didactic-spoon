@@ -49,6 +49,16 @@ def apply_click_animation(widget, normal_color, pulse_color=None, button_num=1):
     from .color_utils import lighten_color
     from utils.logger import Logger
 
+    # Precompute the pulse color outside the event handler to avoid redundant
+    # string parsing and math operations on every single click event.
+    _precomputed_pulse = None
+    if pulse_color:
+        _precomputed_pulse = pulse_color
+    elif normal_color == "transparent":
+        _precomputed_pulse = "#C8A45D"
+    else:
+        _precomputed_pulse = lighten_color(normal_color, 35)
+
     def on_click(_):
         try:
             # Skip if widget is disabled
@@ -69,17 +79,17 @@ def apply_click_animation(widget, normal_color, pulse_color=None, button_num=1):
             orig_fg = widget._orig_pulse_fg
             orig_hover = widget._orig_pulse_hover
 
-            # Generate a bright pulse color
+            # Determine active pulse color. We use the precomputed normal color pulse,
+            # UNLESS the widget has a specific hover color we should base the pulse on
+            # to maintain visual hierarchy.
             if pulse_color:
                 active_pulse = pulse_color
-            elif orig_hover and orig_hover != "transparent":
+            elif orig_hover and orig_hover != "transparent" and orig_hover != normal_color:
                 # Extract first color if it's a tuple
                 hover_base = orig_hover[0] if isinstance(orig_hover, tuple) else orig_hover
                 active_pulse = lighten_color(hover_base, 35)
-            elif normal_color == "transparent":
-                active_pulse = "#C8A45D"
             else:
-                active_pulse = lighten_color(normal_color, 35)
+                active_pulse = _precomputed_pulse
 
             # CustomTkinter renders hover_color when the mouse is over the widget.
             # To show a pulse effect during a click, we must change both fg_color and hover_color.
