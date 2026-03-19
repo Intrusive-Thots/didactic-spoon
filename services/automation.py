@@ -31,6 +31,7 @@ class AutomationEngine:
         self.stop_func: Optional[Callable] = stop_func
         self.stats_func: Optional[Callable] = kwargs.get("stats_func")
         self.window_func: Optional[Callable] = kwargs.get("window_func")
+        self.toast_func: Optional[Callable] = kwargs.get("toast_func")
         self.running: bool = False
         self.paused: bool = False
         self.thread: Optional[threading.Thread] = None
@@ -192,6 +193,23 @@ class AutomationEngine:
             self.lcu.request("POST", "/lol-matchmaking/v1/ready-check/accept")
             self.ready_check_accepted = True
             self._log("Ready Check Accepted!")
+
+            # 🌟 Nova Feature: Match Accept Hype Mode
+            # Creative Rationale: Auto-accepting a match is a mundane utility function.
+            # By injecting a randomized motivational toast with confetti, we transform
+            # a basic system action into a delightful, rewarding user experience.
+            # Benefit: Increases user engagement and adds a spark of joy to the workflow.
+            tf = self.toast_func
+            if tf is not None:
+                messages = [
+                    "Time to shine! Let's get this W.",
+                    "Match accepted. GLHF!",
+                    "Your team needs you. Go get 'em!",
+                    "Queue popped! Time to lock in.",
+                    "Victory awaits. Good luck!"
+                ]
+                msg = random.choice(messages)
+                tf(msg, "🚀", "success", True)
 
     def _handle_auto_queue(self, phase):
         if not self.config.get("auto_requeue"): return
