@@ -91,7 +91,10 @@ class LeagueLoopApp(ctk.CTk):
             log_func=None, # Will be set after sidebar is created
             stop_func=lambda: self.after(0, lambda: self.sidebar._on_power_click()) if hasattr(self, "sidebar") else None,
             stats_func=lambda team, bench: self.after(0, lambda: self.sidebar.update_lobby_stats(team, bench)) if hasattr(self, "sidebar") else None,
-            window_func=lambda state: self.after(0, lambda: self._handle_window_state(state))
+            window_func=lambda state: self.after(0, lambda: self._handle_window_state(state)),
+            # 🌟 Nova Feature: Route the new toast_func into the main thread
+            # so the automation engine can safely trigger holographic visual effects.
+            toast_func=lambda msg, icon, theme, confetti: self.after(0, lambda: ToastManager.get_instance().show(msg, icon=icon, theme=theme, confetti=confetti))
         )
 
         self.setup_ui()
@@ -126,15 +129,15 @@ class LeagueLoopApp(ctk.CTk):
     def _process_ui_queue(self):
         # Bolt optimization: checking .empty() is faster than catching queue.Empty
         # in a 16ms polling loop where the queue is usually empty.
-        try:
-            for _ in range(100):
-                if self._ui_queue.empty():
-                    break
+        for _ in range(100):
+            if self._ui_queue.empty():
+                break
+            try:
                 task, args, kwargs = self._ui_queue.get_nowait()
                 if task:
                     task(*args, **kwargs)
-        except queue.Empty:
-            pass
+            except queue.Empty:
+                pass
         super().after(16, self._process_ui_queue)
 
     def after(self, ms, func=None, *args):
