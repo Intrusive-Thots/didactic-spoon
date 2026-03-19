@@ -159,7 +159,7 @@ class PriorityIconGrid(ctk.CTkFrame):
         self.grid_parent = ctk.CTkFrame(self.scroll, fg_color="transparent")
         self.grid_parent.pack(pady=(0, SPACING_MD))
         
-        self.grid_parent.grid_propagate(False)
+        # Let the frame dynamically resize its height based on children
         self.grid_parent.configure(width=200)
 
         for i in range(ICONS_PER_ROW):
