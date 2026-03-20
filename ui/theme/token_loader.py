@@ -29,11 +29,15 @@ class DesignTokens:
         """Memoized helper to avoid repeated dict traversal and string splitting overhead."""
         data = self.tokens
         try:
-            # Single dot-separated string fast path
-            if len(keys) == 1 and isinstance(keys[0], str) and "." in keys[0]:
-                for part in keys[0].split("."):
-                    data = data[part]
-                return data
+            # Fast path execution for single string keys (e.g. "spacing")
+            # to avoid the overhead of falling through to the general loop
+            # and repeated type/string-matching checks.
+            if len(keys) == 1 and isinstance(keys[0], str):
+                if "." in keys[0]:
+                    for part in keys[0].split("."):
+                        data = data[part]
+                    return data
+                return data[keys[0]]
 
             for k in keys:
                 if isinstance(k, str) and "." in k:
