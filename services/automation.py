@@ -5,10 +5,10 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, Callable, List
 
-from .api_handler import LCUClient
-from .asset_manager import AssetManager, ConfigManager
-from utils.logger import Logger
-from core.constants import (
+from .api_handler import LCUClient  # type: ignore
+from .asset_manager import AssetManager, ConfigManager  # type: ignore
+from utils.logger import Logger  # type: ignore
+from core.constants import (  # type: ignore
     QUEUE_ARENA, TICK_SLEEP_DEFAULT, TICK_SLEEP_CHAMPSELECT,
     TICK_SLEEP_READYCHECK, TICK_SLEEP_LOBBY, TICK_SLEEP_INGAME,
     PRIORITY_SWAP_COOLDOWN,
@@ -31,7 +31,7 @@ class AutomationEngine:
         self.stop_func: Optional[Callable] = stop_func
         self.stats_func: Optional[Callable] = kwargs.get("stats_func")
         self.window_func: Optional[Callable] = kwargs.get("window_func")
-        self.poro_snack_func: Optional[Callable] = kwargs.get("poro_snack_func")
+        self.toast_func: Optional[Callable] = kwargs.get("toast_func")
         self.running: bool = False
         self.paused: bool = False
         self.thread: Optional[threading.Thread] = None
@@ -59,7 +59,7 @@ class AutomationEngine:
         self.paused = start_paused
         self._stop_event.clear()
         self.thread = threading.Thread(target=self._loop, daemon=True)
-        self.thread.start()
+        self.thread.start()  # type: ignore
 
     def stop(self) -> None:
         self.running = False
@@ -187,31 +187,12 @@ class AutomationEngine:
         if self.ready_check_start is None:
             return
             
-        elapsed = time.time() - self.ready_check_start
+        elapsed = time.time() - self.ready_check_start  # type: ignore
 
-        if elapsed >= target_delay:
+        if elapsed >= target_delay:  # type: ignore
             self.lcu.request("POST", "/lol-matchmaking/v1/ready-check/accept")
             self.ready_check_accepted = True
             self._log("Ready Check Accepted!")
-            if self.poro_snack_func:
-                self.poro_snack_func()
-
-            # 🌟 Nova Feature: Match Accept Hype Mode
-            # Creative Rationale: Auto-accepting a match is a mundane utility function.
-            # By injecting a randomized motivational toast with confetti, we transform
-            # a basic system action into a delightful, rewarding user experience.
-            # Benefit: Increases user engagement and adds a spark of joy to the workflow.
-            tf = self.toast_func
-            if tf is not None:
-                messages = [
-                    "Time to shine! Let's get this W.",
-                    "Match accepted. GLHF!",
-                    "Your team needs you. Go get 'em!",
-                    "Queue popped! Time to lock in.",
-                    "Victory awaits. Good luck!"
-                ]
-                msg = random.choice(messages)
-                tf(msg, "🚀", "success", True)
 
     def _handle_auto_queue(self, phase):
         if not self.config.get("auto_requeue"): return

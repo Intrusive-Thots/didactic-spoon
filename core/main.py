@@ -9,31 +9,31 @@ import queue
 import subprocess
 from tkinter import TclError
 
-import customtkinter as ctk
-import keyboard
-from PIL import Image
+import customtkinter as ctk  # type: ignore
+import keyboard  # type: ignore
+from PIL import Image  # type: ignore
 
 from typing import Optional, TYPE_CHECKING
 
-from services.api_handler import LCUClient
-from services.asset_manager import AssetManager, ConfigManager
-from services.automation import AutomationEngine
-from services.stats_scraper import StatsScraper
-from utils.logger import Logger
-from utils.path_utils import get_asset_path
-from core.version import __version__
-from core.constants import (
+from services.api_handler import LCUClient  # type: ignore
+from services.asset_manager import AssetManager, ConfigManager  # type: ignore
+from services.automation import AutomationEngine  # type: ignore
+from services.stats_scraper import StatsScraper  # type: ignore
+from utils.logger import Logger  # type: ignore
+from utils.path_utils import get_asset_path  # type: ignore
+from core.version import __version__  # type: ignore
+from core.constants import (  # type: ignore
     SIDEBAR_WIDTH, SIDEBAR_HEIGHT, COMPACT_SIZE, COMPACT_BUTTON_SIZE,
     COMPACT_GLOW_SIZE, DOCKING_POLL_INTERVAL, DOCKING_IDLE_INTERVAL,
     CONNECTION_POLL_INTERVAL, CONNECTION_ERROR_INTERVAL,
     GEOMETRY_THRESHOLD,
 )
 
-from ui.app_sidebar import SidebarWidget
-from ui.components.factory import get_color, get_font, TOKENS
-from ui.components.toast import ToastManager
-from ui.ui_shared import CTkTooltip
-from ui.components.omnibar import Omnibar
+from ui.app_sidebar import SidebarWidget  # type: ignore
+from ui.components.factory import get_color, get_font, TOKENS  # type: ignore
+from ui.components.toast import ToastManager  # type: ignore
+from ui.ui_shared import CTkTooltip  # type: ignore
+from ui.components.omnibar import Omnibar  # type: ignore
 
 if TYPE_CHECKING:
     import ctypes.wintypes
@@ -91,8 +91,7 @@ class LeagueLoopApp(ctk.CTk):
             log_func=None, # Will be set after sidebar is created
             stop_func=lambda: self.after(0, lambda: self.sidebar._on_power_click()) if hasattr(self, "sidebar") else None,
             stats_func=lambda team, bench: self.after(0, lambda: self.sidebar.update_lobby_stats(team, bench)) if hasattr(self, "sidebar") else None,
-            window_func=lambda state: self.after(0, lambda: self._handle_window_state(state)),
-            poro_snack_func=lambda: self.after(0, lambda: self.sidebar._poro_snack_earned()) if hasattr(self, "sidebar") else None
+            window_func=lambda state: self.after(0, lambda: self._handle_window_state(state))
         )
 
         self.setup_ui()
@@ -113,8 +112,8 @@ class LeagueLoopApp(ctk.CTk):
         self._queue_hotkey = None
         self._bind_hotkeys()
 
-        if self.automation:
-            self.automation.start(start_paused=True)
+        if self.automation is not None:
+            self.automation.start(start_paused=True)  # type: ignore
 
         self.assets.start_loading()
         threading.Thread(target=self.connection_loop, daemon=True).start()
@@ -207,25 +206,26 @@ class LeagueLoopApp(ctk.CTk):
                     r"C:\Riot Games\Riot Client\RiotClientServices.exe",
                     r"D:\Riot Games\Riot Client\RiotClientServices.exe",
                     r"E:\Riot Games\Riot Client\RiotClientServices.exe",
-                    r"C:\Program Files (x86)\Riot Games\Riot Client\RiotClientServices.exe"
+                    r"C:\Program Files (x86)\Riot Games\Riot Client\RiotClientServices.exe",
+                    os.path.join(os.environ.get("USERPROFILE", ""), r"Riot Games\Riot Client\RiotClientServices.exe")
                 ]
                 
                 # Proactive Registry Lookup
                 try:
                     import winreg
-                    for hkey in [winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE]:
+                    for hkey in [getattr(winreg, "HKEY_CURRENT_USER", 0), getattr(winreg, "HKEY_LOCAL_MACHINE", 0)]:
                         try:
-                            key = winreg.OpenKey(hkey, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Riot Game league_of_legends.live")
-                            val, _ = winreg.QueryValueEx(key, "UninstallString")
+                            key = getattr(winreg, "OpenKey")(hkey, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Riot Game league_of_legends.live")
+                            val, _ = getattr(winreg, "QueryValueEx")(key, "UninstallString")
                             # Typically "C:\Riot Games\Riot Client\RiotClientServices.exe" --uninstall-product=...
                             if val and "RiotClientServices.exe" in val:
                                 path = val.split('"')[1] if '"' in val else val.split(' ')[0]
                                 if os.path.exists(path): candidates.insert(0, path)
                         except Exception as e:
-                            from utils.logger import Logger
+                            from utils.logger import Logger  # type: ignore
                             Logger.debug("SYS", f"Registry iteration failed: {e}")
                 except Exception as e:
-                    from utils.logger import Logger
+                    from utils.logger import Logger  # type: ignore
                     Logger.debug("SYS", f"Registry module failed: {e}")
 
             for c in candidates:
@@ -401,7 +401,7 @@ class LeagueLoopApp(ctk.CTk):
             keyboard.add_hotkey(self._launch_hotkey, self._hotkey_launch_client, suppress=False)
             keyboard.add_hotkey(self._automation_hotkey, self._hotkey_toggle_automation, suppress=False)
             keyboard.add_hotkey(self._queue_hotkey, self._hotkey_find_match, suppress=False)
-            keyboard.add_hotkey(self._omnibar_hotkey, lambda: self.after(0, self.omnibar.show), suppress=False)
+            keyboard.add_hotkey(self._omnibar_hotkey, lambda: self.after(0, self.omnibar.show) if self.omnibar is not None else None, suppress=False)  # type: ignore
         except Exception as e:
             Logger.error("SYS", f"Failed to register hotkeys: {e}")
 
@@ -478,11 +478,11 @@ class LeagueLoopApp(ctk.CTk):
 
     def toggle_power(self, power_state):
         Logger.info("SYS", f"Power Toggled: {power_state}")
-        if self.automation:
+        if self.automation is not None:
             if power_state:
-                self.automation.resume()
+                self.automation.resume()  # type: ignore
             else:
-                self.automation.pause()
+                self.automation.pause()  # type: ignore
 
     def connection_loop(self):
         while self.running and not self._stop_event.is_set():
@@ -504,7 +504,7 @@ class LeagueLoopApp(ctk.CTk):
         last_hwnd = 0
         last_geom = (0, 0, 0, 0) # x, y, w, h
         
-        while self.running and not self._stop_event.is_set():
+        while self.running and not self._stop_event.is_set():  # type: ignore
             try:
                 hwnd = 0
                 windll = getattr(ctypes, "windll", None)
@@ -532,13 +532,14 @@ class LeagueLoopApp(ctk.CTk):
                     client_h = rect.bottom - rect.top
                     
                     if client_w > 100:
-                        my_w = 200
-                        my_h = min(client_h, 800)
+                        is_expanded = getattr(self, "sidebar", None) is None or getattr(self.sidebar, "_body_expanded", True)
+                        my_w = 200 if is_expanded else 44
+                        my_h = client_h if is_expanded else 44
                         target_x = client_x + client_w
                         target_y = client_y
                         
                         curr_geom = (target_x, target_y, my_w, my_h)
-                        if any(abs(curr_geom[i] - last_geom[i]) > GEOMETRY_THRESHOLD for i in range(4)):
+                        if any(abs(curr_geom[i] - last_geom[i]) > GEOMETRY_THRESHOLD for i in range(4)):  # type: ignore
                             self.after(0, lambda x=target_x, y=target_y, h=my_h: self.geometry(f"{my_w}x{h}+{x}+{y}"))
                             last_geom = curr_geom
                         
@@ -582,7 +583,7 @@ class LeagueLoopApp(ctk.CTk):
 
 def _kill_other_instances():
     """Terminate any other running instances of LeagueLoop."""
-    import psutil
+    import psutil  # type: ignore
     my_pid = os.getpid()
     # Also protect the parent (e.g. the shell that launched us)
     try:
@@ -609,7 +610,7 @@ def _kill_other_instances():
             if "core.main" in cmdline_str or "core\\main" in cmdline_str:
                 Logger.info("SYS", f"Killing stale instance PID {proc.pid}")
                 proc.kill()
-                killed += 1
+                killed += 1  # type: ignore
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             continue
     if killed:

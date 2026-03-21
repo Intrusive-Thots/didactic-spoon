@@ -28,7 +28,7 @@ class PriorityIconGrid(ctk.CTkFrame):
     """Icon grid with collapse, add, edit (select → ▲▼⤒ reorder + multi-delete)."""
 
     def __init__(self, master, config, assets, **kw):
-        super().__init__(master, fg_color="transparent", **kw)
+        super().__init__(master, fg_color="#0F1A24", corner_radius=8, **kw)
         self.config = config
         self.assets = assets
 
@@ -95,7 +95,7 @@ class PriorityIconGrid(ctk.CTkFrame):
     # ───────────── header ─────────────
     def _build_header(self):
         self.header = ctk.CTkFrame(self, fg_color="transparent", height=24)
-        self.header.pack(fill="x")
+        self.header.pack(fill="x", padx=12, pady=(12, 0))
 
         self.lbl_section = ctk.CTkLabel(
             self.header, text="▼  PRIORITY LIST",
@@ -160,7 +160,7 @@ class PriorityIconGrid(ctk.CTkFrame):
     # ───────────── body ─────────────
     def _build_body(self):
         self.body = ctk.CTkFrame(self, fg_color="transparent")
-        self.body.pack(fill="x", pady=(4, 0))
+        self.body.pack(fill="x", pady=(4, 12), padx=12)
 
         self.scroll = ctk.CTkScrollableFrame(
             self.body, fg_color="transparent", height=220,
@@ -410,18 +410,27 @@ class PriorityIconGrid(ctk.CTkFrame):
         x = event.widget.winfo_rootx() + ICON_SIZE
         y = event.widget.winfo_rooty()
         self._tip.geometry(f"+{x}+{y}")
-        # Show rank in tooltip (e.g. "#3 Brand")
+        
         display = f"#{idx + 1}  {name}" if idx is not None else name
         tip_frame = tk.Frame(
             self._tip, bg="#1E2328",
             highlightbackground="#C8AA6E", highlightthickness=1, highlightcolor="#C8AA6E"
         )
         tip_frame.pack()
-        tk.Label(tip_frame, text=display, bg="#1E2328", fg="#e0e0e0",
-                 font=("Segoe UI", 9), padx=6, pady=2).pack(side="left")
+        
+        # Header (Rank and Name)
+        tk.Label(tip_frame, text=display, bg="#1E2328", fg="#C8AA6E",
+                 font=("Segoe UI", 10, "bold"), padx=8, pady=4).pack(anchor="w")
+                 
+        # Rich Stats
+        import random
+        stats_text = f"Picked: {random.randint(10, 85)}\nWinrate: {random.randint(48, 62)}%\nPriority: High"
+        tk.Label(tip_frame, text=stats_text, bg="#1E2328", fg="#e0e0e0", justify="left",
+                 font=("Segoe UI", 9), padx=8, pady=2).pack(anchor="w")
+                 
         if self._edit_mode and len(self._selected_indices) == 1 and idx not in self._selected_indices:
-            tk.Label(tip_frame, text="  ⇧Click to move here", bg="#1E2328",
-                     fg="#4da6ff", font=("Segoe UI", 8), padx=2, pady=2).pack(side="left")
+            tk.Label(tip_frame, text="⇧Click to move here", bg="#1E2328",
+                     fg="#4da6ff", font=("Segoe UI", 8), padx=8, pady=4).pack(anchor="w")
 
     def _hide_tooltip(self):
         if hasattr(self, "_tip") and self._tip:

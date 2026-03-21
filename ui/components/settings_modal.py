@@ -1,9 +1,9 @@
 import tkinter as tk
-import customtkinter as ctk
-import keyboard
+import customtkinter as ctk  # type: ignore
+import keyboard  # type: ignore
 
-from ui.components.factory import get_color, get_font, get_radius, make_button
-from utils.logger import Logger
+from ui.components.factory import get_color, get_font, get_radius, make_button  # type: ignore
+from utils.logger import Logger  # type: ignore
 
 
 class HotkeyRecorder(ctk.CTkButton):
@@ -19,19 +19,19 @@ class HotkeyRecorder(ctk.CTkButton):
         self._hook = None
 
         super().__init__(
-            master,
-            text=initial_value or "Click to set",
-            width=kwargs.pop("width", 140),
-            height=kwargs.pop("height", 28),
-            corner_radius=6,
-            font=get_font("body", "bold"),
-            fg_color=get_color("colors.background.card"),
-            text_color=get_color("colors.text.primary"),
-            border_width=1,
-            border_color=get_color("colors.border.subtle"),
-            hover_color=get_color("colors.state.hover"),
-            command=self._toggle_recording,
-            cursor="hand2",
+            master,  # type: ignore
+            text=initial_value or "Click to set",  # type: ignore
+            width=kwargs.pop("width", 140),  # type: ignore
+            height=kwargs.pop("height", 28),  # type: ignore
+            corner_radius=6,  # type: ignore
+            font=get_font("body", "bold"),  # type: ignore
+            fg_color=get_color("colors.background.card"),  # type: ignore
+            text_color=get_color("colors.text.primary"),  # type: ignore
+            border_width=1,  # type: ignore
+            border_color=get_color("colors.border.subtle"),  # type: ignore
+            hover_color=get_color("colors.state.hover"),  # type: ignore
+            command=self._toggle_recording,  # type: ignore
+            cursor="hand2",  # type: ignore
             **kwargs,
         )
 
@@ -55,7 +55,8 @@ class HotkeyRecorder(ctk.CTkButton):
 
     def _on_key_press(self, event):
         """Capture key presses and build the hotkey combo string."""
-        name = event.name.lower()
+        ev_name = getattr(event, "name", None)
+        name = ev_name.lower() if isinstance(ev_name, str) else ""
 
         # Normalize modifier names
         modifiers_map = {
@@ -125,7 +126,7 @@ class HotkeyRecorder(ctk.CTkButton):
 
 class SettingsModal(ctk.CTkToplevel):
     def __init__(self, master, config, on_save_callback=None):
-        super().__init__(master)
+        super().__init__(master)  # type: ignore
         
         self.config = config
         self.on_save_callback = on_save_callback
@@ -190,40 +191,16 @@ class SettingsModal(ctk.CTkToplevel):
         form_frame.pack(fill="x", padx=20, pady=10)
         form_frame.columnconfigure(1, weight=1)
         
-        # ── Mode Selection Toggle ──
-        mode_lbl = ctk.CTkLabel(
-            form_frame, text="Game Mode", 
-            font=get_font("body"), 
-            text_color=get_color("colors.text.muted")
-        )
-        mode_lbl.grid(row=0, column=0, sticky="w", pady=8, padx=(0, 10))
-        
-        self.mode_var = ctk.StringVar(value=self.config.get("aram_mode", "ARAM"))
-        self.mode_select = ctk.CTkOptionMenu(
-            form_frame, values=["ARAM", "ARAM Mayhem"],
-            variable=self.mode_var, width=150,
-            font=get_font("body", "bold"),
-            fg_color=get_color("colors.background.card"),
-            button_color=get_color("colors.accent.primary"),
-            button_hover_color=get_color("colors.state.hover")
-        )
-        self.mode_select.grid(row=0, column=1, sticky="e", pady=8)
-
-        # ── Divider ──
-        ctk.CTkFrame(form_frame, height=1, fg_color=get_color("colors.border.subtle")).grid(
-            row=1, column=0, columnspan=2, sticky="ew", pady=8
-        )
-
         hotkey_header = ctk.CTkLabel(
             form_frame, text="HOTKEYS",
             font=get_font("caption", "bold"),
             text_color=get_color("colors.text.muted"),
         )
-        hotkey_header.grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 2))
+        hotkey_header.grid(row=0, column=0, columnspan=2, sticky="w", pady=(4, 2))
         
         # ── Hotkey Recorders ──
         for idx, (label_text, config_key, default_val) in enumerate(hotkeys):
-            row_idx = idx + 3  # offset for mode + divider + header
+            row_idx = idx + 1  # offset for header
             lbl = ctk.CTkLabel(
                 form_frame, text=label_text, 
                 font=get_font("body"), 
@@ -254,9 +231,6 @@ class SettingsModal(ctk.CTkToplevel):
         btn_save.pack(side="right")
         
     def _save_settings(self):
-        # Save mode
-        self.config.set("aram_mode", self.mode_var.get())
-        
         # Save hotkeys from recorders
         for config_key, recorder in self.recorders.items():
             val = recorder.get().strip().lower()

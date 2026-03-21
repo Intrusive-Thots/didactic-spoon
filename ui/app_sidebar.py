@@ -1,26 +1,25 @@
 import tkinter as tk
-import customtkinter as ctk
+import customtkinter as ctk  # type: ignore
 import os
-from PIL import Image
+from PIL import Image  # type: ignore
 
-from utils.logger import Logger
-from utils.path_utils import get_asset_path
-from ui.components.factory import get_color, get_font, get_radius, TOKENS, make_button
-from ui.ui_shared import CTkTooltip
-from ui.components.priority_grid import PriorityIconGrid
-from ui.components.settings_modal import SettingsModal
-from ui.components.lol_toggle import LolToggle
-from ui.components.account_switcher import AccountSwitcher
-from core.constants import SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL
+from utils.logger import Logger  # type: ignore
+from utils.path_utils import get_asset_path  # type: ignore
+from ui.components.factory import get_color, get_font, get_radius, TOKENS, make_button  # type: ignore
+from ui.ui_shared import CTkTooltip  # type: ignore
+from ui.components.priority_grid import PriorityIconGrid  # type: ignore
+from ui.components.settings_modal import SettingsModal  # type: ignore
+from ui.components.lol_toggle import LolToggle  # type: ignore
+from core.constants import SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL  # type: ignore
 
 class SidebarWidget(ctk.CTkFrame):
     def __init__(self, master, toggle_callback, config, lcu=None, assets=None, scraper=None):
-        super().__init__(
+        super().__init__(  # type: ignore
             master, 
-            corner_radius=0,
-            fg_color=get_color("colors.background.app"),
-            border_width=1,
-            border_color=get_color("colors.border.subtle")
+            corner_radius=0,  # type: ignore
+            fg_color=get_color("colors.background.app"),  # type: ignore
+            border_width=1,  # type: ignore
+            border_color=get_color("colors.border.subtle")  # type: ignore
         )
         self.toggle_callback = toggle_callback
         self.config = config
@@ -42,9 +41,8 @@ class SidebarWidget(ctk.CTkFrame):
         
         self.lbl_title = ctk.CTkLabel(
             self.header, text="League Loop", 
-            font=get_font("body", "bold"),
-            text_color=get_color("colors.text.primary"),
-            anchor="w"
+            font=get_font("title", "bold"), 
+            text_color=get_color("colors.text.primary")
         )
         self.lbl_title.pack(side="left", fill="x", expand=True, padx=SPACING_XS)
 
@@ -72,25 +70,46 @@ class SidebarWidget(ctk.CTkFrame):
         self.btn_settings.pack(side="right", padx=(4, 1))
         CTkTooltip(self.btn_settings, "Open Settings")
 
-        # ▼ Collapse
-        self._body_expanded = True
-        self.btn_collapse = ctk.CTkButton(
-            self.header, text="▼", width=20, height=20,
+        # ▼ Minimize
+        self.btn_minimize = ctk.CTkButton(
+            self.header, text="—", width=20, height=20,
             corner_radius=10, font=("Arial", 10, "bold"),
             fg_color="transparent",
             text_color=get_color("colors.text.muted"),
             hover_color=get_color("colors.state.hover"),
-            command=self._toggle_body_collapse,
+            command=self._minimize_window,
             cursor="hand2"
         )
-        self.btn_collapse.pack(side="right", padx=(4, 1))
-        self.tooltip_collapse = CTkTooltip(self.btn_collapse, "Collapse Sidebar")
+        self.btn_minimize.pack(side="right", padx=(4, 1))
+        self.tooltip_minimize = CTkTooltip(self.btn_minimize, "Minimize Sidebar")
 
         self.drag_widgets = [self, self.header, self.lbl_title]
 
         # ── Collapsible Body ──
         self.main_body = ctk.CTkFrame(self, fg_color="transparent")
         self.main_body.pack(fill="both", expand=True, padx=SPACING_MD, pady=SPACING_MD)
+
+        # ── Live Status Indicator Row ──
+        self.live_status_row = ctk.CTkFrame(self.main_body, fg_color="transparent")
+        self.live_status_row.pack(fill="x", pady=(0, 6))
+
+        # Active Dot
+        self.dot_active = ctk.CTkLabel(self.live_status_row, text="●", text_color="#00C853", font=("Arial", 12))
+        self.dot_active.pack(side="left")
+        self.lbl_dot_active = ctk.CTkLabel(self.live_status_row, text="Active", font=get_font("caption"), text_color=get_color("colors.text.muted"))
+        self.lbl_dot_active.pack(side="left", padx=(4, 8))
+
+        # Connected Dot
+        self.dot_connected = ctk.CTkLabel(self.live_status_row, text="●", text_color="#00C853", font=("Arial", 12))
+        self.dot_connected.pack(side="left")
+        self.lbl_dot_connected = ctk.CTkLabel(self.live_status_row, text="Connected", font=get_font("caption"), text_color=get_color("colors.text.muted"))
+        self.lbl_dot_connected.pack(side="left", padx=(4, 8))
+
+        # In Queue Dot
+        self.dot_queue = ctk.CTkLabel(self.live_status_row, text="●", text_color="#6C757D", font=("Arial", 12))
+        self.dot_queue.pack(side="left")
+        self.lbl_dot_queue = ctk.CTkLabel(self.live_status_row, text="In Queue", font=get_font("caption"), text_color=get_color("colors.text.muted"))
+        self.lbl_dot_queue.pack(side="left", padx=(4, 0))
 
         # ── Status & Mode Selection ──
         status_frame = ctk.CTkFrame(self.main_body, fg_color="transparent")
@@ -145,11 +164,66 @@ class SidebarWidget(ctk.CTkFrame):
 
         # Divider NOT here according to rules, instead replace with just action buttons
         # ── Action Buttons ──
-        btn_frame = ctk.CTkFrame(self.main_body, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=0, pady=(0, SPACING_LG))
+        self.action_container = ctk.CTkFrame(self.main_body, fg_color="#0F1A24", corner_radius=get_radius("md"))
+        self.action_container.pack(fill="x", pady=(0, SPACING_LG))
 
+        self.action_expanded = True
+        self.lbl_action_section = ctk.CTkLabel(
+            self.action_container, text="▼  ACTIONS",
+            font=get_font("caption", "bold"),
+            text_color=get_color("colors.text.muted"), anchor="w",
+            cursor="hand2",
+        )
+        self.lbl_action_section.pack(fill="x", padx=SPACING_MD, pady=(SPACING_SM, SPACING_SM))
+        self.lbl_action_section.bind("<Button-1>", self._toggle_action_collapse)
+
+        self.btn_frame = ctk.CTkFrame(self.action_container, fg_color="transparent")
+        self.btn_frame.pack(fill="x", padx=12, pady=(0, 12))
+
+        # ── STEP 1: Session Info Block (3-column grid, fixed height) ──
+        self.session_frame = ctk.CTkFrame(
+            self.btn_frame,
+            height=64,
+            fg_color="#0F1A24"
+        )
+        self.session_frame.pack(fill="x", pady=(0, 8))
+        self.session_frame.pack_propagate(False)
+        self.session_frame.grid_columnconfigure((0, 1, 2), weight=1)
+
+        self.queue_label = ctk.CTkLabel(
+            self.session_frame,
+            text=self.var_game_mode.get(),
+            font=("Segoe UI", 12, "bold"),
+            text_color="#C8AA6E"
+        )
+        self.queue_label.grid(row=0, column=0, padx=8, pady=(10, 2), sticky="w", columnspan=2)
+
+        self.time_label = ctk.CTkLabel(
+            self.session_frame,
+            text="Queue: Idle",
+            font=("Segoe UI", 11),
+            text_color=get_color("colors.text.primary")
+        )
+        self.time_label.grid(row=1, column=0, padx=8, pady=(0, 10), sticky="w")
+
+        self.estimate_label = ctk.CTkLabel(
+            self.session_frame,
+            text="● Connected",
+            font=("Segoe UI", 11),
+            text_color="#00C853"
+        )
+        self.estimate_label.grid(row=1, column=1, padx=8, pady=(0, 10), sticky="e")
+
+        self.session_separator = ctk.CTkFrame(
+            self.session_frame,
+            height=1,
+            fg_color="#1F2A36"
+        )
+        self.session_separator.place(relx=0, rely=1.0, relwidth=1.0, anchor="sw")
+
+        # ── Find Match (primary action) ──
         self.btn_find_match = make_button(
-            btn_frame, 
+            self.btn_frame, 
             text="▶  Find Match",
             style="primary",
             font=("Arial", 13, "bold"), 
@@ -161,8 +235,49 @@ class SidebarWidget(ctk.CTkFrame):
         self.btn_find_match.pack(fill="x", pady=0)
         CTkTooltip(self.btn_find_match, "Start or Cancel Matchmaking")
 
+        # ── STEP 2: Divider above Quick Actions ──
+        self.actions_divider = ctk.CTkFrame(
+            self.btn_frame,
+            height=1,
+            fg_color="#1F2A36"
+        )
+        self.actions_divider.pack(fill="x", pady=(6, 4))
+
+        # ── STEP 2: Quick Actions Row (2-column grid, fixed height) ──
+        self.quick_actions_frame = ctk.CTkFrame(
+            self.btn_frame,
+            height=44,
+            fg_color="transparent"
+        )
+        self.quick_actions_frame.pack(fill="x", pady=(4, 8))
+        self.quick_actions_frame.pack_propagate(False)
+        self.quick_actions_frame.grid_columnconfigure((0, 1), weight=1)
+
+        self.requeue_button = ctk.CTkButton(
+            self.quick_actions_frame,
+            text="Requeue",
+            height=32,
+            fg_color="#0F1A24",
+            hover_color="#1A2733",
+            text_color="#AAB6C4",
+            command=self._force_requeue
+        )
+        self.requeue_button.grid(row=0, column=0, padx=(0, 6), pady=6, sticky="ew")
+
+        self.dodge_button = ctk.CTkButton(
+            self.quick_actions_frame,
+            text="Dodge",
+            height=32,
+            fg_color="#0F1A24",
+            hover_color="#1A2733",
+            text_color="#AAB6C4",
+            command=self._force_dodge
+        )
+        self.dodge_button.grid(row=0, column=1, padx=(6, 0), pady=6, sticky="ew")
+
+        # ── Launch Client ──
         self.btn_launch_client = make_button(
-            btn_frame,
+            self.btn_frame,
             text="🚀 Launch Client",
             style="secondary",
             font=get_font("body", "bold"),
@@ -172,46 +287,32 @@ class SidebarWidget(ctk.CTkFrame):
         self.btn_launch_client.pack(fill="x", pady=(SPACING_SM, 0))
         CTkTooltip(self.btn_launch_client, "Open the Riot Client and start League")
         
-        # Account Switcher
-        acc_switch = AccountSwitcher(
-            btn_frame,
-            config=self.config,
-            on_launch_callback=lambda: self.master._hotkey_launch_client() if hasattr(self.master, "_hotkey_launch_client") else None
-        )
-        acc_switch.pack(fill="x", pady=(SPACING_MD, 0))
-
-        # Poro Snack Counter (Easter Egg)
-        self.lbl_poro_snacks = make_button(
-            btn_frame,
-            text=f"🍪 Poro Snacks: {self.config.get('poro_snacks', 0)}",
-            style="ghost",
-            font=("Arial", 11),
-            height=24,
-            text_color="#C8AA6E",
-            command=self._feed_poro
-        )
-        self.lbl_poro_snacks.pack(fill="x", pady=(SPACING_SM, 0))
-        CTkTooltip(self.lbl_poro_snacks, "Feed the Poro! (Earned from auto-accepting)")
-
         # Divider after button
         divider_btn = ctk.CTkFrame(self.main_body, height=1, fg_color="#1E2328")
         divider_btn.pack(fill="x", pady=SPACING_MD)
 
         # ── Toggles Section ──
-        toggles_label = ctk.CTkLabel(
-            self.main_body, text="AUTOMATION", font=("Arial", 11, "bold"),
-            text_color=get_color("colors.accent.gold", "#C8AA6E"), anchor="w"
+        self.auto_container = ctk.CTkFrame(self.main_body, fg_color="#0F1A24", corner_radius=get_radius("md"))
+        self.auto_container.pack(fill="x", pady=(0, SPACING_LG))
+
+        self.auto_expanded = True
+        self.lbl_auto_section = ctk.CTkLabel(
+            self.auto_container, text="▼  AUTOMATION",
+            font=get_font("caption", "bold"),
+            text_color=get_color("colors.text.muted"), anchor="w",
+            cursor="hand2",
         )
-        toggles_label.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
+        self.lbl_auto_section.pack(fill="x", padx=SPACING_MD, pady=(SPACING_SM, SPACING_SM))
+        self.lbl_auto_section.bind("<Button-1>", self._toggle_auto_collapse)
         
         TOGGLE_ROW_HEIGHT = 28
-        automation_frame = ctk.CTkFrame(self.main_body, height=110, fg_color="transparent")
-        automation_frame.pack(fill="x", pady=(0, SPACING_LG))
-        automation_frame.pack_propagate(False)
+        self.automation_frame = ctk.CTkFrame(self.auto_container, height=110, fg_color="transparent")
+        self.automation_frame.pack(fill="x")
+        self.automation_frame.pack_propagate(False)
 
         # Auto Accept
         self.var_accept = ctk.BooleanVar(value=self.config.get("auto_accept", True))
-        row1 = ctk.CTkFrame(automation_frame, fg_color="transparent", height=TOGGLE_ROW_HEIGHT)
+        row1 = ctk.CTkFrame(self.automation_frame, fg_color="transparent", height=TOGGLE_ROW_HEIGHT)
         row1.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
         row1.pack_propagate(False)
         lbl_accept = ctk.CTkLabel(row1, text="Auto Accept", font=get_font("body"), width=120, anchor="w", text_color="#F0E6D2")
@@ -223,7 +324,7 @@ class SidebarWidget(ctk.CTkFrame):
 
         # Auto Re-Queue
         self.var_requeue = ctk.BooleanVar(value=self.config.get("auto_requeue", False))
-        row2 = ctk.CTkFrame(automation_frame, fg_color="transparent", height=TOGGLE_ROW_HEIGHT)
+        row2 = ctk.CTkFrame(self.automation_frame, fg_color="transparent", height=TOGGLE_ROW_HEIGHT)
         row2.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
         row2.pack_propagate(False)
         lbl_requeue = ctk.CTkLabel(row2, text="Auto Re-Queue", font=get_font("body"), width=120, anchor="w", text_color="#F0E6D2")
@@ -235,7 +336,7 @@ class SidebarWidget(ctk.CTkFrame):
 
         # Priority Picker
         self.var_priority = ctk.BooleanVar(value=self.config.get("priority_picker", {}).get("enabled", False))
-        row3 = ctk.CTkFrame(automation_frame, fg_color="transparent", height=TOGGLE_ROW_HEIGHT)
+        row3 = ctk.CTkFrame(self.automation_frame, fg_color="transparent", height=TOGGLE_ROW_HEIGHT)
         row3.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
         row3.pack_propagate(False)
         lbl_priority = ctk.CTkLabel(row3, text="Priority Sniper", font=get_font("body"), width=120, anchor="w", text_color="#F0E6D2")
@@ -258,15 +359,20 @@ class SidebarWidget(ctk.CTkFrame):
         divider_status = ctk.CTkFrame(self.main_body, height=1, fg_color="#1E2328")
         divider_status.pack(fill="x", pady=SPACING_MD)
 
+        # ── Mini Stats Panel ──
+        self.mini_stats_frame = ctk.CTkFrame(self.main_body, fg_color="transparent")
+        self.mini_stats_frame.pack(fill="x", padx=SPACING_MD, pady=(12, 8))
+        
+        ctk.CTkLabel(self.mini_stats_frame, text="WIN RATE   55%", font=get_font("caption", "bold"), text_color=get_color("colors.text.primary")).pack(anchor="w")
+        ctk.CTkLabel(self.mini_stats_frame, text="GAMES      42", font=get_font("caption"), text_color=get_color("colors.text.muted")).pack(anchor="w")
+        ctk.CTkLabel(self.mini_stats_frame, text="TOP PICK   Lux", font=get_font("caption"), text_color=get_color("colors.text.muted")).pack(anchor="w")
+
         # ── Status Readout (Bottom Area) ──
-        status_info_frame = ctk.CTkFrame(self.main_body, fg_color="transparent")
-        status_info_frame.pack(fill="x", padx=SPACING_MD, pady=(SPACING_LG, SPACING_MD))
+        self.status_info_frame = ctk.CTkFrame(self.main_body, fg_color="transparent")
+        self.status_info_frame.pack(fill="x", padx=SPACING_MD, pady=(SPACING_LG, SPACING_MD))
         
-        self.lbl_match_status = ctk.CTkLabel(status_info_frame, text="Status: Connected", font=("Arial", 10), text_color="#6C757D", anchor="w")
+        self.lbl_match_status = ctk.CTkLabel(self.status_info_frame, text="● Connected — Idle", font=("Arial", 10), text_color="#00C853", anchor="w")
         self.lbl_match_status.pack(fill="x", pady=(0, SPACING_XS))
-        
-        self.lbl_queue_timer = ctk.CTkLabel(status_info_frame, text="Queue: Idle", font=("Arial", 10), text_color="#6C757D", anchor="w")
-        self.lbl_queue_timer.pack(fill="x", pady=(0, SPACING_XS))
 
         # ── Action Log (Bottom) ──
         self.spacer = ctk.CTkFrame(self.main_body, fg_color="transparent")
@@ -314,7 +420,7 @@ class SidebarWidget(ctk.CTkFrame):
 
     # ── Callbacks ──
     def _load_icons_async(self):
-        if not self.winfo_exists(): return
+        if not self.winfo_exists(): return  # type: ignore
         try:
             idle_path = get_asset_path("assets/icon_idle.png")
             active_path = get_asset_path("assets/icon_active.png")
@@ -327,22 +433,65 @@ class SidebarWidget(ctk.CTkFrame):
 
     def _toggle_body_collapse(self):
         self._body_expanded = not self._body_expanded
+        h = self.master.winfo_height()
         if self._body_expanded:
+            self.header.pack_configure(fill="x", pady=(SPACING_SM, SPACING_MD), padx=SPACING_MD)
+            self.lbl_title.pack(side="left")
+            self.btn_close.pack(side="right", padx=(4, 2))
+            self.btn_settings.pack(side="right", padx=(4, 1))
+            self.btn_collapse.pack(side="right", padx=(4, 1))
             self.main_body.pack(fill="both", expand=True)
-            self.btn_collapse.configure(text="▼")
-            self.master.geometry("200x400")
+            self.btn_collapse.configure(text="◀")
+            self.master.geometry(f"200x{h}")
             if hasattr(self, 'tooltip_collapse'):
                 self.tooltip_collapse.text = "Collapse Sidebar"
         else:
             self.main_body.pack_forget()
+            self.btn_close.pack_forget()
+            self.btn_settings.pack_forget()
+            self.lbl_title.pack_forget()
+            
+            self.header.pack_configure(fill="both", expand=True, padx=0, pady=0)
+            self.btn_collapse.pack_configure(side="top", pady=10, padx=0)
+            
             self.btn_collapse.configure(text="▶")
-            self.master.geometry("200x44")
+            self.master.geometry("44x44")
             if hasattr(self, 'tooltip_collapse'):
                 self.tooltip_collapse.text = "Expand Sidebar"
+            
+    def _minimize_window(self):
+        """Minimize via Win32 API — tkinter's iconify() is blocked by overrideredirect(True)."""
+        import ctypes
+        SW_MINIMIZE = 6
+        hwnd = ctypes.windll.user32.GetParent(self.master.winfo_id())
+        if hwnd == 0:
+            hwnd = self.master.winfo_id()
+        ctypes.windll.user32.ShowWindow(hwnd, SW_MINIMIZE)
+
+    def _toggle_action_collapse(self, event=None):
+        self.action_expanded = not getattr(self, "action_expanded", True)
+        if self.action_expanded:
+            self.lbl_action_section.configure(text="▼  ACTIONS")
+            self.btn_frame.pack(fill="x", padx=12, pady=(0, 12))
+        else:
+            self.lbl_action_section.configure(text="▶  ACTIONS")
+            self.btn_frame.pack_forget()
+
+    def _toggle_auto_collapse(self, event=None):
+        self.auto_expanded = not getattr(self, "auto_expanded", True)
+        if self.auto_expanded:
+            self.lbl_auto_section.configure(text="▼  AUTOMATION")
+            self.automation_frame.pack(fill="x")
+        else:
+            self.lbl_auto_section.configure(text="▶  AUTOMATION")
+            self.automation_frame.pack_forget()
+
     def _on_mode_change(self, new_mode):
         self.config.set("aram_mode", new_mode)
         if self.scraper:
             self.scraper.set_mode(new_mode)
+        if hasattr(self, "queue_label"):
+            self.queue_label.configure(text=new_mode)
 
     # ── Handlers ──
     def set_power_state(self, state: bool):
@@ -352,7 +501,7 @@ class SidebarWidget(ctk.CTkFrame):
         try:
             self.var_power.set(state)
         except Exception as e:
-            from utils.logger import Logger
+            from utils.logger import Logger  # type: ignore
             Logger.debug("UI", f"State sync error: {e}")
 
         if hasattr(self, "btn_power_status") and self.btn_power_status.winfo_exists():
@@ -385,7 +534,7 @@ class SidebarWidget(ctk.CTkFrame):
                     self.set_power_state(False)
                 return
 
-    def _get_queue_id_for_mode(self, mode):
+    def _get_queue_id_for_mode(self, mode: str):
         """Dynamically resolve the queue ID from the client."""
         mode_map = {
             "Quickplay": 490,
@@ -421,8 +570,10 @@ class SidebarWidget(ctk.CTkFrame):
 
                 for q in queues:
                     if q.get("isCustom"): continue
-                    if mode.lower() in q.get("name", "").lower():
-                        return int(q.get("id"))
+                    q_name = q.get("name")
+                    if isinstance(mode, str) and isinstance(q_name, str):
+                        if mode.lower() in q_name.lower():
+                            return int(q.get("id"))
         except Exception:
             pass
         return 450 # Default to ARAM
@@ -515,6 +666,27 @@ class SidebarWidget(ctk.CTkFrame):
         if self.winfo_exists():
             self.lbl_action.configure(text="Idle.")
 
+    def _force_requeue(self):
+        if hasattr(self, "master") and hasattr(self.master, "lcu"):
+            try:
+                # Cancel current queue if active, then restart it
+                self.master.lcu.request("DELETE", "/lol-lobby/v2/lobby/matchmaking/search")
+                import time
+                time.sleep(0.5)
+                self.master.lcu.request("POST", "/lol-lobby/v2/lobby/matchmaking/search")
+                self.update_action_log("Re-queued Matchmaking.")
+            except Exception as e:
+                self.update_action_log(f"Requeue error: {e}")
+
+    def _force_dodge(self):
+        if hasattr(self, "master") and hasattr(self.master, "lcu"):
+            try:
+                # Most reliable way to dodge is terminating the client UX
+                self.master.lcu.request("POST", "/process-control/v1/process/quit")
+                self.update_action_log("Client exiting (Dodging)...")
+            except Exception as e:
+                self.update_action_log(f"Dodge error: {e}")
+
     def update_lobby_stats(self, team, bench):
         """Called from AutomationEngine during ChampSelect to show winrate stats."""
         if not self.winfo_exists(): return
@@ -571,7 +743,7 @@ class SidebarWidget(ctk.CTkFrame):
         champ_stats.sort(key=lambda x: x[1], reverse=True)
 
         # Render Top 5
-        for i, (cname, wr) in enumerate(champ_stats[:5]):
+        for i, (cname, wr) in enumerate(champ_stats[:5]):  # type: ignore
             row = ctk.CTkFrame(self.stats_content, fg_color="transparent")
             row.pack(fill="x", pady=1)
 
@@ -583,21 +755,11 @@ class SidebarWidget(ctk.CTkFrame):
             lbl_wr = ctk.CTkLabel(row, text=f"{wr:.1f}%", font=get_font("body", "bold"), text_color=color)
             lbl_wr.pack(side="right")
 
-    def _feed_poro(self):
-        """Manually click to feed poro!"""
-        snacks = self.config.get("poro_snacks", 0) + 1
-        self.config.set("poro_snacks", snacks)
-        if self.winfo_exists():
-            self.lbl_poro_snacks.configure(text=f"🍪 Poro Snacks: {snacks}", text_color="#ffffff")
-            self.after(200, lambda: self.lbl_poro_snacks.configure(text_color="#C8AA6E") if self.winfo_exists() else None)
 
-    def _poro_snack_earned(self):
-        """Called by Automation Engine when auto-accept fires."""
-        self._feed_poro()
 
     def _open_settings(self):
-        if self.settings_window is None or not self.settings_window.winfo_exists():
+        if self.settings_window is None or not self.settings_window.winfo_exists():  # type: ignore
             self.settings_window = SettingsModal(self.master, self.config, on_save_callback=self.master.on_settings_saved)
         else:
-            self.settings_window.focus_force()
-            self.settings_window.lift()
+            self.settings_window.focus_force()  # type: ignore
+            self.settings_window.lift()  # type: ignore
