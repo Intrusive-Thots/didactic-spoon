@@ -3,7 +3,21 @@ Logger Module
 Handles application logging to file and console using standard logging module.
 """
 import logging
+import os
+import sys
 from logging.handlers import RotatingFileHandler
+
+# Resolve a writable log directory — prefer %APPDATA%/LeagueLoop, fall back to cwd
+_log_dir = os.path.join(os.environ.get("APPDATA", ""), "LeagueLoop")
+try:
+    os.makedirs(_log_dir, exist_ok=True)
+    # Quick write-test
+    _test_path = os.path.join(_log_dir, ".logtest")
+    with open(_test_path, "w") as _f:
+        _f.write("ok")
+    os.remove(_test_path)
+except Exception:
+    _log_dir = os.getcwd()
 
 # Set up the Python rotating file logger
 _log_format = '[%(asctime)s.%(msecs)03d] [%(threadName)s] %(message)s'
@@ -18,13 +32,13 @@ _logger.setLevel(logging.DEBUG)
 if not _logger.handlers:
     # File Handler - ALL Logs (5MB max size, keeps 3 backups)
     file_handler = RotatingFileHandler(
-        'debug.log', maxBytes=5*1024*1024, backupCount=3, encoding='utf-8'
+        os.path.join(_log_dir, 'debug.log'), maxBytes=5*1024*1024, backupCount=3, encoding='utf-8'
     )
     file_handler.setFormatter(formatter)
     
     # Error File Handler - ERROR/CRITICAL Logs Only
     error_handler = RotatingFileHandler(
-        'error.log', maxBytes=2*1024*1024, backupCount=2, encoding='utf-8'
+        os.path.join(_log_dir, 'error.log'), maxBytes=2*1024*1024, backupCount=2, encoding='utf-8'
     )
     error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(formatter)
