@@ -97,8 +97,16 @@ class AutomationEngine:
             try:
                 self._tick()
             except Exception as e:
-                tb = traceback.format_exc()
-                Logger.error("AutoLoop", f"Critical Error: {e}\n{tb}")
+                # Flood-suppress: only log identical errors once per 30s
+                err_key = str(e)
+                now = time.time()
+                last_time = getattr(self, "_last_error_times", {}).get(err_key, 0)
+                if not hasattr(self, "_last_error_times"):
+                    self._last_error_times = {}
+                if now - last_time > 30:
+                    tb = traceback.format_exc()
+                    Logger.error("AutoLoop", f"Critical Error: {e}\n{tb}")
+                    self._last_error_times[err_key] = now
                 self._stop_event.wait(3)
 
     def _tick(self):

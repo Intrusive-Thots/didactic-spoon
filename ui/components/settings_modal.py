@@ -2,14 +2,9 @@ import tkinter as tk
 import customtkinter as ctk  # type: ignore
 import keyboard  # type: ignore
 
-<<<<<<< HEAD
+from ui.ui_shared import CTkTooltip  # type: ignore
 from ui.components.factory import get_color, get_font, get_radius, make_button  # type: ignore
 from utils.logger import Logger  # type: ignore
-=======
-from ui.ui_shared import CTkTooltip
-from ui.components.factory import get_color, get_font, get_radius, make_button
-from utils.logger import Logger
->>>>>>> c91a3ee46680d593dae2ef0b0aaee66de2fc49d1
 
 
 class HotkeyRecorder(ctk.CTkButton):
@@ -197,8 +192,6 @@ class SettingsModal(ctk.CTkToplevel):
         form_frame.pack(fill="x", padx=20, pady=10)
         form_frame.columnconfigure(1, weight=1)
         
-<<<<<<< HEAD
-=======
         # ── Mode Selection Toggle ──
         mode_lbl = ctk.CTkLabel(
             form_frame, text="Game Mode", 
@@ -224,17 +217,16 @@ class SettingsModal(ctk.CTkToplevel):
             row=1, column=0, columnspan=2, sticky="ew", pady=8
         )
 
->>>>>>> c91a3ee46680d593dae2ef0b0aaee66de2fc49d1
         hotkey_header = ctk.CTkLabel(
             form_frame, text="HOTKEYS",
             font=get_font("caption", "bold"),
             text_color=get_color("colors.text.muted"),
         )
-        hotkey_header.grid(row=0, column=0, columnspan=2, sticky="w", pady=(4, 2))
+        hotkey_header.grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 2))
         
         # ── Hotkey Recorders ──
         for idx, (label_text, config_key, default_val) in enumerate(hotkeys):
-            row_idx = idx + 1  # offset for header
+            row_idx = idx + 3  # offset for mode selector (0), divider (1), header (2)
             lbl = ctk.CTkLabel(
                 form_frame, text=label_text, 
                 font=get_font("body"), 
