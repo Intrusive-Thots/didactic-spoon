@@ -2,8 +2,14 @@ import tkinter as tk
 import customtkinter as ctk  # type: ignore
 import keyboard  # type: ignore
 
+<<<<<<< HEAD
 from ui.components.factory import get_color, get_font, get_radius, make_button  # type: ignore
 from utils.logger import Logger  # type: ignore
+=======
+from ui.ui_shared import CTkTooltip
+from ui.components.factory import get_color, get_font, get_radius, make_button
+from utils.logger import Logger
+>>>>>>> c91a3ee46680d593dae2ef0b0aaee66de2fc49d1
 
 
 class HotkeyRecorder(ctk.CTkButton):
@@ -191,6 +197,34 @@ class SettingsModal(ctk.CTkToplevel):
         form_frame.pack(fill="x", padx=20, pady=10)
         form_frame.columnconfigure(1, weight=1)
         
+<<<<<<< HEAD
+=======
+        # ── Mode Selection Toggle ──
+        mode_lbl = ctk.CTkLabel(
+            form_frame, text="Game Mode", 
+            font=get_font("body"), 
+            text_color=get_color("colors.text.muted")
+        )
+        mode_lbl.grid(row=0, column=0, sticky="w", pady=8, padx=(0, 10))
+        
+        self.mode_var = ctk.StringVar(value=self.config.get("aram_mode", "ARAM"))
+        self.mode_select = ctk.CTkOptionMenu(
+            form_frame, values=["ARAM", "ARAM Mayhem"],
+            variable=self.mode_var, width=150,
+            font=get_font("body", "bold"),
+            fg_color=get_color("colors.background.card"),
+            button_color=get_color("colors.accent.primary"),
+            button_hover_color=get_color("colors.state.hover")
+        )
+        self.mode_select.grid(row=0, column=1, sticky="e", pady=8)
+        CTkTooltip(self.mode_select, "Select the active ARAM mode (determines lobby creation payload)")
+
+        # ── Divider ──
+        ctk.CTkFrame(form_frame, height=1, fg_color=get_color("colors.border.subtle")).grid(
+            row=1, column=0, columnspan=2, sticky="ew", pady=8
+        )
+
+>>>>>>> c91a3ee46680d593dae2ef0b0aaee66de2fc49d1
         hotkey_header = ctk.CTkLabel(
             form_frame, text="HOTKEYS",
             font=get_font("caption", "bold"),
