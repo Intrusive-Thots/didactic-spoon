@@ -47,6 +47,7 @@
             "Fiddlesticks",
             "AurelionSol",
             "Amumu",
+            "Draven",
             "Sion",
             "Karthus",
             "Velkoz",
@@ -55,6 +56,7 @@
             "Heimerdinger",
             "Nautilus",
             "Malzahar",
+            "Ashe",
             "Lux",
             "Lillia",
             "Olaf",
@@ -63,13 +65,12 @@
             "Lulu",
             "Kayle",
             "Galio",
-            "Chogath",
             "Gangplank",
-            "Ekko",
             "Jax",
-            "Zac",
             "Shyvana",
-            "Veigar"
+            "Veigar",
+            "Mel",
+            "Leona"
         ]
     },
     "hotkey_launch_client": "ctrl+shift+l",

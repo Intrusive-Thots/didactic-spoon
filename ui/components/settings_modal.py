@@ -9,7 +9,7 @@ from utils.logger import Logger  # type: ignore
 
 class HotkeyRecorder(ctk.CTkButton):
     """A button that records keyboard shortcuts when clicked.
-    
+
     Click to start recording → press your key combo → it captures and displays it.
     """
 
@@ -51,7 +51,6 @@ class HotkeyRecorder(ctk.CTkButton):
             text_color="#ffffff",
             border_color=get_color("colors.accent.primary"),
         )
-        # Hook into keyboard events
         self._hook = keyboard.on_press(self._on_key_press)
 
     def _on_key_press(self, event):
@@ -59,7 +58,6 @@ class HotkeyRecorder(ctk.CTkButton):
         ev_name = getattr(event, "name", None)
         name = ev_name.lower() if isinstance(ev_name, str) else ""
 
-        # Normalize modifier names
         modifiers_map = {
             "left ctrl": "ctrl", "right ctrl": "ctrl",
             "left shift": "shift", "right shift": "shift",
@@ -70,14 +68,11 @@ class HotkeyRecorder(ctk.CTkButton):
             "alt_l": "alt", "alt_r": "alt",
         }
         name = modifiers_map.get(name, name)
-
         self._pressed_keys.add(name)
 
-        # If we have at least one non-modifier key, finalize
         modifier_names = {"ctrl", "shift", "alt", "win"}
         non_modifiers = self._pressed_keys - modifier_names
         if non_modifiers:
-            # Build the combo string: modifiers first, then the key
             parts = []
             for mod in ["ctrl", "shift", "alt", "win"]:
                 if mod in self._pressed_keys:
@@ -110,13 +105,11 @@ class HotkeyRecorder(ctk.CTkButton):
                 self._hook = None
             except Exception:
                 pass
-        
-        # If _font is already gone, or it's already being destroyed, don't re-enter
+
         if not hasattr(self, "_font") or not self.winfo_exists():
             return
-            
+
         try:
-            # Call the underlying tkinter destroy if super().destroy() fails
             super().destroy()
         except Exception:
             try:
@@ -125,36 +118,51 @@ class HotkeyRecorder(ctk.CTkButton):
                 pass
 
 
+# ────────────────────────────────────────────────────────────
+#  Section Builder — Creates a collapsible group with a header
+# ────────────────────────────────────────────────────────────
+def _section_header(parent, title):
+    """Create a styled section header label."""
+    hdr = ctk.CTkLabel(
+        parent, text=title,
+        font=get_font("caption", "bold"),
+        text_color="#C8AA6E",
+        anchor="w",
+    )
+    hdr.pack(fill="x", pady=(12, 4))
+    return hdr
+
+
+def _divider(parent):
+    """Create a subtle horizontal rule."""
+    ctk.CTkFrame(parent, height=1, fg_color=get_color("colors.border.subtle")).pack(
+        fill="x", pady=8
+    )
+
+
 class SettingsModal(ctk.CTkToplevel):
     def __init__(self, master, config, on_save_callback=None):
         super().__init__(master)  # type: ignore
-        
+
         self.config = config
         self.on_save_callback = on_save_callback
         self.recorders = {}
-        
-        self.title("Global Settings")
-        self.geometry("360x480")
+
+        self.title("League Loop — Settings")
+        self.geometry("380x560")
         self.resizable(False, False)
         self.attributes("-topmost", True)
-        
         self.configure(fg_color=get_color("colors.background.app"))
-        
-        # Center relative to master, but shift to the left of the sidebar
+
+        # Center relative to master
         self.update_idletasks()
-        # master is the sidebar (200px), we want to be to the left of it
-        # master.winfo_rootx() is the left edge of the sidebar
         x = master.winfo_rootx() - self.winfo_width() - 20
         y = master.winfo_rooty() + (master.winfo_height() // 2) - (self.winfo_height() // 2)
-        
-        # Ensure we don't go off-screen to the left
-        if x < 10: x = 10
-        
+        if x < 10:
+            x = 10
         self.geometry(f"+{int(x)}+{int(y)}")
-        
+
         self.protocol("WM_DELETE_WINDOW", self._close)
-        
-        # Delay UI setup — CTkToplevel has a rendering bug with overrideredirect parents
         self.after(150, self._deferred_init)
 
     def _deferred_init(self):
@@ -162,119 +170,211 @@ class SettingsModal(ctk.CTkToplevel):
         self.lift()
         self.focus_force()
 
+    # ──────────────────────────────────────────────
+    #  UI Layout
+    # ──────────────────────────────────────────────
     def _setup_ui(self):
-        # ── Title ──
-        lbl_title = ctk.CTkLabel(
-            self, text="⚙ Settings", 
-            font=get_font("title", "bold"), 
-            text_color=get_color("colors.text.primary")
-        )
-        lbl_title.pack(pady=(16, 4))
+        # ── Header ──
+        header = ctk.CTkFrame(self, fg_color="#0A1428", corner_radius=0)
+        header.pack(fill="x")
 
-        lbl_subtitle = ctk.CTkLabel(
-            self, text="Click a hotkey field then press your combo",
+        ctk.CTkLabel(
+            header, text="⚙  SETTINGS",
+            font=("Beaufort for LOL", 16, "bold"),
+            text_color="#C8AA6E",
+        ).pack(side="left", padx=16, pady=12)
+
+        ctk.CTkLabel(
+            header, text="v1.0",
             font=get_font("caption"),
-            text_color=get_color("colors.text.muted")
+            text_color=get_color("colors.text.muted"),
+        ).pack(side="right", padx=16, pady=12)
+
+        # ── Scrollable body ──
+        body = ctk.CTkScrollableFrame(
+            self,
+            fg_color="transparent",
+            scrollbar_button_color=get_color("colors.background.card"),
+            scrollbar_button_hover_color=get_color("colors.state.hover"),
         )
-        lbl_subtitle.pack(pady=(0, 12))
-        
+        body.pack(fill="both", expand=True, padx=16, pady=(8, 0))
+
         self.recorders = {}
-        
-        # Define hotkeys to expose
+
+        # ━━━━━━━━ GENERAL ━━━━━━━━
+        _section_header(body, "GENERAL")
+
+        row_mode = ctk.CTkFrame(body, fg_color="transparent")
+        row_mode.pack(fill="x", pady=4)
+        ctk.CTkLabel(
+            row_mode, text="Game Mode",
+            font=get_font("body"),
+            text_color=get_color("colors.text.primary"),
+        ).pack(side="left")
+
+        self.mode_var = ctk.StringVar(value=self.config.get("aram_mode", "ARAM"))
+        self.mode_select = ctk.CTkOptionMenu(
+            row_mode,
+            values=[
+                "Quickplay", "Draft Pick", "Ranked Solo/Duo", "Ranked Flex",
+                "ARAM", "ARAM Mayhem", "Arena", "URF", "ARURF",
+                "Nexus Blitz", "One For All", "Ultimate Spellbook",
+                "TFT Normal", "TFT Ranked",
+            ],
+            variable=self.mode_var,
+            width=160,
+            font=get_font("body", "bold"),
+            fg_color=get_color("colors.background.card"),
+            button_color="#1A2733",
+            button_hover_color=get_color("colors.state.hover"),
+            dropdown_fg_color=get_color("colors.background.app"),
+            dropdown_hover_color=get_color("colors.state.hover"),
+            dropdown_font=get_font("caption"),
+        )
+        self.mode_select.pack(side="right")
+        CTkTooltip(self.mode_select, "Select the game mode for lobby creation")
+
+        # Accept Delay
+        row_delay = ctk.CTkFrame(body, fg_color="transparent")
+        row_delay.pack(fill="x", pady=4)
+        ctk.CTkLabel(
+            row_delay, text="Accept Delay",
+            font=get_font("body"),
+            text_color=get_color("colors.text.primary"),
+        ).pack(side="left")
+
+        delay_val = float(self.config.get("accept_delay", 2.0))
+        self.delay_var = ctk.DoubleVar(value=delay_val)
+        self.lbl_delay_val = ctk.CTkLabel(
+            row_delay, text=f"{delay_val:.1f}s",
+            font=get_font("body", "bold"),
+            text_color="#C8AA6E",
+            width=40,
+        )
+        self.lbl_delay_val.pack(side="right")
+
+        self.slider_delay = ctk.CTkSlider(
+            row_delay,
+            from_=0, to=8,
+            number_of_steps=16,
+            variable=self.delay_var,
+            width=100,
+            fg_color=get_color("colors.background.card"),
+            progress_color="#C8AA6E",
+            button_color="#F0E6D2",
+            button_hover_color="#FFFFFF",
+            command=self._on_delay_slide,
+        )
+        self.slider_delay.pack(side="right", padx=(8, 4))
+        CTkTooltip(self.slider_delay, "Delay before auto-accepting a match (0 = instant)")
+
+        _divider(body)
+
+        # ━━━━━━━━ HOTKEYS ━━━━━━━━
+        _section_header(body, "HOTKEYS")
+
         hotkeys = [
             ("Client Launch", "hotkey_launch_client", "ctrl+shift+l"),
             ("Toggle Automation", "hotkey_toggle_automation", "ctrl+shift+a"),
             ("Find Match", "hotkey_find_match", "ctrl+shift+f"),
-            ("Compact Mode", "hotkey_compact_mode", "ctrl+shift+m")
+            ("Compact Mode", "hotkey_compact_mode", "ctrl+shift+m"),
         ]
-        
-        form_frame = ctk.CTkFrame(self, fg_color="transparent")
-        form_frame.pack(fill="x", padx=20, pady=10)
-        form_frame.columnconfigure(1, weight=1)
-        
-        # ── Mode Selection Toggle ──
-        mode_lbl = ctk.CTkLabel(
-            form_frame, text="Game Mode", 
-            font=get_font("body"), 
-            text_color=get_color("colors.text.muted")
-        )
-        mode_lbl.grid(row=0, column=0, sticky="w", pady=8, padx=(0, 10))
-        
-        self.mode_var = ctk.StringVar(value=self.config.get("aram_mode", "ARAM"))
-        self.mode_select = ctk.CTkOptionMenu(
-            form_frame, values=["ARAM", "ARAM Mayhem"],
-            variable=self.mode_var, width=150,
-            font=get_font("body", "bold"),
-            fg_color=get_color("colors.background.card"),
-            button_color=get_color("colors.accent.primary"),
-            button_hover_color=get_color("colors.state.hover")
-        )
-        self.mode_select.grid(row=0, column=1, sticky="e", pady=8)
-        CTkTooltip(self.mode_select, "Select the active ARAM mode (determines lobby creation payload)")
 
-        # ── Divider ──
-        ctk.CTkFrame(form_frame, height=1, fg_color=get_color("colors.border.subtle")).grid(
-            row=1, column=0, columnspan=2, sticky="ew", pady=8
-        )
+        for label_text, config_key, default_val in hotkeys:
+            row = ctk.CTkFrame(body, fg_color="transparent")
+            row.pack(fill="x", pady=3)
+            ctk.CTkLabel(
+                row, text=label_text,
+                font=get_font("body"),
+                text_color=get_color("colors.text.primary"),
+            ).pack(side="left")
 
-        hotkey_header = ctk.CTkLabel(
-            form_frame, text="HOTKEYS",
-            font=get_font("caption", "bold"),
-            text_color=get_color("colors.text.muted"),
-        )
-        hotkey_header.grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 2))
-        
-        # ── Hotkey Recorders ──
-        for idx, (label_text, config_key, default_val) in enumerate(hotkeys):
-            row_idx = idx + 3  # offset for mode selector (0), divider (1), header (2)
-            lbl = ctk.CTkLabel(
-                form_frame, text=label_text, 
-                font=get_font("body"), 
-                text_color=get_color("colors.text.muted")
-            )
-            lbl.grid(row=row_idx, column=0, sticky="w", pady=6, padx=(0, 10))
-            
             current_val = self.config.get(config_key, default_val)
-            recorder = HotkeyRecorder(form_frame, initial_value=str(current_val), width=150)
-            recorder.grid(row=row_idx, column=1, sticky="e", pady=6)
-            
+            recorder = HotkeyRecorder(row, initial_value=str(current_val), width=140)
+            recorder.pack(side="right")
             self.recorders[config_key] = recorder
-            
-        # ── Buttons ──
-        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=20, side="bottom", pady=20)
-        
-        btn_cancel = make_button(
-            parent=btn_frame, text="Cancel", command=self._close,
-            variant="secondary", width=100
+
+        _divider(body)
+
+        # ━━━━━━━━ ABOUT ━━━━━━━━
+        _section_header(body, "ABOUT")
+
+        ctk.CTkLabel(
+            body, text="League Loop",
+            font=("Beaufort for LOL", 13, "bold"),
+            text_color=get_color("colors.text.primary"),
+        ).pack(anchor="w")
+        ctk.CTkLabel(
+            body, text="Companion overlay for League of Legends",
+            font=get_font("caption"),
+            text_color=get_color("colors.text.muted"),
+        ).pack(anchor="w", pady=(0, 4))
+        ctk.CTkLabel(
+            body,
+            text="Built with CustomTkinter • LCU API • Python",
+            font=get_font("caption"),
+            text_color=get_color("colors.text.muted"),
+        ).pack(anchor="w", pady=(0, 8))
+
+        # ── Footer buttons ──
+        btn_frame = ctk.CTkFrame(self, fg_color="#0A1428", corner_radius=0)
+        btn_frame.pack(fill="x", side="bottom")
+
+        inner = ctk.CTkFrame(btn_frame, fg_color="transparent")
+        inner.pack(padx=16, pady=12)
+
+        btn_cancel = ctk.CTkButton(
+            inner, text="Cancel", width=100, height=32,
+            font=get_font("body", "bold"),
+            fg_color="transparent",
+            border_width=1,
+            border_color=get_color("colors.border.subtle"),
+            text_color=get_color("colors.text.muted"),
+            hover_color=get_color("colors.state.hover"),
+            command=self._close,
         )
-        btn_cancel.pack(side="left")
-        
-        btn_save = make_button(
-            parent=btn_frame, text="Save", command=self._save_settings,
-            variant="primary", width=100
+        btn_cancel.pack(side="left", padx=(0, 8))
+
+        btn_save = ctk.CTkButton(
+            inner, text="Save", width=100, height=32,
+            font=get_font("body", "bold"),
+            fg_color="#C8AA6E",
+            text_color="#0A1428",
+            hover_color="#F0E6D2",
+            command=self._save_settings,
         )
-        btn_save.pack(side="right")
-        
+        btn_save.pack(side="left")
+
+    # ──────────────────────────────────────────────
+    #  Callbacks
+    # ──────────────────────────────────────────────
+    def _on_delay_slide(self, value):
+        self.lbl_delay_val.configure(text=f"{value:.1f}s")
+
     def _save_settings(self):
-        # Save hotkeys from recorders
+        # Save hotkeys
         for config_key, recorder in self.recorders.items():
             val = recorder.get().strip().lower()
             if val:
                 self.config.set(config_key, val)
-                
+
+        # Save game mode
+        self.config.set("aram_mode", self.mode_var.get())
+
+        # Save accept delay
+        self.config.set("accept_delay", round(self.delay_var.get(), 1))
+
         if self.on_save_callback:
             try:
                 self.on_save_callback()
             except Exception as e:
                 Logger.error("SYS", f"Settings callback failed: {e}")
-                
+
         self._close()
 
     def _close(self):
-        """Properly clean up recorders and destroy the window with extreme prejudice."""
+        """Properly clean up recorders and destroy the window."""
         try:
-            # 1. Unhook recorders immediately
             for recorder in getattr(self, "recorders", {}).values():
                 try:
                     if hasattr(recorder, "_hook") and recorder._hook is not None:
@@ -286,14 +386,12 @@ class SettingsModal(ctk.CTkToplevel):
             pass
 
         try:
-            # 2. Clear reference in parent
             if hasattr(self.master, "settings_window"):
                 self.master.settings_window = None
         except Exception:
             pass
-            
+
         try:
-            # 3. Explicitly destroy children first with guards
             if self.winfo_exists():
                 for child in self.winfo_children():
                     try:
@@ -302,9 +400,7 @@ class SettingsModal(ctk.CTkToplevel):
                     except Exception:
                         pass
 
-            # 4. Final destruction of the Toplevel
-            if self.winfo_exists():
-                super().destroy()
-        except Exception as e:
-            # Silent fail for destruction is safer in threaded UI environments
+                if self.winfo_exists():
+                    super().destroy()
+        except Exception:
             pass
