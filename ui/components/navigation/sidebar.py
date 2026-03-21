@@ -43,5 +43,6 @@ class SidebarItem(ctk.CTkButton):
         )
 
         if not is_active:
-            self.bind("<Enter>", lambda e: self.configure(text_color=get_color("colors.text.primary")))
+            text_primary = get_color("colors.text.primary")
+            self.bind("<Enter>", lambda e: self.configure(text_color=text_primary))
             self.bind("<Leave>", lambda e: self.configure(text_color=text_color))

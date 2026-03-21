@@ -28,6 +28,10 @@ class DraggableList(ctk.CTkScrollableFrame):
             self._row_frames.append(lbl_empty)
             return
 
+        danger_color = get_color("colors.state.danger", "#EF5350")
+        accent_color = get_color("colors.accent.primary", "#C8AA6E")
+        card_hover_color = get_color("colors.background.card", "gray30")
+
         for i, item in enumerate(self.items):
             frame = ctk.CTkFrame(self, fg_color=("gray85", "gray20"))
             frame.pack(fill="x", pady=2, padx=5)
@@ -83,7 +87,7 @@ class DraggableList(ctk.CTkScrollableFrame):
             # Remove Button
             btn_remove = ctk.CTkButton(
                 actions, text="❌", width=30, height=25,
-                fg_color="transparent", hover_color=get_color("colors.state.danger", "#EF5350"),
+                fg_color="transparent", hover_color=danger_color,
                 command=lambda x=item, f=frame: self._animate_remove(x, f),
                 cursor="hand2"
             )
@@ -99,10 +103,10 @@ class DraggableList(ctk.CTkScrollableFrame):
 
             # Malcolm's Infusion: Row hover states
             def on_enter(e, f=frame):
-                if f.winfo_exists() and f.cget("fg_color") != get_color("colors.state.danger", "#EF5350") and f.cget("fg_color") != get_color("colors.accent.primary", "#C8AA6E"):
-                    f.configure(fg_color=get_color("colors.background.card", "gray30"))
+                if f.winfo_exists() and f.cget("fg_color") != danger_color and f.cget("fg_color") != accent_color:
+                    f.configure(fg_color=card_hover_color)
             def on_leave(e, f=frame):
-                if f.winfo_exists() and f.cget("fg_color") != get_color("colors.state.danger", "#EF5350") and f.cget("fg_color") != get_color("colors.accent.primary", "#C8AA6E"):
+                if f.winfo_exists() and f.cget("fg_color") != danger_color and f.cget("fg_color") != accent_color:
                     f.configure(fg_color=("gray85", "gray20"))
 
             frame.bind("<Enter>", on_enter)
