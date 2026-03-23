@@ -13,6 +13,7 @@
 ## 2026-03-19 - Precompute Helper Lookups for Hover States
 **Learning:** Calling complex styling helper functions like `get_color` and `parse_border` directly inside high-frequency UI event handlers like `on_enter` and `on_leave` adds measurable performance overhead and main thread latency (~40% slower) due to unnecessary redundant calculations for a static token.
 **Action:** Precompute static color/border values outside the event handler definitions and reference the cached values within the closure to improve responsiveness of mouse interactions.
+<<<<<<< Updated upstream
 
 ## 2026-04-10 - Fast-Path Dictionary Lookups
 **Learning:** For tight-loop string-based dictionary lookups (e.g., parsing UI design tokens), checking for dots and unconditionally splitting (`.split('.')`) allocates lists unnecessarily.
@@ -29,3 +30,7 @@
 ## 2026-04-20 - Fast Path List Navigation Colors
 **Learning:** Dynamically resolving theme tokens (like `get_color("colors.accent.primary")`) in high-frequency list navigation callbacks (`_on_up`, `_on_down`) causes measurable latency and redundant main-thread overhead as users scroll through many items.
 **Action:** Precompute active and normal item colors in the component's `__init__` when rendering complex custom list components to ensure `O(1)` state updates and maintain crisp UI responsiveness.
+
+## 2026-03-23 - CTkEntry Unsupported kwargs
+**Learning:** Certain `customtkinter` wrapper widgets do not support native Tkinter standard arguments like `cursor="xterm"`, which varies by version and raises a hard `ValueError` during UI instantiation.
+**Action:** Remove unsupported kwargs that explicitly crash on initialization, and instantiate components in isolation via tests to guarantee they aren't shipping with bad formatting arguments.
