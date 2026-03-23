@@ -29,3 +29,7 @@
 ## 2026-04-20 - Fast Path List Navigation Colors
 **Learning:** Dynamically resolving theme tokens (like `get_color("colors.accent.primary")`) in high-frequency list navigation callbacks (`_on_up`, `_on_down`) causes measurable latency and redundant main-thread overhead as users scroll through many items.
 **Action:** Precompute active and normal item colors in the component's `__init__` when rendering complex custom list components to ensure `O(1)` state updates and maintain crisp UI responsiveness.
+
+## 2026-04-25 - Avoid O(N) Disk I/O in UI Callbacks
+**Learning:** Calling `os.listdir()` repeatedly inside UI interactions (like resolving autocomplete suggestions or parsing imported data) introduces significant O(N) disk I/O overhead and main thread blocking.
+**Action:** Precompute directory contents into an O(1) memory mapping (e.g., dictionary) during component initialization, and use this dictionary to resolve paths or real names instantly.

@@ -47,24 +47,20 @@ class PriorityIconGrid(ctk.CTkFrame):
 
     # ───────────── helpers ─────────────
     def _scan_known_champions(self):
-        known = set()
-        cache_dir = get_asset_path("assets")
-        if os.path.isdir(cache_dir):
-            for f in os.listdir(cache_dir):
-                if f.startswith("champion_") and f.endswith(".png"):
-                    known.add(f[len("champion_"):-len(".png")].lower())
-        return known
-
-    def _resolve_champion_name(self, raw):
-        normalized = raw.replace(" ", "").replace("'", "").lower()
+        # ⚡ Bolt: Fast-path dictionary lookup to map normalized names to real asset names
+        # avoiding os.listdir() overhead on every lookup in _resolve_champion_name.
+        known = {}
         cache_dir = get_asset_path("assets")
         if os.path.isdir(cache_dir):
             for f in os.listdir(cache_dir):
                 if f.startswith("champion_") and f.endswith(".png"):
                     real = f[len("champion_"):-len(".png")]
-                    if real.lower() == normalized:
-                        return real
-        return None
+                    known[real.lower()] = real
+        return known
+
+    def _resolve_champion_name(self, raw):
+        normalized = raw.replace(" ", "").replace("'", "").lower()
+        return self._known_champions.get(normalized)
 
     @staticmethod
     def _dedup(seq):
@@ -888,10 +884,11 @@ class PriorityIconGrid(ctk.CTkFrame):
 
         # Find matches (fuzzy search logic)
         matches = []
-        for champ in sorted(self._known_champions):
-            if champ.lower().startswith(query):
+        for champ in sorted(self._known_champions.values()):
+            champ_lower = champ.lower()
+            if champ_lower.startswith(query):
                 matches.append(champ)
-            elif query in champ.lower():
+            elif query in champ_lower:
                 matches.append(champ)
 
         # Deduplicate and sort starts-with matches first
@@ -905,14 +902,8 @@ class PriorityIconGrid(ctk.CTkFrame):
         self.suggestions_frame.pack(fill="x", pady=(4, 0))
 
         for i, champ in enumerate(unique_matches[:3]):
-            # Use original casing from _known_champions (assuming it's formatted reasonably well)
-            # or use asset manager if we had one here. For now, rely on champ from matches.
-            # To handle cases like "Miss Fortune", we can use string capwords or title() if the
-            # input from _scan_known_champions() is strictly lowercase. Wait, _scan_known_champions()
-            # does `.lower()` on the filenames. So we have to format it cleanly.
-            # A simple heuristic for names with spaces/apostrophes:
-            import string
-            display_name = string.capwords(champ.replace("'", "' "), " ").replace("' ", "'")
+            # Display name directly uses the correctly-cased real name from the dictionary
+            display_name = champ
 
             pill = ctk.CTkButton(
                 self.suggestions_frame, text=display_name, width=0, height=20,
