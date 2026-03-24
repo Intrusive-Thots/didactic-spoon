@@ -79,5 +79,96 @@ class TestAutomationEngineReadyCheck(unittest.TestCase):
         # Verify logging was NOT triggered
         self.logic._log.assert_not_called()
 
+
+class TestAutomationEngineWindowState(unittest.TestCase):
+    """Tests for window state transitions including stealth mode."""
+
+    def _make_engine(self, stealth=False):
+        engine = AutomationEngine.__new__(AutomationEngine)
+        engine.lcu = MagicMock()
+        engine.config = MagicMock()
+        engine.config.get = MagicMock(side_effect=lambda key, default=None: {
+            "stealth_mode": stealth,
+            "auto_accept": False,
+            "auto_requeue": False,
+        }.get(key, default))
+        engine.assets = MagicMock()
+        engine.window_func = MagicMock()
+        engine.log = MagicMock()
+        engine._log = MagicMock()
+        engine.stop_func = None
+        engine.stats_func = None
+        engine.toast_func = None
+        engine.running = True
+        engine.paused = False
+        engine.setup_done = False
+        engine._skin_equipped = False
+        engine._requeue_handled = False
+        engine._stop_event = MagicMock()
+        engine.executor = MagicMock()
+        engine._last_error_times = {}
+        engine.last_phase = "None"
+        engine.current_queue_id = None
+        engine.ready_check_start = None
+        engine.ready_check_delay = None
+        engine.ready_check_accepted = False
+        engine._last_countdown_log = None
+        engine._last_disconnect_log = 0.0
+        engine._last_priority_swap = 0.0
+        engine._last_search_state_time = 0.0
+        engine._cached_search_state = None
+        return engine
+
+    def test_stealth_off_sends_restore(self):
+        """When stealth_mode is OFF, transitioning from InProgress → EndOfGame calls restore."""
+        engine = self._make_engine(stealth=False)
+        engine.last_phase = "InProgress"
+
+        # Simulate phase data
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = "EndOfGame"
+        mock_future = MagicMock()
+        mock_future.result.return_value = mock_response
+        engine.executor.submit.return_value = mock_future
+
+        engine._tick()
+
+        engine.window_func.assert_called_with("restore")
+
+    def test_stealth_on_sends_restore_quiet(self):
+        """When stealth_mode is ON, transitioning from InProgress → EndOfGame calls restore_quiet."""
+        engine = self._make_engine(stealth=True)
+        engine.last_phase = "InProgress"
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = "EndOfGame"
+        mock_future = MagicMock()
+        mock_future.result.return_value = mock_response
+        engine.executor.submit.return_value = mock_future
+
+        engine._tick()
+
+        engine.window_func.assert_called_with("restore_quiet")
+
+    def test_inprogress_always_minimizes(self):
+        """Regardless of stealth mode, entering InProgress always minimizes."""
+        for stealth in (True, False):
+            engine = self._make_engine(stealth=stealth)
+            engine.last_phase = "ChampSelect"
+
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = "InProgress"
+            mock_future = MagicMock()
+            mock_future.result.return_value = mock_response
+            engine.executor.submit.return_value = mock_future
+
+            engine._tick()
+
+            engine.window_func.assert_called_with("minimize")
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -5,24 +5,49 @@ import functools
 
 def _resolve_token_path():
     """Resolve design_tokens.json for both dev and PyInstaller frozen builds."""
-    try:
-        base = sys._MEIPASS
-    except AttributeError:
-        base = os.path.abspath(os.path.dirname(__file__))
-        return os.path.join(base, "design_tokens.json")
-    return os.path.join(base, "ui", "theme", "design_tokens.json")
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        # Frozen: Try common locations in _MEIPASS
+        candidates = [
+            os.path.join(sys._MEIPASS, "ui", "theme", "design_tokens.json"),
+            os.path.join(sys._MEIPASS, "design_tokens.json"),
+            os.path.join(os.path.dirname(sys.executable), "ui", "theme", "design_tokens.json"),
+        ]
+        for c in candidates:
+            if os.path.exists(c):
+                return c
+    
+    # Dev or fallback
+    base = os.path.abspath(os.path.dirname(__file__))
+    return os.path.join(base, "design_tokens.json")
 
 TOKEN_PATH = _resolve_token_path()
 
-DEFAULT_TOKENS = {}
+# Sensible fallbacks for critical layout tokens to prevent NoneType scaling errors
+DEFAULT_TOKENS = {
+    "spacing": {
+        "xs": 4, "sm": 8, "md": 12, "lg": 16, "xl": 24, "xxl": 32
+    },
+    "radius": {
+        "xs": 2, "sm": 4, "md": 8, "lg": 12, "xl": 16, "pill": 999
+    },
+    "colors": {
+        "background": {"app": "#091428", "panel": "#0A1428", "card": "#141E28"},
+        "text": {"primary": "#F0E6D2", "secondary": "#C8AA6E", "muted": "#6C757D"},
+        "accent": {"primary": "#C8AA6E", "gold": "#C8AA6E", "blue": "#0BC6E3"}
+    }
+}
 
 class DesignTokens:
     def __init__(self):
         try:
-            with open(TOKEN_PATH, "r") as f:
-                self.tokens = json.load(f)
+            if os.path.exists(TOKEN_PATH):
+                with open(TOKEN_PATH, "r") as f:
+                    self.tokens = json.load(f)
+            else:
+                self.tokens = DEFAULT_TOKENS
         except (FileNotFoundError, json.JSONDecodeError):
             self.tokens = DEFAULT_TOKENS
+
 
     @functools.lru_cache(maxsize=1024)
     def _get_memoized(self, keys):

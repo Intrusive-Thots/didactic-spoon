@@ -195,6 +195,9 @@ class LeagueLoopApp(ctk.CTk):
             self.attributes("-topmost", True)
             self.lift()
             Logger.info("SYS", "Game ended. Restoring window.")
+        elif state == "restore_quiet":
+            self.deiconify()
+            Logger.info("SYS", "Game ended. Window restored (stealth).")
 
     def _hotkey_launch_client(self):
         def _launch():

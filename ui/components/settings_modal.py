@@ -273,6 +273,37 @@ class SettingsModal(ctk.CTkToplevel):
 
         _divider(body)
 
+        # ━━━━━━━━ BEHAVIOR ━━━━━━━━
+        _section_header(body, "BEHAVIOR")
+
+        row_stealth = ctk.CTkFrame(body, fg_color="transparent")
+        row_stealth.pack(fill="x", pady=4)
+        ctk.CTkLabel(
+            row_stealth, text="Stealth Mode",
+            font=get_font("body"),
+            text_color=get_color("colors.text.primary"),
+        ).pack(side="left")
+
+        self.stealth_var = ctk.BooleanVar(value=bool(self.config.get("stealth_mode", False)))
+        self.stealth_switch = ctk.CTkSwitch(
+            row_stealth,
+            text="",
+            variable=self.stealth_var,
+            width=40,
+            fg_color=get_color("colors.background.card"),
+            progress_color="#C8AA6E",
+            button_color="#F0E6D2",
+            button_hover_color="#FFFFFF",
+        )
+        self.stealth_switch.pack(side="right")
+        CTkTooltip(
+            self.stealth_switch,
+            "Keep LeagueLoop in the background during automations.\n"
+            "It will only pop up when a game starts or ends."
+        )
+
+        _divider(body)
+
         # ━━━━━━━━ HOTKEYS ━━━━━━━━
         _section_header(body, "HOTKEYS")
 
@@ -370,6 +401,9 @@ class SettingsModal(ctk.CTkToplevel):
 
         # Save accept delay
         self.config.set("accept_delay", round(self.delay_var.get(), 1))
+
+        # Save stealth mode
+        self.config.set("stealth_mode", bool(self.stealth_var.get()))
 
         if self.on_save_callback:
             try:

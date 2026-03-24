@@ -62,6 +62,7 @@ DEFAULT_CONFIG = {
     "ban_UTILITY": "",
     "always_on_top": True,
     "poro_snacks": 0,
+    "stealth_mode": False,
 }
 
 

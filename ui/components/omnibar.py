@@ -61,7 +61,7 @@ class Omnibar(ctk.CTkFrame):
         """Construct the Omnibar layout."""
         # ── Search Input ──
         input_container = ctk.CTkFrame(self, fg_color="transparent")
-        input_container.pack(fill="x", padx=TOKENS.get("spacing.md"), pady=(TOKENS.get("spacing.md"), TOKENS.get("spacing.sm")))
+        input_container.pack(fill="x", padx=TOKENS.get("spacing.md", 12), pady=(TOKENS.get("spacing.md", 12), TOKENS.get("spacing.sm", 8)))
 
         self.search_input = make_input(
             input_container,
@@ -86,7 +86,7 @@ class Omnibar(ctk.CTkFrame):
             scrollbar_button_color="#1E2328",
             scrollbar_button_hover_color="#3A4654",
         )
-        self.results_frame.pack(fill="both", expand=True, padx=TOKENS.get("spacing.xs"), pady=TOKENS.get("spacing.sm"))
+        self.results_frame.pack(fill="both", expand=True, padx=TOKENS.get("spacing.xs", 4), pady=TOKENS.get("spacing.sm", 8))
 
     def _bind_events(self):
         self.search_input.bind("<KeyRelease>", self._on_search)
@@ -193,7 +193,7 @@ class Omnibar(ctk.CTkFrame):
                 text_color=get_color("colors.text.muted"),
                 font=get_font("body")
             )
-            lbl.pack(pady=TOKENS.get("spacing.xl"))
+            lbl.pack(pady=TOKENS.get("spacing.xl", 24))
             self._result_widgets.append(lbl)
             return
 
@@ -210,7 +210,7 @@ class Omnibar(ctk.CTkFrame):
                 corner_radius=get_radius("sm"),
                 height=48
             )
-            row.pack(fill="x", padx=TOKENS.get("spacing.sm"), pady=2)
+            row.pack(fill="x", padx=TOKENS.get("spacing.sm", 8), pady=2)
             row.pack_propagate(False)
 
             # Icon
@@ -220,7 +220,7 @@ class Omnibar(ctk.CTkFrame):
                 font=get_font("body"),
                 text_color=text_color,
                 width=30
-            ).pack(side="left", padx=(TOKENS.get("spacing.sm"), TOKENS.get("spacing.xs")))
+            ).pack(side="left", padx=(TOKENS.get("spacing.sm", 8), TOKENS.get("spacing.xs", 4)))
 
             # Text Container
             text_cont = ctk.CTkFrame(row, fg_color="transparent")
