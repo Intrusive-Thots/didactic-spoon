@@ -23,6 +23,8 @@ SEL_BG     = "#141E28"      # dark blue tint
 DEL_BORDER = "#E74C3C"      # red for delete-marked
 DEL_BG     = "#4d1111"
 
+_CLEAN_TRANS = str.maketrans("", "", " '.")
+
 
 class PriorityIconGrid(ctk.CTkFrame):
     """Icon grid with collapse, add, edit (select → ▲▼⤒ reorder + multi-delete)."""
@@ -59,7 +61,7 @@ class PriorityIconGrid(ctk.CTkFrame):
         return known
 
     def _resolve_champion_name(self, raw):
-        normalized = raw.replace(" ", "").replace("'", "").lower()
+        normalized = raw.translate(_CLEAN_TRANS).lower()
         return self._known_champions.get(normalized)
 
     @staticmethod
