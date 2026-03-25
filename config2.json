@@ -34,40 +34,16 @@
     "ban_BOTTOM": "",
     "ban_UTILITY": "",
     "always_on_top": true,
-    "poro_snacks": 0,
+    "poro_snacks": 65,
     "stealth_mode": true,
+    "aram_mode": "ARAM Mayhem",
     "priority_picker": {
         "enabled": true,
-        "list": [
-            "Fizz",
-            "Singed",
-            "Brand",
-            "TwistedFate",
-            "Shaco",
-            "Lillia",
-            "Fiddlesticks",
-            "Sion",
-            "AurelionSol",
-            "Velkoz",
-            "Karthus",
-            "Tryndamere",
-            "Heimerdinger",
-            "Ziggs",
-            "Hwei",
-            "Amumu",
-            "Yorick",
-            "Malzahar",
-            "Leona",
-            "Swain",
-            "Nautilus",
-            "MasterYi",
-            "Lux",
-            "Cassiopeia"
-        ]
+        "list": []
     },
     "hotkey_launch_client": "ctrl+shift+l",
     "hotkey_toggle_automation": "ctrl+shift+a",
     "hotkey_find_match": "shift+alt+z",
-    "hotkey_compact_mode": "ctrl+shift+m",
-    "aram_mode": "ARAM Mayhem"
+    "hotkey_compact_mode": "shift+alt+s",
+    "accounts": []
 }
