@@ -234,11 +234,15 @@ class StatsScraper:
 
     def get_winrate(self, champ_name):
         """Look up a champion's ARAM win rate. Returns baseline 50.0 if completely unknown."""
-        # ⚡ Bolt: Fast-path string manipulation.
-        # Use str.translate instead of chained .replace calls to perform the cleanup in a single
-        # optimized C pass and avoid allocating multiple intermediate strings on the heap.
-        clean = champ_name.translate(_CLEAN_TRANS).lower()
-        return self.win_rates.get(clean, 50.0)
+        # ⚡ Bolt: Fast-path string manipulation and dictionary lookup.
+        # Use EAFP to attempt a direct exact match first to skip all string manipulation
+        # overhead for the most common case where keys are already clean strings.
+        try:
+            return self.win_rates[champ_name]
+        except KeyError:
+            # Fallback: clean the string and try again
+            clean = champ_name.translate(_CLEAN_TRANS).lower()
+            return self.win_rates.get(clean, 50.0)
 
     @property
     def is_offline(self) -> bool:
