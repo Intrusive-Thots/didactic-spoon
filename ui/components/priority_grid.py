@@ -23,6 +23,8 @@ SEL_BG     = "#141E28"      # dark blue tint
 DEL_BORDER = "#E74C3C"      # red for delete-marked
 DEL_BG     = "#4d1111"
 
+_CLEAN_TRANS = str.maketrans("", "", " '.")
+
 
 class PriorityIconGrid(ctk.CTkFrame):
     """Icon grid with collapse, add, edit (select → ▲▼⤒ reorder + multi-delete)."""
@@ -59,7 +61,7 @@ class PriorityIconGrid(ctk.CTkFrame):
         return known
 
     def _resolve_champion_name(self, raw):
-        normalized = raw.replace(" ", "").replace("'", "").lower()
+        normalized = raw.translate(_CLEAN_TRANS).lower()
         return self._known_champions.get(normalized)
 
     @staticmethod
@@ -232,6 +234,7 @@ class PriorityIconGrid(ctk.CTkFrame):
             border_width=1,
             border_color=get_color("colors.border.subtle"),
             text_color=get_color("colors.text.primary"),
+            cursor="xterm",
         )
         self.add_entry.pack(side="left", padx=(0, 4))
         self.add_entry.bind("<Return>", lambda e: self._commit_add())
@@ -350,6 +353,7 @@ class PriorityIconGrid(ctk.CTkFrame):
             text_color=get_color("colors.text.primary"),
             placeholder_text="pos",
             justify="center",
+            cursor="xterm",
         )
         self._move_entry.pack(side="left", padx=(0, 2))
         self._move_entry.bind("<Return>", lambda e: self._commit_move_to())

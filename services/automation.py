@@ -32,6 +32,7 @@ class AutomationEngine:
         self.stats_func: Optional[Callable] = kwargs.get("stats_func")
         self.window_func: Optional[Callable] = kwargs.get("window_func")
         self.toast_func: Optional[Callable] = kwargs.get("toast_func")
+        self.queue_func: Optional[Callable] = kwargs.get("queue_func")
         self.running: bool = False
         self.paused: bool = False
         self.thread: Optional[threading.Thread] = None
@@ -101,7 +102,6 @@ class AutomationEngine:
                 # Flood-suppress: only log identical errors once per 30s
                 err_key = str(e)
                 now = time.time()
-                # ⚡ Bolt: Fast-path dict lookup to avoid redundant default dict {} allocation
                 last_time = self._last_error_times.get(err_key, 0)
                 if now - last_time > 30:
                     tb = traceback.format_exc()
@@ -122,6 +122,16 @@ class AutomationEngine:
 
         phase_req = f_phase.result()
         phase = phase_req.json() if phase_req and phase_req.status_code == 200 else "None"
+
+        search_state = None
+        if phase == "Matchmaking":
+            search_req = self.lcu.request("GET", "/lol-lobby/v2/lobby/matchmaking/search-state")
+            if search_req and search_req.status_code == 200:
+                search_state = search_req.json()
+
+        qf = getattr(self, "queue_func", None)
+        if qf is not None:
+            qf(phase, search_state)
 
         if self.last_phase == "Matchmaking" and phase == "Lobby":
             if not self.config.get("auto_requeue"):

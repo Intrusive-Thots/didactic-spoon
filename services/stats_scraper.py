@@ -46,6 +46,8 @@ BASELINE_ARAM_WINRATES = {
     "aurora": 51.0, "hwei": 50.0, "naafiri": 49.0,
 }
 
+_CLEAN_TRANS = str.maketrans("", "", " '.")
+
 
 class StatsScraper:
     """Fetches ARAM win rates once at startup. Falls back to baseline data on failure."""
@@ -137,7 +139,7 @@ class StatsScraper:
                                 wr = cdata.get("wr") or cdata.get("winRate")
 
                             if wr and name:
-                                clean = name.replace("'", "").replace(" ", "").replace(".", "").lower()
+                                clean = name.translate(_CLEAN_TRANS).lower()
                                 results[clean] = float(wr)
         except Exception as e:
             Logger.debug("Stats", f"BS4 parsing failed for lolalytics: {e}")
@@ -182,7 +184,7 @@ class StatsScraper:
             # Metasrc typically uses a table where rows have data-champ
             rows = soup.find_all("tr", attrs={"data-champ": True})
             for row in rows:
-                champ = row["data-champ"].replace("'", "").replace(" ", "").replace(".", "").lower()
+                champ = row["data-champ"].translate(_CLEAN_TRANS).lower()
                 # Find all percentages in text
                 text = row.get_text()
                 pcts = re.findall(r'([\d.]+)%', text)
@@ -198,7 +200,7 @@ class StatsScraper:
                 for link in links:
                     name_el = link.string
                     if not name_el: continue
-                    champ = name_el.strip().replace("'", "").replace(" ", "").replace(".", "").lower()
+                    champ = name_el.strip().translate(_CLEAN_TRANS).lower()
                     parent = link.find_parent(["tr", "div"])
                     if parent:
                         pcts = re.findall(r'(\d{2}\.\d{2})%', parent.get_text())
@@ -222,7 +224,7 @@ class StatsScraper:
                         for pct_str in pcts:
                             wr = float(pct_str)
                             if 35.0 <= wr <= 65.0:
-                                clean_name = display_name.replace("'", "").replace(" ", "").replace(".", "").lower()
+                                clean_name = display_name.translate(_CLEAN_TRANS).lower()
                                 results[clean_name] = wr
                                 break
                     except ValueError:
@@ -232,7 +234,10 @@ class StatsScraper:
 
     def get_winrate(self, champ_name):
         """Look up a champion's ARAM win rate. Returns baseline 50.0 if completely unknown."""
-        clean = champ_name.replace("'", "").replace(" ", "").replace(".", "").lower()
+        # ⚡ Bolt: Fast-path string manipulation.
+        # Use str.translate instead of chained .replace calls to perform the cleanup in a single
+        # optimized C pass and avoid allocating multiple intermediate strings on the heap.
+        clean = champ_name.translate(_CLEAN_TRANS).lower()
         return self.win_rates.get(clean, 50.0)
 
     @property
