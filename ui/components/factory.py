@@ -124,11 +124,11 @@ class RiotButton(ctk.CTkFrame):
         self._inner_color = inner_color
         
     def _on_enter(self, h_color):
-        self.configure(cursor="hand2")
+        self.configure()
         self.inner.configure(fg_color=h_color)
         
     def _on_leave(self, i_color):
-        self.configure(cursor="")
+        self.configure()
         self.inner.configure(fg_color=i_color)
         
     def _on_click(self, e):
@@ -152,6 +152,7 @@ def make_button(parent, text, style="primary", width=None, command=None, icon=No
     """Factory wrapper for new RiotButton."""
     w = kw.pop("width", width or 120)
     h = kw.pop("height", 30)
+    kw.pop("cursor", None)
     if "variant" in kw:
         style = kw.pop("variant")
     return RiotButton(parent, text=text, style=style, width=w, height=h, command=command, **kw)
@@ -170,6 +171,7 @@ def make_input(parent, placeholder="", width=None, **kw):
     def_border_w, def_border_c = parse_border("subtle")
     border_w = kw.pop("border_width", def_border_w)
     border_c = kw.pop("border_color", def_border_c)
+    kw.pop("cursor", None)
     
     entry = ctk.CTkEntry(
         parent,
@@ -183,7 +185,6 @@ def make_input(parent, placeholder="", width=None, **kw):
         placeholder_text=placeholder,
         placeholder_text_color=get_color("colors.text.muted"),
         text_color=get_color("colors.text.primary"),
-        cursor="xterm",
         **kw
     )
 

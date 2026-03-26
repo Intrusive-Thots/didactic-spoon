@@ -8,8 +8,8 @@ QUEUE_ARAM = 450
 QUEUE_ARENA = 1700
 
 # --- Polling & Timing ---
-DOCKING_POLL_INTERVAL = 0.5        # seconds between docking geometry checks
-DOCKING_IDLE_INTERVAL = 2.0        # seconds when no client window found
+DOCKING_POLL_INTERVAL = 0.05       # seconds between docking geometry checks
+DOCKING_IDLE_INTERVAL = 0.5        # seconds when no client window found
 CONNECTION_POLL_INTERVAL = 2.0     # seconds between LCU connection attempts
 CONNECTION_ERROR_INTERVAL = 5.0    # seconds to wait after connection error
 TICK_SLEEP_DEFAULT = 3.0

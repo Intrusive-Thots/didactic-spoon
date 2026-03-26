@@ -34,6 +34,7 @@ from ui.components.factory import get_color, get_font, TOKENS  # type: ignore
 from ui.components.toast import ToastManager  # type: ignore
 from ui.ui_shared import CTkTooltip  # type: ignore
 from ui.components.omnibar import Omnibar  # type: ignore
+from tkinterdnd2 import TkinterDnD  # type: ignore
 
 if TYPE_CHECKING:
     import ctypes.wintypes
@@ -50,9 +51,10 @@ def global_exception_handler(exc_type, exc_value, exc_traceback):
 
 sys.excepthook = global_exception_handler
 
-class LeagueLoopApp(ctk.CTk):
+class LeagueLoopApp(ctk.CTk, TkinterDnD.DnDWrapper):
     def __init__(self):
         super().__init__()
+        self.TkdndVersion = TkinterDnD._require(self)
         self.report_callback_exception = self._on_tk_error
         
         self._ui_queue = queue.Queue()
@@ -90,7 +92,7 @@ class LeagueLoopApp(ctk.CTk):
             self.config,
             log_func=None, # Will be set after sidebar is created
             stop_func=lambda: self.after(0, lambda: self.sidebar._on_power_click()) if hasattr(self, "sidebar") else None,
-            stats_func=lambda team, bench: self.after(0, lambda: self.sidebar.update_lobby_stats(team, bench)) if hasattr(self, "sidebar") else None,
+            stats_func=lambda team, bench, me=None: self.after(0, lambda: self.sidebar.update_lobby_stats(team, bench, me)) if hasattr(self, "sidebar") else None,
             window_func=lambda state: self.after(0, lambda: self._handle_window_state(state)),
             queue_func=lambda phase, state: self.after(0, lambda: self.sidebar.update_queue_state(phase, state)) if hasattr(self, "sidebar") else None
         )
@@ -114,7 +116,7 @@ class LeagueLoopApp(ctk.CTk):
         self._bind_hotkeys()
 
         if self.automation is not None:
-            self.automation.start(start_paused=True)  # type: ignore
+            self.automation.start(start_paused=False)  # type: ignore
 
         self.assets.start_loading()
         threading.Thread(target=self.connection_loop, daemon=True).start()
@@ -489,9 +491,16 @@ class LeagueLoopApp(ctk.CTk):
                 self.automation.pause()  # type: ignore
 
     def connection_loop(self):
+        last_state = None
         while self.running and not self._stop_event.is_set():
             try:
-                if not self.lcu.is_connected:
+                current_state = self.lcu.is_connected
+                if current_state != last_state:
+                    last_state = current_state
+                    if hasattr(self, "sidebar") and hasattr(self.sidebar, "on_lcu_connection_changed"):
+                        self.after(0, lambda s=current_state: getattr(self, "sidebar").on_lcu_connection_changed(s))
+
+                if not current_state:
                     connected = self.lcu.connect()
                     if connected:
                         Logger.info("LCU", "Connected to League Client")

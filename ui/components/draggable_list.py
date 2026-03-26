@@ -64,8 +64,7 @@ class DraggableList(ctk.CTkScrollableFrame):
             btn_up = ctk.CTkButton(
                 actions, text="▲", width=25, height=25,
                 fg_color="transparent", hover_color="gray30",
-                command=lambda idx=i: self._move_item(idx, -1),
-                cursor="hand2"
+                command=lambda idx=i: self._move_item(idx, -1)
             )
             btn_up.pack(side="left", padx=2)
             CTkTooltip(btn_up, "Move Up")
@@ -76,8 +75,7 @@ class DraggableList(ctk.CTkScrollableFrame):
             btn_down = ctk.CTkButton(
                 actions, text="▼", width=25, height=25,
                 fg_color="transparent", hover_color="gray30",
-                command=lambda idx=i: self._move_item(idx, 1),
-                cursor="hand2"
+                command=lambda idx=i: self._move_item(idx, 1)
             )
             btn_down.pack(side="left", padx=2)
             CTkTooltip(btn_down, "Move Down")
@@ -88,14 +86,13 @@ class DraggableList(ctk.CTkScrollableFrame):
             btn_remove = ctk.CTkButton(
                 actions, text="❌", width=30, height=25,
                 fg_color="transparent", hover_color=danger_color,
-                command=lambda x=item, f=frame: self._animate_remove(x, f),
-                cursor="hand2"
+                command=lambda x=item, f=frame: self._animate_remove(x, f)
             )
             btn_remove.pack(side="left", padx=(5, 0))
             CTkTooltip(btn_remove, "Remove Item")
             
             # Optional Drag Handle (Kept for flexibility but less buggy now)
-            lbl_drag = ctk.CTkLabel(frame, text=" ↕ ", cursor="hand2")
+            lbl_drag = ctk.CTkLabel(frame, text=" ↕ ")
             lbl_drag.pack(side="right", padx=5)
             CTkTooltip(lbl_drag, "Drag to reorder")
             

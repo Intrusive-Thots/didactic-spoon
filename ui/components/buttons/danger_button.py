@@ -16,7 +16,7 @@ class DangerButton(ctk.CTkButton):
         text_color = kwargs.pop('text_color', get_color("colors.text.primary", default="#F0E6D2"))
         font = kwargs.pop('font', get_font("body", "bold"))
         corner_radius = kwargs.pop('corner_radius', TOKENS.get("radius.sm", default=4))
-        cursor = kwargs.pop('cursor', "hand2")
+        kwargs.pop('cursor', None)
 
         super().__init__(
             master,
@@ -28,7 +28,6 @@ class DangerButton(ctk.CTkButton):
             text_color=text_color,
             font=font,
             corner_radius=corner_radius,
-            cursor="hand2",
             **kwargs
         )
         apply_hover_brightness(self, bg_color)

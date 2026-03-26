@@ -1,0 +1,33 @@
+[Stats] _try_lolalytics failed: HTTP Error 404: Not Found
+[SYS] Uncaught exception:
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\Administrator\Desktop\LeagueLoop\core\main.py", line 626, in <module>
+    app = LeagueLoopApp()
+  File "C:\Users\Administrator\Desktop\LeagueLoop\core\main.py", line 98, in __init__
+    self.setup_ui()
+    ~~~~~~~~~~~~~^^
+  File "C:\Users\Administrator\Desktop\LeagueLoop\core\main.py", line 154, in setup_ui
+    self.sidebar = SidebarWidget(self, self.toggle_power, self.config, lcu=self.lcu, assets=self.assets, scraper=self.scraper)
+                   ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Administrator\Desktop\LeagueLoop\ui\app_sidebar.py", line 35, in __init__
+    self._setup_ui()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Users\Administrator\Desktop\LeagueLoop\ui\app_sidebar.py", line 227, in _setup_ui
+    self.progress_bar = ctk.CTkProgressBar(
+                        ~~~~~~~~~~~~~~~~~~^
+        self.session_frame,
+        ^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        progress_color=get_color("colors.accent.gold", "#C8AA6E")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Administrator\Desktop\LeagueLoop\.venv\Lib\site-packages\customtkinter\windows\widgets\ctk_progressbar.py", line 58, in __init__
+    self._fg_color = ThemeManager.theme["CTkProgressBar"]["fg_color"] if fg_color is None else self._check_color_type(fg_color)
+                                                                                               ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\Administrator\Desktop\LeagueLoop\.venv\Lib\site-packages\customtkinter\windows\widgets\appearance_mode\appearance_mode_base_class.py", line 55, in _check_color_type
+    raise ValueError(f"transparency is not allowed for this attribute")
+ValueError: transparency is not allowed for this attribute
+

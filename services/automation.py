@@ -177,6 +177,7 @@ class AutomationEngine:
         self._handle_ready_check(phase)
         self._handle_champ_select(phase, session_data)
         self._handle_auto_queue(phase)
+        self._check_friend_lobby(phase)
 
         sleep_time = TICK_SLEEP_DEFAULT
         if phase == "ChampSelect": sleep_time = TICK_SLEEP_CHAMPSELECT
@@ -256,7 +257,9 @@ class AutomationEngine:
         
         sf2 = self.stats_func
         if sf2 is not None:
-            sf2(my_team, bench)
+            local_cell_id = session.get("localPlayerCellId")
+            me = next((p for p in my_team if p.get("cellId") == local_cell_id), None)
+            sf2(my_team, bench, me)
 
         has_bench = len(bench) > 0
         is_arena = self.current_queue_id == QUEUE_ARENA
@@ -374,3 +377,67 @@ class AutomationEngine:
             self._last_priority_swap = now
             # Reset skin flag so we re-equip for the new champion
             self._skin_equipped = False
+
+    def _check_friend_lobby(self, phase):
+        # We only try to join when not in game/champ select
+        if phase in ("InProgress", "ChampSelect", "Matchmaking", "ReadyCheck"):
+            return
+
+        if not self.config.get("auto_join_enabled", True):
+            return
+
+        friend_list = self.config.get("auto_join_list", [])
+        active_friends = [f for f in friend_list if f.get("enabled") and f.get("name", "").strip()]
+        if not active_friends:
+            return
+
+        now = time.time()
+        # Rate limit checks to every ~5 seconds to avoid spamming the friends endpoint
+        if not hasattr(self, "_last_friend_check"): self._last_friend_check = 0.0
+        if now - self._last_friend_check < 5.0:
+            return
+        self._last_friend_check = now
+
+        res = self.lcu.request("GET", "/lol-chat/v1/friends")
+        if not res or res.status_code != 200:
+            return
+        friends = res.json()
+
+        for target_dict in active_friends:
+            target_friend = target_dict.get("name", "").strip()
+            found_open_party = False
+            
+            for f in friends:
+                game_name = f.get("gameName", "")
+                game_tag = f.get("gameTag", "")
+                combo_name = f"{game_name}#{game_tag}" if game_tag else game_name
+                
+                target_lower = target_friend.lower()
+                if target_lower == game_name.lower() or target_lower == combo_name.lower():
+                    lol = f.get("lol", {})
+                    if lol.get("ptyType") == "open":
+                        pty_str = lol.get("pty", "")
+                        if pty_str:
+                            import json
+                            try:
+                                pty_data = json.loads(pty_str)
+                                party_id = pty_data.get("partyId")
+                                if party_id:
+                                    # Check if we are already in this specific party
+                                    my_res = self.lcu.request("GET", "/lol-lobby/v2/lobby")
+                                    if my_res and my_res.status_code == 200:
+                                        my_lobby = my_res.json()
+                                        if my_lobby.get("partyId") == party_id:
+                                            return  # Already in their party
+                                            
+                                    # Join party
+                                    join_res = self.lcu.request("POST", f"/lol-lobby/v2/party/{party_id}/join")
+                                    if join_res and join_res.status_code in [200, 204]:
+                                        self._log(f"Auto-joined {game_name}'s Party!")
+                                        found_open_party = True
+                            except Exception as e:
+                                Logger.debug("Auto", f"Failed parsing friend party: {e}")
+                    break # Found the friend, stop searching
+            
+            if found_open_party:
+                break # Joined a friend, stop iterating the priority list

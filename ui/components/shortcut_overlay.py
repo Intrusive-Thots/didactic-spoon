@@ -74,8 +74,7 @@ class ShortcutOverlay(ctk.CTkFrame):
             hover_color=get_color("colors.state.hover"),
             text_color=get_color("colors.text.muted"),
             font=get_font("body"),
-            command=self.hide,
-            cursor="hand2"
+            command=self.hide
         )
         btn_close.pack(side="right")
         CTkTooltip(btn_close, "Close Overlay")

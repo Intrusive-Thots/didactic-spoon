@@ -104,8 +104,7 @@ class SpellSelector(ctk.CTkFrame):
                 corner_radius=8,
                 text_color=_text_color,
                 font=_font,
-                command=lambda n=s_name: self.on_select(n),
-                cursor="hand2"
+                command=lambda n=s_name: self.on_select(n)
             )
             btn.spell_name = s_name
             self.buttons.append(btn)

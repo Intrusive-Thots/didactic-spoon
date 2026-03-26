@@ -10,6 +10,7 @@ from ui.ui_shared import CTkTooltip  # type: ignore
 from ui.components.priority_grid import PriorityIconGrid  # type: ignore
 from ui.components.settings_modal import SettingsModal  # type: ignore
 from ui.components.lol_toggle import LolToggle  # type: ignore
+from ui.components.friend_list import FriendPriorityList  # type: ignore
 from core.constants import SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL  # type: ignore
 
 class SidebarWidget(ctk.CTkFrame):
@@ -52,8 +53,7 @@ class SidebarWidget(ctk.CTkFrame):
             self.header, text="✕", width=20, height=20,
             corner_radius=10, font=("Arial", 11),
             fg_color="transparent", hover_color="#e81123",
-            command=self.master._on_close,
-            cursor="hand2"
+            command=self.master._on_close
         )
         self.btn_close.pack(side="right", padx=(4, 2))
         CTkTooltip(self.btn_close, "Close Application")
@@ -65,8 +65,7 @@ class SidebarWidget(ctk.CTkFrame):
             fg_color="transparent",
             text_color=get_color("colors.text.muted"),
             hover_color=get_color("colors.state.hover"),
-            command=self._open_settings,
-            cursor="hand2"
+            command=self._open_settings
         )
         self.btn_settings.pack(side="right", padx=(4, 1))
         CTkTooltip(self.btn_settings, "Open Settings")
@@ -78,8 +77,7 @@ class SidebarWidget(ctk.CTkFrame):
             fg_color="transparent",
             text_color=get_color("colors.text.muted"),
             hover_color=get_color("colors.state.hover"),
-            command=self._minimize_window,
-            cursor="hand2"
+            command=self._minimize_window
         )
         self.btn_minimize.pack(side="right", padx=(4, 1))
         self.tooltip_minimize = CTkTooltip(self.btn_minimize, "Minimize Sidebar")
@@ -90,27 +88,8 @@ class SidebarWidget(ctk.CTkFrame):
         self.main_body = ctk.CTkFrame(self, fg_color="transparent")
         self.main_body.pack(fill="both", expand=True, padx=SPACING_MD, pady=SPACING_MD)
 
-        # ── Live Status Indicator Row ──
-        self.live_status_row = ctk.CTkFrame(self.main_body, fg_color="transparent")
-        self.live_status_row.pack(fill="x", pady=(0, 6))
-
-        # Active Dot
-        self.dot_active = ctk.CTkLabel(self.live_status_row, text="●", text_color="#00C853", font=("Arial", 12))
-        self.dot_active.pack(side="left")
-        self.lbl_dot_active = ctk.CTkLabel(self.live_status_row, text="Active", font=get_font("caption"), text_color=get_color("colors.text.muted"))
-        self.lbl_dot_active.pack(side="left", padx=(4, 8))
-
-        # Connected Dot
-        self.dot_connected = ctk.CTkLabel(self.live_status_row, text="●", text_color="#00C853", font=("Arial", 12))
-        self.dot_connected.pack(side="left")
-        self.lbl_dot_connected = ctk.CTkLabel(self.live_status_row, text="Connected", font=get_font("caption"), text_color=get_color("colors.text.muted"))
-        self.lbl_dot_connected.pack(side="left", padx=(4, 8))
-
-        # In Queue Dot
-        self.dot_queue = ctk.CTkLabel(self.live_status_row, text="●", text_color="#6C757D", font=("Arial", 12))
-        self.dot_queue.pack(side="left")
-        self.lbl_dot_queue = ctk.CTkLabel(self.live_status_row, text="In Queue", font=get_font("caption"), text_color=get_color("colors.text.muted"))
-        self.lbl_dot_queue.pack(side="left", padx=(4, 0))
+        self.power_state = True
+        self.var_power = ctk.BooleanVar(value=True)
 
         # ── Status & Mode Selection ──
         status_frame = ctk.CTkFrame(self.main_body, fg_color="transparent")
@@ -158,38 +137,19 @@ class SidebarWidget(ctk.CTkFrame):
             dropdown_font=get_font("caption"),
             width=110,
             height=28,
-            command=self._on_mode_change,
-            cursor="hand2"
+            command=self._on_mode_change
         )
         self.opt_game_mode.pack(side="left", fill="x", expand=True)
         CTkTooltip(self.opt_game_mode, "Select Game Mode")
 
-        # Divider NOT here according to rules, instead replace with just action buttons
-        # ── Action Buttons ──
-        self.action_container = ctk.CTkFrame(self.main_body, fg_color="#0F1A24", corner_radius=get_radius("md"))
-        self.action_container.pack(fill="x", pady=(0, SPACING_LG))
-
-        self.action_expanded = True
-        self.lbl_action_section = ctk.CTkLabel(
-            self.action_container, text="▼  ACTIONS",
-            font=get_font("caption", "bold"),
-            text_color=get_color("colors.text.muted"), anchor="w",
-            cursor="hand2",
-        )
-        self.lbl_action_section.pack(fill="x", padx=SPACING_MD, pady=(SPACING_SM, SPACING_SM))
-        CTkTooltip(self.lbl_action_section, "Toggle Actions")
-        self.lbl_action_section.bind("<Button-1>", self._toggle_action_collapse)
-
-        self.btn_frame = ctk.CTkFrame(self.action_container, fg_color="transparent")
-        self.btn_frame.pack(fill="x", padx=12, pady=(0, 12))
-
-        # ── STEP 1: Session Info Block (3-column grid, fixed height) ──
+        # ── Session Info Block (always visible) ──
         self.session_frame = ctk.CTkFrame(
-            self.btn_frame,
+            self.main_body,
             height=64,
-            fg_color="#0F1A24"
+            fg_color="#0F1A24",
+            corner_radius=get_radius("md")
         )
-        self.session_frame.pack(fill="x", pady=(0, 8))
+        self.session_frame.pack(fill="x", pady=(0, SPACING_MD))
         self.session_frame.pack_propagate(False)
         self.session_frame.grid_columnconfigure((0, 1, 2), weight=1)
 
@@ -228,11 +188,29 @@ class SidebarWidget(ctk.CTkFrame):
             self.session_frame,
             height=3,
             corner_radius=0,
-            fg_color="transparent",
             progress_color=get_color("colors.accent.gold", "#C8AA6E")
         )
         self.progress_bar.set(0)
         self.progress_bar.place(relx=0, rely=0.98, relwidth=1.0, anchor="sw")
+
+        # ── Action Buttons ──
+        self.action_container = ctk.CTkFrame(self.main_body, fg_color="#0F1A24", corner_radius=get_radius("md"))
+        self.action_container.pack(fill="x", pady=(0, SPACING_LG))
+
+        self.action_expanded = True
+        self.lbl_action_section = ctk.CTkLabel(
+            self.action_container, text="▼  ACTIONS",
+            font=get_font("caption", "bold"),
+            text_color=get_color("colors.text.muted"), anchor="w",
+        )
+        self.lbl_action_section.pack(fill="x", padx=SPACING_MD, pady=(SPACING_SM, SPACING_SM))
+        CTkTooltip(self.lbl_action_section, "Toggle Actions")
+        self.lbl_action_section.bind("<Button-1>", self._toggle_action_collapse)
+
+        self.btn_frame = ctk.CTkFrame(self.action_container, fg_color="transparent")
+        self.btn_frame.pack(fill="x", padx=12, pady=(0, 12))
+
+        # Session Block relocated above self.action_container
 
         # ── Find Match (primary action) ──
         self.btn_find_match = make_button(
@@ -273,8 +251,7 @@ class SidebarWidget(ctk.CTkFrame):
             fg_color="#0F1A24",
             hover_color="#1A2733",
             text_color="#AAB6C4",
-            command=self._force_requeue,
-            cursor="hand2"
+            command=self._force_requeue
         )
         self.requeue_button.grid(row=0, column=0, padx=(0, 6), pady=6, sticky="ew")
         CTkTooltip(self.requeue_button, "Cancel and re-enter matchmaking queue")
@@ -286,8 +263,7 @@ class SidebarWidget(ctk.CTkFrame):
             fg_color="#0F1A24",
             hover_color="#1A2733",
             text_color="#AAB6C4",
-            command=self._force_dodge,
-            cursor="hand2"
+            command=self._force_dodge
         )
         self.dodge_button.grid(row=0, column=1, padx=(6, 0), pady=6, sticky="ew")
         CTkTooltip(self.dodge_button, "Force quit the client to dodge the lobby")
@@ -305,8 +281,8 @@ class SidebarWidget(ctk.CTkFrame):
         CTkTooltip(self.btn_launch_client, "Open the Riot Client and start League")
         
         # Divider after button
-        divider_btn = ctk.CTkFrame(self.main_body, height=1, fg_color="#1E2328")
-        divider_btn.pack(fill="x", pady=SPACING_MD)
+        self.divider_btn = ctk.CTkFrame(self.main_body, height=1, fg_color="#1E2328")
+        self.divider_btn.pack(fill="x", pady=SPACING_MD)
 
         # ── Toggles Section ──
         self.auto_container = ctk.CTkFrame(self.main_body, fg_color="#0F1A24", corner_radius=get_radius("md"))
@@ -317,14 +293,13 @@ class SidebarWidget(ctk.CTkFrame):
             self.auto_container, text="▼  AUTOMATION",
             font=get_font("caption", "bold"),
             text_color=get_color("colors.text.muted"), anchor="w",
-            cursor="hand2",
         )
         self.lbl_auto_section.pack(fill="x", padx=SPACING_MD, pady=(SPACING_SM, SPACING_SM))
         CTkTooltip(self.lbl_auto_section, "Toggle Automation")
         self.lbl_auto_section.bind("<Button-1>", self._toggle_auto_collapse)
         
         TOGGLE_ROW_HEIGHT = 28
-        self.automation_frame = ctk.CTkFrame(self.auto_container, height=110, fg_color="transparent")
+        self.automation_frame = ctk.CTkFrame(self.auto_container, height=120, fg_color="transparent")
         self.automation_frame.pack(fill="x")
         self.automation_frame.pack_propagate(False)
 
@@ -352,12 +327,12 @@ class SidebarWidget(ctk.CTkFrame):
         self.sw_requeue.pack(side="right")
         CTkTooltip(self.sw_requeue, "Automatically re-enters matchmaking after a game ends")
 
-        # Priority Picker
+        # Pick Sniper
         self.var_priority = ctk.BooleanVar(value=self.config.get("priority_picker", {}).get("enabled", False))
         row3 = ctk.CTkFrame(self.automation_frame, fg_color="transparent", height=TOGGLE_ROW_HEIGHT)
         row3.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
         row3.pack_propagate(False)
-        lbl_priority = ctk.CTkLabel(row3, text="Priority Sniper", font=get_font("body"), width=120, anchor="w", text_color="#F0E6D2")
+        lbl_priority = ctk.CTkLabel(row3, text="Pick Sniper", font=get_font("body"), width=120, anchor="w", text_color="#F0E6D2")
         lbl_priority.pack(side="left")
         CTkTooltip(lbl_priority, "Attempts to pick highest available champion from Priority List")
         self.sw_priority = LolToggle(row3, variable=self.var_priority, command=self._on_toggle_priority)
@@ -371,26 +346,13 @@ class SidebarWidget(ctk.CTkFrame):
         # ── Priority Icon Grid ──
         # Let grid module handle spacing internally for right-pad and bottom pad
         self.priority_grid = PriorityIconGrid(self.main_body, self.config, self.assets)
-        self.priority_grid.pack(fill="x", pady=(0, SPACING_MD), padx=(0, SPACING_SM)) # padx for scrollbar prevention
-
-        # Divider before status
-        divider_status = ctk.CTkFrame(self.main_body, height=1, fg_color="#1E2328")
-        divider_status.pack(fill="x", pady=SPACING_MD)
-
-        # ── Mini Stats Panel ──
-        self.mini_stats_frame = ctk.CTkFrame(self.main_body, fg_color="transparent")
-        self.mini_stats_frame.pack(fill="x", padx=SPACING_MD, pady=(12, 8))
+        self.priority_grid.pack(fill="x", pady=(0, SPACING_MD), padx=0)
         
-        ctk.CTkLabel(self.mini_stats_frame, text="WIN RATE   55%", font=get_font("caption", "bold"), text_color=get_color("colors.text.primary")).pack(anchor="w")
-        ctk.CTkLabel(self.mini_stats_frame, text="GAMES      42", font=get_font("caption"), text_color=get_color("colors.text.muted")).pack(anchor="w")
-        ctk.CTkLabel(self.mini_stats_frame, text="TOP PICK   Lux", font=get_font("caption"), text_color=get_color("colors.text.muted")).pack(anchor="w")
+        # ── Friend Auto-Join List ──
+        self.friend_list = FriendPriorityList(self.main_body, config=self.config, lcu=self.lcu)
+        self.friend_list.pack(fill="x", pady=(0, SPACING_MD), padx=0)
 
-        # ── Status Readout (Bottom Area) ──
-        self.status_info_frame = ctk.CTkFrame(self.main_body, fg_color="transparent")
-        self.status_info_frame.pack(fill="x", padx=SPACING_MD, pady=(SPACING_LG, SPACING_MD))
-        
-        self.lbl_match_status = ctk.CTkLabel(self.status_info_frame, text="● Connected — Idle", font=("Arial", 10), text_color="#00C853", anchor="w")
-        self.lbl_match_status.pack(fill="x", pady=(0, SPACING_XS))
+        # UI status and dummy stats stripped for cleaner layout
 
         # ── Action Log (Bottom) ──
         self.spacer = ctk.CTkFrame(self.main_body, fg_color="transparent")
@@ -430,8 +392,7 @@ class SidebarWidget(ctk.CTkFrame):
             fg_color="transparent",
             text_color=get_color("colors.text.muted"),
             hover_color=get_color("colors.state.hover", "#e81123"),
-            command=self._clear_action_log,
-            cursor="hand2"
+            command=self._clear_action_log
         )
         self.btn_clear_log.pack(side="right", padx=(4, 0))
         CTkTooltip(self.btn_clear_log, "Clear Log")
@@ -514,6 +475,21 @@ class SidebarWidget(ctk.CTkFrame):
             self.queue_label.configure(text=new_mode)
 
     # ── Handlers ──
+    def on_lcu_connection_changed(self, connected: bool):
+        if not self.winfo_exists(): return
+        if connected:
+            if hasattr(self, "btn_launch_client") and self.btn_launch_client.winfo_viewable():
+                self.btn_launch_client.pack_forget()
+                if hasattr(self, "divider_btn"):
+                    self.divider_btn.pack_forget()
+        else:
+            if hasattr(self, "btn_launch_client") and not self.btn_launch_client.winfo_viewable():
+                self.btn_launch_client.pack(fill="x", pady=(SPACING_SM, 0))
+                if hasattr(self, "divider_btn"):
+                    self.divider_btn.pack(fill="x", pady=SPACING_MD)
+            self.time_label.configure(text="Disconnected", text_color="#ff4444")
+            self.estimate_label.configure(text="● Offline", text_color="#ff4444")
+
     def set_power_state(self, state: bool):
         """Pure visual/logical toggle without user-cancel side effects."""
         if getattr(self, "power_state", None) == state: return
@@ -678,6 +654,12 @@ class SidebarWidget(ctk.CTkFrame):
         cfg["enabled"] = self.var_priority.get()
         self.config.set("priority_picker", cfg)
 
+    def _on_toggle_auto_join(self):
+        self.config.set("auto_join_friend_enabled", self.var_auto_join.get())
+
+    def _on_friend_typing(self, event):
+        self.config.set("auto_join_friend", self.entry_friend.get())
+
     def update_action_log(self, text):
         if self.winfo_exists():
             self.lbl_action.configure(text=text)
@@ -816,9 +798,15 @@ class SidebarWidget(ctk.CTkFrame):
             self.progress_bar.set(0)
             self._last_phase_toast = phase
 
-    def update_lobby_stats(self, team, bench):
+    def update_lobby_stats(self, team, bench, me=None):
         """Called from AutomationEngine during ChampSelect to show winrate stats."""
         if not self.winfo_exists(): return
+        
+        # Pass hovered champion to priority grid
+        champ_id = me.get("championId", 0) if me else 0
+        if hasattr(self, "priority_grid") and hasattr(self.priority_grid, "set_hovered_champion"):
+            self.priority_grid.set_hovered_champion(champ_id)
+
         if not team and not bench:
             self.stats_frame.pack_forget()
             self._last_stats_hash = None
