@@ -9,6 +9,7 @@
   - Complexity (C): 7
   - Recency (R): 9
   - Score: (9 x 0.4) + (8 x 0.2) + (7 x 0.25) + (9 x 0.15) = 8.3
+  - Confidence: High
 - **[Inference]** Strong grasp of extending `ctk.CTkFrame`, applying `get_color()`, and avoiding unsupported kwargs for stability.
 
 ### Add Toast Notification
@@ -19,6 +20,7 @@
   - Complexity (C): 5
   - Recency (R): 8
   - Score: (8 x 0.4) + (7 x 0.2) + (5 x 0.25) + (8 x 0.15) = 7.05
+  - Confidence: Medium
 - **[Inference]** Understands asynchronous UI updates and background task notifications.
 
 ### Update Design Tokens
@@ -29,6 +31,7 @@
   - Complexity (C): 4
   - Recency (R): 6
   - Score: (7 x 0.4) + (5 x 0.2) + (4 x 0.25) + (6 x 0.15) = 5.7
+  - Confidence: Low
 - **[Inference]** Familiar with `ui/components/factory.py` design system structure.
 
 ## Automation & Background Processing
@@ -40,6 +43,7 @@
   - Complexity (C): 8
   - Recency (R): 8
   - Score: (8 x 0.4) + (6 x 0.2) + (8 x 0.25) + (8 x 0.15) = 7.6
+  - Confidence: High
 - **[Inference]** Understands thread safety (`self.after()`) and decoupling UI from backend processes.
 
 ### Add Hotkey Binding
@@ -50,6 +54,7 @@
   - Complexity (C): 5
   - Recency (R): 7
   - Score: (7 x 0.4) + (6 x 0.2) + (5 x 0.25) + (7 x 0.15) = 6.3
+  - Confidence: Medium
 - **[Inference]** Follows main thread safety practices for keyboard listener callbacks.
 
 ### Add Toggle Setting
@@ -60,6 +65,7 @@
   - Complexity (C): 6
   - Recency (R): 7
   - Score: (8 x 0.4) + (7 x 0.2) + (6 x 0.25) + (7 x 0.15) = 7.15
+  - Confidence: Medium
 - **[Inference]** Experienced in modifying `config.json` state representations and mapping them to UI interactions.
 
 ### Debug Champ Select
@@ -70,6 +76,7 @@
   - Complexity (C): 9
   - Recency (R): 8
   - Score: (9 x 0.4) + (5 x 0.2) + (9 x 0.25) + (8 x 0.15) = 8.05
+  - Confidence: High
 - **[Inference]** Highly proficient at tracing API flows and debugging LCU session state updates.
 
 ## LCU API Integration
@@ -81,6 +88,7 @@
   - Complexity (C): 7
   - Recency (R): 9
   - Score: (8 x 0.4) + (8 x 0.2) + (7 x 0.25) + (9 x 0.15) = 7.9
+  - Confidence: High
 - **[Inference]** Competent in RESTful interaction with the League Client endpoints using proper authentication headers.
 
 ### Test LCU Connection
@@ -91,6 +99,7 @@
   - Complexity (C): 6
   - Recency (R): 7
   - Score: (7 x 0.4) + (6 x 0.2) + (6 x 0.25) + (7 x 0.15) = 6.55
+  - Confidence: Medium
 - **[Inference]** Understands the lockfile parsing process and SSL certificate validation bypass logic.
 
 ## Application Architecture & Data
@@ -102,6 +111,7 @@
   - Complexity (C): 5
   - Recency (R): 6
   - Score: (6 x 0.4) + (4 x 0.2) + (5 x 0.25) + (6 x 0.15) = 5.35
+  - Confidence: Low
 - **[Inference]** Able to extend global command palette logic efficiently.
 
 ### Add Stats Scraper Source
@@ -112,6 +122,7 @@
   - Complexity (C): 7
   - Recency (R): 7
   - Score: (8 x 0.4) + (5 x 0.2) + (7 x 0.25) + (7 x 0.15) = 7.0
+  - Confidence: Medium
 - **[Inference]** Familiar with external API requests, JSON parsing, and fallback/caching strategies.
 
 ### Edit Config
@@ -122,6 +133,7 @@
   - Complexity (C): 4
   - Recency (R): 9
   - Score: (9 x 0.4) + (9 x 0.2) + (4 x 0.25) + (9 x 0.15) = 7.75
+  - Confidence: High
 - **[Inference]** Uses `ConfigManager` properly to avoid race conditions.
 
 ### Read Crash Logs
@@ -132,6 +144,7 @@
   - Complexity (C): 7
   - Recency (R): 8
   - Score: (8 x 0.4) + (6 x 0.2) + (7 x 0.25) + (8 x 0.15) = 7.35
+  - Confidence: Medium
 - **[Inference]** Strong troubleshooting skills using localized traceback outputs.
 
 ## DevOps & Environment Setup
@@ -143,6 +156,7 @@
   - Complexity (C): 8
   - Recency (R): 5
   - Score: (7 x 0.4) + (3 x 0.2) + (8 x 0.25) + (5 x 0.15) = 6.15
+  - Confidence: Medium
 - **[Inference]** Understands spec file configurations and resource bundling for PyInstaller.
 
 ### Build Installer
@@ -153,6 +167,7 @@
   - Complexity (C): 6
   - Recency (R): 5
   - Score: (6 x 0.4) + (3 x 0.2) + (6 x 0.25) + (5 x 0.15) = 5.25
+  - Confidence: Low
 - **[Inference]** Capable of generating deployment installers from build outputs.
 
 ### Git Sync
@@ -163,6 +178,7 @@
   - Complexity (C): 3
   - Recency (R): 9
   - Score: (9 x 0.4) + (9 x 0.2) + (3 x 0.25) + (9 x 0.15) = 7.5
+  - Confidence: High
 - **[Inference]** Uses Git effectively for version control.
 
 ### Install Dependency
@@ -173,6 +189,7 @@
   - Complexity (C): 3
   - Recency (R): 8
   - Score: (8 x 0.4) + (6 x 0.2) + (3 x 0.25) + (8 x 0.15) = 6.35
+  - Confidence: Medium
 - **[Inference]** Manages Python package dependencies securely.
 
 ### Launch Dev Server
@@ -183,6 +200,7 @@
   - Complexity (C): 2
   - Recency (R): 9
   - Score: (9 x 0.4) + (10 x 0.2) + (2 x 0.25) + (9 x 0.15) = 7.45
+  - Confidence: Medium
 - **[Inference]** Configures environment paths correctly.
 
 ### Refresh Assets
@@ -193,6 +211,7 @@
   - Complexity (C): 6
   - Recency (R): 6
   - Score: (7 x 0.4) + (4 x 0.2) + (6 x 0.25) + (6 x 0.15) = 6.0
+  - Confidence: Medium
 - **[Inference]** Can manage external asset synchronization and storage.
 
 ### Run Tests
@@ -203,4 +222,5 @@
   - Complexity (C): 7
   - Recency (R): 8
   - Score: (8 x 0.4) + (8 x 0.2) + (7 x 0.25) + (8 x 0.15) = 7.75
+  - Confidence: High
 - **[Inference]** Competent with unittest, xvfb-run, and mocking Tkinter UI dependencies.
