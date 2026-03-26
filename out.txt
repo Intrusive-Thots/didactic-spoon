@@ -1,5 +1,0 @@
-Updating 8174120..365f2c4
-error: Your local changes to the following files would be overwritten by merge:
-	.jules/bolt.md
-Please commit your changes or stash them before you merge.
-Aborting

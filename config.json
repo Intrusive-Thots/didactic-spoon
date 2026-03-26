@@ -75,7 +75,11 @@
     "auto_join_friend": "Palafu",
     "auto_join_list": [
         {
-            "name": "NicholasLobo\u2069 #\u2066NA1\u2069",
+            "name": "I Am StON3D#NA1",
+            "enabled": false
+        },
+        {
+            "name": "Palafu",
             "enabled": true
         }
     ],
@@ -110,7 +114,6 @@
         "HamStats#NA1",
         "HyperBeast#NA86",
         "I am Richie89#6792",
-        "I Am StON3D#NA1",
         "ILiveforNYE#5828",
         "Infuse#7373",
         "Is0Drin#Phel",
@@ -170,7 +173,6 @@
         "MootaMan",
         "MrSheaBam",
         "Nickyy",
-        "Palafu",
         "paNick",
         "ReiemTroj",
         "rubuzzy",
@@ -186,7 +188,8 @@
         "zerb#Dom",
         "Bo\u0438Bo\u0438s#5988",
         "LetsGoChromeDome#8315",
-        "Palafu#NA1"
+        "Palafu#NA1",
+        "NicholasLobo\u2069 #\u2066NA1\u2069"
     ],
     "auto_join_enabled": true
 }
