@@ -370,7 +370,14 @@ class AssetManager:
 
     def get_champ_name(self, champ_id: int) -> str:
         """Get champion name by ID."""
-        return self.id_to_key.get(champ_id, str(champ_id))
+        # ⚡ Bolt: Fast-path EAFP optimization to prevent eager string allocation.
+        # Previously, `.get(champ_id, str(champ_id))` forced Python to allocate `str(champ_id)`
+        # on every single lookup. By using try/except, we defer the expensive string conversion
+        # entirely to the rare cache miss path.
+        try:
+            return self.id_to_key[champ_id]
+        except KeyError:
+            return str(champ_id)
 
 
 
