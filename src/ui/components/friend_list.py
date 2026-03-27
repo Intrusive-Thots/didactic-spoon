@@ -24,7 +24,7 @@ class SearchableDropdown(ctk.CTkFrame):
             font=get_font("body"),
             fg_color=get_color("colors.background.card"),
             border_color=get_color("colors.border.subtle"),
-            cursor="xterm"
+            
         )
         self.entry.pack(side="left", fill="both", expand=True)
         
@@ -33,7 +33,7 @@ class SearchableDropdown(ctk.CTkFrame):
             fg_color=get_color("colors.background.card"),
             hover_color=get_color("colors.state.hover"),
             command=self._toggle_dropdown,
-            cursor="hand2"
+            
         )
         self.btn.pack(side="right", fill="y", padx=(2, 0))
         
@@ -156,7 +156,7 @@ class SearchableDropdown(ctk.CTkFrame):
                 hover_color=get_color("colors.state.hover"),
                 height=28,
                 command=lambda v=val: self._select_val(v),
-                cursor="hand2"
+                
             )
             btn.pack(fill="x", pady=1)
             
@@ -227,7 +227,7 @@ class FriendPriorityList(ctk.CTkFrame):
             text_color="#0F1A24",
             command=self._move_down_global,
             state="disabled",
-            cursor="hand2"
+            
         )
         self.btn_dn_global.pack(side="right", padx=0)
         CTkTooltip(self.btn_dn_global, "Move Down")
@@ -241,7 +241,7 @@ class FriendPriorityList(ctk.CTkFrame):
             text_color="#0F1A24",
             command=self._move_up_global,
             state="disabled",
-            cursor="hand2"
+            
         )
         self.btn_up_global.pack(side="right", padx=(0, 2))
         CTkTooltip(self.btn_up_global, "Move Up")
@@ -271,7 +271,7 @@ class FriendPriorityList(ctk.CTkFrame):
             hover_color="#005B99",
             text_color="#FFFFFF",
             command=self._on_add_friend,
-            cursor="hand2"
+            
         )
         self.btn_add.pack(side="right")
 
@@ -431,7 +431,7 @@ class FriendPriorityList(ctk.CTkFrame):
                 corner_radius=4, font=("Arial", 10), fg_color="transparent",
                 hover_color="#e81123", text_color=get_color("colors.text.muted") if not is_selected else get_color("colors.background.app"),
                 command=lambda idx=i: self._remove_item(idx),
-                cursor="hand2"
+                
             )
             btn_del.pack(side="left", padx=(0, 4))
             CTkTooltip(btn_del, "Remove friend")
