@@ -9,7 +9,7 @@ import customtkinter as ctk
 from PIL import Image
 
 from utils.path_utils import get_asset_path
-from ui.components.factory import get_color, get_font, get_radius, TOKENS
+from ui.components.factory import get_color, get_font, get_radius, TOKENS, make_input
 from ui.ui_shared import CTkTooltip
 from core.constants import SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL
 
@@ -257,15 +257,12 @@ class PriorityIconGrid(ctk.CTkFrame):
         self.add_row = ctk.CTkFrame(self.add_container, fg_color="transparent", height=28)
         self.add_row.pack(fill="x")
 
-        self.add_entry = ctk.CTkEntry(
-            self.add_row, placeholder_text="Champion name...",
-            font=get_font("caption"), height=24, width=120,
-            corner_radius=get_radius("sm"),
-            fg_color=get_color("colors.background.card"),
-            border_width=1,
-            border_color=get_color("colors.border.subtle"),
-            text_color=get_color("colors.text.primary"),
-            
+        self.add_entry = make_input(
+            self.add_row,
+            placeholder="Champion name...",
+            width=120,
+            height=24,
+            font=get_font("caption")
         )
         self.add_entry.pack(side="left", padx=(0, 4))
         self.add_entry.bind("<Return>", lambda e: self._commit_add())
@@ -375,16 +372,13 @@ class PriorityIconGrid(ctk.CTkFrame):
             width=12,
         )
         move_lbl.pack(side="left")
-        self._move_entry = ctk.CTkEntry(
-            self._move_to_frame, width=34, height=22,
-            font=("Segoe UI", 11), corner_radius=4,
-            fg_color=get_color("colors.background.card"),
-            border_width=1,
-            border_color=get_color("colors.border.subtle"),
-            text_color=get_color("colors.text.primary"),
-            placeholder_text="pos",
-            justify="center",
-            
+        self._move_entry = make_input(
+            self._move_to_frame,
+            placeholder="pos",
+            width=34,
+            height=22,
+            font=("Segoe UI", 11),
+            justify="center"
         )
         self._move_entry.pack(side="left", padx=(0, 2))
         self._move_entry.bind("<Return>", lambda e: self._commit_move_to())
