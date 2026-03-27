@@ -1,0 +1,3 @@
+## 2024-03-27 - Centralize Focus States with Factory Inputs
+**Learning:** Hardcoding standard styling arguments (like `border_width`, `fg_color`) or instantiating core widgets directly (e.g., `ctk.CTkEntry` instead of `make_input`) bypasses the centralized design system. This leads to missing accessibility features, such as consistent focus-visible rings for keyboard navigation.
+**Action:** When implementing new inputs, always prefer the `make_input` factory and omit hardcoded low-level styles to inherit standard focus handlers and UX defaults.
