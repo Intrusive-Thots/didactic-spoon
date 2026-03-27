@@ -58,6 +58,10 @@ class PriorityIconGrid(ctk.CTkFrame):
                 if f.startswith("champion_") and f.endswith(".png"):
                     real = f[len("champion_"):-len(".png")]
                     known[real.lower()] = real
+
+        # ⚡ Bolt: Precompute and sort normalized names to eliminate .lower() and sorted()
+        # allocations from the hot-path _on_add_typing loop
+        self._search_cache = sorted([(v.lower(), v) for v in known.values()], key=lambda x: x[1])
         return known
 
     def _resolve_champion_name(self, raw):
@@ -977,8 +981,7 @@ class PriorityIconGrid(ctk.CTkFrame):
 
         # Find matches (fuzzy search logic)
         matches = []
-        for champ in sorted(self._known_champions.values()):
-            champ_lower = champ.lower()
+        for champ_lower, champ in self._search_cache:
             if champ_lower.startswith(query):
                 matches.append(champ)
             elif query in champ_lower:
