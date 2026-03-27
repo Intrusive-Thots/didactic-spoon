@@ -10,16 +10,19 @@ import customtkinter as ctk
 import requests
 from PIL import Image
 
-from utils.path_utils import get_asset_path
+from utils.path_utils import get_asset_path, get_data_dir
 
-# Constants
-CONFIG_FILE = "config.json"
-CACHE_DIR = get_asset_path("assets")
-ASSETS_DIR = get_asset_path("assets")
+# Directories
+USER_DATA_DIR = get_data_dir()
+USER_CONFIG_FILE = os.path.join(USER_DATA_DIR, "config.json")
+BUNDLED_CONFIG_FILE = get_asset_path("config.json")
 
-# Ensure cache directories exist (only works in dev mode, fails silently in exe mode)
+CACHE_DIR = os.path.join(USER_DATA_DIR, "cache")
+BUNDLED_ASSETS_DIR = get_asset_path("assets")
+
+# Ensure user directories exist
 try:
-    os.makedirs(ASSETS_DIR, exist_ok=True)
+    os.makedirs(CACHE_DIR, exist_ok=True)
 except OSError:
     pass
 
@@ -35,7 +38,6 @@ DEFAULT_CONFIG = {
     "auto_hover": False,
     "auto_lock_in": False,
     "auto_random_skin": False,
-    "auto_spells": True,
     "accept_delay": 2.0,
     "polling_rate_champ_select": 0.5,  # Default to Fast for CS
     # Role-Based Picks (3 slots per role)
@@ -76,11 +78,21 @@ class ConfigManager:
 
     def __init__(self):
         self.cfg = DEFAULT_CONFIG.copy()
-        if os.path.exists(CONFIG_FILE):
+        
+        # 1. Load bundled template first (transfers dev configurations to users)
+        if os.path.exists(BUNDLED_CONFIG_FILE):
             try:
-                with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                with open(BUNDLED_CONFIG_FILE, "r", encoding="utf-8") as f:
                     self.cfg.update(json.load(f))
-            except Exception as e:  # pylint: disable=broad-exception-caught
+            except Exception:
+                pass
+                
+        # 2. Override with the user's local runtime config
+        if os.path.exists(USER_CONFIG_FILE):
+            try:
+                with open(USER_CONFIG_FILE, "r", encoding="utf-8") as f:
+                    self.cfg.update(json.load(f))
+            except Exception as e:
                 Logger.error("asset_manager.py", f"Handled exception: {type(e).__name__}: {e}")
 
     def get(self, key, default=None):
@@ -100,9 +112,12 @@ class ConfigManager:
             self.save()
 
     def save(self):
-        """Save configuration to file."""
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(self.cfg, f, indent=4)
+        """Save configuration to file securely in AppData."""
+        try:
+            with open(USER_CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(self.cfg, f, indent=4)
+        except Exception as e:
+            Logger.error("asset_manager.py", f"Failed saving config: {e}")
 
 
 
@@ -112,22 +127,13 @@ class AssetManager:
 
     def __init__(self, log_func=None):
         self._log_func = log_func
-        # Create dir if not exists
-        if not os.path.exists(ASSETS_DIR):
-            try:
-                os.makedirs(ASSETS_DIR)
-            except Exception as e:  # pylint: disable=broad-exception-caught
-                Logger.error("asset_manager.py", f"Handled exception: {type(e).__name__}: {e}")
 
         self.champ_data: Dict[str, Any] = {}
         self.id_to_key: Dict[int, str] = {}  # ID (int) -> Key/DDragonID (str)
         self.id_to_tags: Dict[int, list] = {}  # ID (int) -> List[Tags]
         self.name_to_id: Dict[str, int] = {}  # Name/Key (lower) -> ID (int)
         self.champ_roles: Dict[int, list] = {}  # ID -> List[Positions]
-        self.spell_data: Dict[int, str] = {}
         self.icons: Dict[str, ctk.CTkImage] = {}
-
-        self._runes_cache = None
 
         self._pending_downloads = set()
         self._lock = threading.Lock()
@@ -189,8 +195,7 @@ class AssetManager:
                             f.write(self.ddragon_ver)
 
                         # Invalidate stale data caches so they re-download
-                        self._runes_cache = None
-                        for filename in ("champion.json", "item.json", "summoner.json", "runesReforged.json"):
+                        for filename in ("champion.json", "item.json", "summoner.json"):
                             path = os.path.join(CACHE_DIR, filename)
                             if os.path.exists(path):
                                 try:
@@ -216,45 +221,7 @@ class AssetManager:
 
         self._load_champion_data()
         self._load_meraki_data()
-        self._load_spell_data()
-        self._load_rune_icons()
         self.log("Assets Loaded.")
-
-    def _load_rune_icons(self):
-        """Preloads all rune icons to cache (Download Only)."""
-        runes = self.get_runes_data()
-        if not runes:
-            return
-
-        count = 0
-        for tree in runes:
-            # Tree Icon
-            self._ensure_rune_icon(tree.get("icon"))
-            # Slots
-            slots = tree.get("slots")
-            if not slots:
-                continue
-
-            for slot in slots:
-                slot_runes = slot.get("runes")
-                if not slot_runes:
-                    continue
-
-                for rune in slot_runes:
-                    self._ensure_rune_icon(rune.get("icon"))
-                    count += 1
-        self.log(f"Pre-checked {count} rune icons.")
-
-    def _ensure_rune_icon(self, icon_path):
-        """Downloads rune icon if missing, but DOES NOT create CTkImage."""
-        if not icon_path:
-            return
-        safe_name = icon_path.replace("/", "_").replace("\\", "_")
-        path = os.path.join(ASSETS_DIR, f"rune_{safe_name}")
-
-        if not os.path.exists(path):
-            url = f"https://ddragon.leagueoflegends.com/cdn/img/{icon_path}"
-            self._start_download(url, path)
 
     def _load_champion_data(self):
         path = os.path.join(CACHE_DIR, "champion.json")
@@ -346,28 +313,6 @@ class AssetManager:
             except OSError as e:
                 Logger.warning("asset_manager.py", f"Failed to remove file {path}: {e}")
 
-    def _load_spell_data(self):
-        path = os.path.join(CACHE_DIR, "summoner.json")
-        try:
-            if not os.path.exists(path):
-                url = f"https://ddragon.leagueoflegends.com/cdn/{self.ddragon_ver}/data/en_US/summoner.json"
-                data = self.session.get(url, timeout=10).json()
-                with open(path, "w", encoding="utf-8") as f:
-                    json.dump(data, f)
-
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                self.spell_data = {}
-                for id_name, info in data["data"].items():
-                    self.spell_data[int(info["key"])] = id_name
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            Logger.error("asset_manager.py", f"Handled exception: {type(e).__name__}: {e}")
-            try:
-                if os.path.exists(path):
-                    os.remove(path)
-            except OSError as e:
-                Logger.warning("asset_manager.py", f"Failed to remove file {path}: {e}")
-
     def get_champ_name(self, champ_id: int) -> str:
         """Get champion name by ID."""
         # ⚡ Bolt: Fast-path EAFP optimization to prevent eager string allocation.
@@ -378,13 +323,6 @@ class AssetManager:
             return self.id_to_key[champ_id]
         except KeyError:
             return str(champ_id)
-
-
-
-
-
-
-
 
     def _simple_download(self, url, path):
         try:
@@ -414,37 +352,9 @@ class AssetManager:
                 self._simple_download(url, path)
             finally:
                 with self._lock:
-                    self._pending_downloads.discard(path)
-
+                    if path in self._pending_downloads:
+                        self._pending_downloads.remove(path)
         self._download_queue.put(_target)
-
-
-
-
-
-
-
-
-
-
-    def get_runes_data(self):
-        """Get runes reforged data."""
-        if self._runes_cache is not None:
-            return self._runes_cache
-
-        path = os.path.join(CACHE_DIR, "runesReforged.json")
-        try:
-            if not os.path.exists(path):
-                url = f"https://ddragon.leagueoflegends.com/cdn/{self.ddragon_ver}/data/en_US/runesReforged.json"
-                data = self.session.get(url, timeout=10).json()
-                with open(path, "w", encoding="utf-8") as f:
-                    json.dump(data, f)
-            with open(path, "r", encoding="utf-8") as f:
-                self._runes_cache = json.load(f)
-                return self._runes_cache
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            Logger.error("asset_manager.py", f"Handled exception: {type(e).__name__}: {e}")
-            return []
 
     def _download_and_cache_image(self, url, path, cache_key, size=None, opacity=1.0):
         if cache_key in self.icons:
@@ -454,7 +364,7 @@ class AssetManager:
         # We replace spaces and invalid characters in cache_key to be safe
         safe_key = cache_key.replace(" ", "_").replace(":", "").replace("/", "_")
         processed_fname = f"processed_{safe_key}.png"
-        processed_path = os.path.join(ASSETS_DIR, processed_fname)
+        processed_path = os.path.join(CACHE_DIR, processed_fname)
         
         if os.path.exists(processed_path):
             try:
@@ -514,25 +424,16 @@ class AssetManager:
         fname = ""
         url = ""
         
-        # Clean the key to support 'MonkeyKing' vs 'Wukong' issues gracefully if needed
         if type_ == "champion":
             fname = f"champion_{key}.png"
             url = f"https://ddragon.leagueoflegends.com/cdn/{self.ddragon_ver}/img/champion/{key}.png"
-        elif type_ == "spell":
-            fname = f"spell_{key}.png"
-            url = f"https://ddragon.leagueoflegends.com/cdn/{self.ddragon_ver}/img/spell/{key}.png"
         elif type_ == "item":
             fname = f"item_{key}.png"
             url = f"https://ddragon.leagueoflegends.com/cdn/{self.ddragon_ver}/img/item/{key}.png"
-        elif type_ == "rune":
-            # For runes, the key might be the relative path
-            safe_name = key.replace("/", "_").replace("\\", "_")
-            fname = f"rune_{safe_name}"
-            url = f"https://ddragon.leagueoflegends.com/cdn/img/{key}"
         else:
             return None
 
-        path = os.path.join(ASSETS_DIR, fname)
+        path = os.path.join(CACHE_DIR, fname)
         return self._download_and_cache_image(url, path, cache_key, size=size)
 
     def get_icon_async(self, type_, key, callback, size=(40, 40), widget=None):
@@ -575,7 +476,7 @@ class AssetManager:
             return None
 
         fname = f"splash_{ddragon_id}_{skin_num}.jpg"
-        path = os.path.join(ASSETS_DIR, fname)
+        path = os.path.join(CACHE_DIR, fname)
         url = f"https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{ddragon_id}_{skin_num}.jpg"
 
         return self._download_and_cache_image(url, path, cache_key, size=(width, None), opacity=opacity)

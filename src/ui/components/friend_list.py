@@ -10,8 +10,8 @@ from tkinterdnd2 import TkinterDnD, DND_TEXT
 
 class SearchableDropdown(ctk.CTkFrame):
     def __init__(self, master, variable, command=None, **kwargs):
-        super().__init__(master, fg_color="transparent", height=28, **kwargs)
-        self.pack_propagate(False)
+        # Remove pack_propagate to allow fluid width stretching based on expand=True
+        super().__init__(master, fg_color="transparent", **kwargs)
         self.variable = variable
         self.command = command
         self._values = []
@@ -20,6 +20,7 @@ class SearchableDropdown(ctk.CTkFrame):
         
         self.entry = ctk.CTkEntry(
             self, textvariable=self.variable,
+            height=28,
             font=get_font("body"),
             fg_color=get_color("colors.background.card"),
             border_color=get_color("colors.border.subtle"),
@@ -28,7 +29,7 @@ class SearchableDropdown(ctk.CTkFrame):
         self.entry.pack(side="left", fill="both", expand=True)
         
         self.btn = ctk.CTkButton(
-            self, text="▼", width=24,
+            self, text="▼", width=22, height=28,
             fg_color=get_color("colors.background.card"),
             hover_color=get_color("colors.state.hover"),
             command=self._toggle_dropdown,
@@ -72,8 +73,18 @@ class SearchableDropdown(ctk.CTkFrame):
             
     def _close_dropdown(self, event=None):
         if self._dropdown_frame:
-            self._dropdown_frame.destroy()
+            try:
+                self._dropdown_frame.place_forget()
+                self._dropdown_frame.destroy()
+            except Exception:
+                pass
             self._dropdown_frame = None
+            try:
+                if hasattr(self, "_click_id"):
+                    root = self.winfo_toplevel()
+                    root.unbind("<Button-1>", self._click_id)
+            except Exception:
+                pass
             
     def _open_dropdown(self):
         if self._dropdown_frame: return
@@ -88,7 +99,7 @@ class SearchableDropdown(ctk.CTkFrame):
         y = self.winfo_rooty() - root.winfo_rooty() + self.winfo_height() + 2
         
         self._dropdown_frame = ctk.CTkScrollableFrame(
-            root, width=w - 20, height=h,
+            root, width=w - 5, height=h,
             fg_color=get_color("colors.background.app"),
             border_width=1, border_color=get_color("colors.border.subtle"),
             corner_radius=4
@@ -199,7 +210,7 @@ class FriendPriorityList(ctk.CTkFrame):
             self.config.set("auto_join_enabled", self.var_master_enabled.get())
         
         self.sw_master = LolToggle(self.header, variable=self.var_master_enabled, command=_on_master_toggle)
-        self.sw_master.pack(side="left", padx=(10, 0))
+        self.sw_master.pack(side="left", padx=(4, 0))
         CTkTooltip(self.sw_master, "Enable or disable global Friend Auto-Join")
 
         # Global Down Area
@@ -227,7 +238,7 @@ class FriendPriorityList(ctk.CTkFrame):
             state="disabled",
             cursor="hand2"
         )
-        self.btn_up_global.pack(side="right", padx=0)
+        self.btn_up_global.pack(side="right", padx=(0, 2))
         CTkTooltip(self.btn_up_global, "Move Up")
 
     def _build_body(self):
@@ -242,14 +253,14 @@ class FriendPriorityList(ctk.CTkFrame):
         self.combo_add = SearchableDropdown(
             self.add_row,
             variable=self.var_new_friend,
-            command=self._on_add_friend,
-            width=200
+            command=self._on_add_friend
+            # Removed static width to allow fluid stretching
         )
-        self.combo_add.pack(side="left", fill="x", expand=True, padx=(0, SPACING_SM))
+        self.combo_add.pack(side="left", fill="x", expand=True, padx=(0, 6))
         # Default placeholder setup is handled inside logic
 
         self.btn_add = ctk.CTkButton(
-            self.add_row, text="Add", width=40, height=28,
+            self.add_row, text="Add", width=36, height=28,
             font=get_font("body", "bold"),
             fg_color=get_color("colors.accent.primary"),
             hover_color="#005B99",
@@ -340,71 +351,96 @@ class FriendPriorityList(ctk.CTkFrame):
             self.lbl_section.configure(text="▶  FRIEND AUTO-JOIN")
 
     def _render_list(self):
+        # We unpack directly into the scroll frame to avoid nest bloat as requested
         for w in self.list_parent.winfo_children():
             w.destroy()
-
+            
         lst = self._friends_data
-        
         if not lst:
             lbl = ctk.CTkLabel(self.list_parent, text="No friends configured.\nType a name and click Add.", font=get_font("caption"), text_color=get_color("colors.text.muted"))
             lbl.pack(pady=20)
             return
 
         for i, item in enumerate(lst):
-            row = ctk.CTkFrame(self.list_parent, fg_color="transparent", height=28)
+            row = ctk.CTkFrame(self.list_parent, height=44, fg_color="transparent")
             row.pack(fill="x", pady=2)
             row.pack_propagate(False)
 
-            sel_idx = getattr(self, "_selected_index", -1)
-            is_selected = (i == sel_idx)
+            is_selected = (i == getattr(self, "_selected_index", -1))
+            enabled = item.get("enabled", True)
 
             if is_selected:
-                row.configure(fg_color=get_color("colors.accent.primary"))
-                lbl_color = get_color("colors.background.app")
-            else:
-                lbl_color = get_color("colors.text.primary")
+                row.configure(fg_color="#182531")
 
-            # Toggle
-            idx_var = ctk.BooleanVar(value=item.get("enabled", True))
+            # Hover Feedback
+            def on_enter(e, r=row, sel=is_selected):
+                if not sel: r.configure(fg_color="#16202A")
+            def on_leave(e, r=row, sel=is_selected):
+                if not sel: r.configure(fg_color="transparent")
+
+            row.bind("<Enter>", on_enter)
+            row.bind("<Leave>", on_leave)
+
+            # Left Icon / Toggle Switch Wrapper
+            idx_var = ctk.BooleanVar(value=enabled)
             setattr(self, f"_var_friend_tog_{i}", idx_var) 
-            
             def _on_tog(idx=i, var=idx_var):
                 self._friends_data[idx]["enabled"] = var.get()
                 self._save_priority_list(self._friends_data)
 
+            # Use LolToggle as the left side icon indicator
             sw = LolToggle(row, variable=idx_var, command=_on_tog)
-            sw.pack(side="left", padx=(6, 10))
+            sw.pack(side="left", padx=(6, 8))
             CTkTooltip(sw, "Toggle active state")
 
-            # Name Label
-            lbl = ctk.CTkLabel(
-                row, text=item.get("name", ""),
-                font=get_font("body", "bold"),
-                text_color=lbl_color,
-                anchor="w"
-            )
-            lbl.pack(side="left", fill="x", expand=True)
+            # Name + Subtext (Centered Container)
+            text_frame = ctk.CTkFrame(row, fg_color="transparent")
+            text_frame.pack(side="left", expand=True, fill="x")
 
-            # Remove ✕
+            lbl_name = ctk.CTkLabel(
+                text_frame, text=item.get("name", ""),
+                font=get_font("body", "bold"),
+                text_color=get_color("colors.text.primary") if enabled else get_color("colors.text.disabled"),
+            )
+            lbl_name.pack(anchor="w")
+
+            lbl_sub = ctk.CTkLabel(
+                text_frame,
+                text="Active" if enabled else "Ignored",
+                text_color="#A0A7B0" if enabled else get_color("colors.text.disabled"),
+                font=("Segoe UI", 10)
+            )
+            lbl_sub.pack(anchor="w")
+
+            # Actions (Right side layout)
+            action_frame = ctk.CTkFrame(row, fg_color="transparent")
+            action_frame.pack(side="right", fill="y")
+            
+            # Status Indicator
+            status_color = get_color("colors.state.success") if enabled else get_color("colors.border.subtle")
+            status = ctk.CTkLabel(action_frame, text="●", text_color=status_color)
+            status.pack(side="left", padx=(0, 6))
+
             btn_del = ctk.CTkButton(
-                row, text="✕", width=24, height=24,
-                corner_radius=4,
-                font=("Arial", 12), fg_color="transparent",
+                action_frame, text="✕", width=20, height=20,
+                corner_radius=4, font=("Arial", 10), fg_color="transparent",
                 hover_color="#e81123", text_color=get_color("colors.text.muted") if not is_selected else get_color("colors.background.app"),
                 command=lambda idx=i: self._remove_item(idx),
                 cursor="hand2"
             )
-            btn_del.pack(side="right", padx=(4, 6))
+            btn_del.pack(side="left", padx=(0, 4))
             CTkTooltip(btn_del, "Remove friend")
 
-            # Bind clicks
+            # Binding selection propagation safely
             def _select(event, idx=i):
                 self._selected_index = idx
                 self._render_list()
 
             row.bind("<Button-1>", _select)
-            lbl.bind("<Button-1>", _select)
-
+            text_frame.bind("<Button-1>", _select)
+            lbl_name.bind("<Button-1>", _select)
+            lbl_sub.bind("<Button-1>", _select)
+            
         # Update global arrows state
         sel = getattr(self, "_selected_index", -1)
         if hasattr(self, "btn_up_global"):

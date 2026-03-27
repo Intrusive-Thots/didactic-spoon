@@ -61,7 +61,22 @@ class LeagueLoopApp(ctk.CTk, TkinterDnD.DnDWrapper):
         self._process_ui_queue()
 
 
+        try:
+            myappid = "league.loop.app.v1"
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        except Exception:
+            pass
+            
         self.title("League Loop")
+        try:
+            icon_path = get_asset_path("assets/app.ico")
+            if os.path.exists(icon_path):
+                self.iconbitmap(icon_path)
+            else:
+                backup = get_asset_path("assets/icon.png")
+                self.iconphoto(False, tk.PhotoImage(file=backup))
+        except Exception as e:
+            Logger.warning("SYS", f"Could not set window icon: {e}")
         self.geometry(f"{SIDEBAR_WIDTH}x{SIDEBAR_HEIGHT}+100+100") # Spawn visibly on screen
         self.minsize(260, 520)
         self.overrideredirect(True) # Borderless for docking
@@ -191,16 +206,61 @@ class LeagueLoopApp(ctk.CTk, TkinterDnD.DnDWrapper):
 
     def _handle_window_state(self, state):
         if state == "minimize":
-            self.withdraw()
-            Logger.info("SYS", "Game started. Hiding window.")
+            self.attributes("-topmost", False)
+            try:
+                import ctypes
+                SW_MINIMIZE = 6
+                hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
+                if hwnd == 0: hwnd = self.winfo_id()
+                ctypes.windll.user32.ShowWindow(hwnd, SW_MINIMIZE)
+            except Exception:
+                self.withdraw()
+            Logger.info("SYS", "Game started. Minimizing window.")
         elif state == "restore":
+            try:
+                import ctypes
+                SW_RESTORE = 9
+                hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
+                if hwnd == 0: hwnd = self.winfo_id()
+                ctypes.windll.user32.ShowWindow(hwnd, SW_RESTORE)
+            except Exception:
+                pass
             self.deiconify()
-            self.attributes("-topmost", True)
+            # Do not set topmost=True here anymore, OS handles Z-order
             self.lift()
             Logger.info("SYS", "Game ended. Restoring window.")
         elif state == "restore_quiet":
+            try:
+                import ctypes
+                SW_RESTORE = 9
+                hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
+                if hwnd == 0: hwnd = self.winfo_id()
+                ctypes.windll.user32.ShowWindow(hwnd, SW_RESTORE)
+            except Exception:
+                pass
             self.deiconify()
             Logger.info("SYS", "Game ended. Window restored (stealth).")
+
+    def _attach_to_hwnd(self, parent_hwnd):
+        """OS-level bond to League Client. Syncs minimize/restore and Z-order natively."""
+        try:
+            import ctypes
+            GWLP_HWNDPARENT = -8
+            my_hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
+            if my_hwnd == 0:
+                my_hwnd = self.winfo_id()
+                
+            # For 64-bit windows, SetWindowLongPtr is required.
+            if hasattr(ctypes.windll.user32, "SetWindowLongPtrW"):
+                ctypes.windll.user32.SetWindowLongPtrW(my_hwnd, GWLP_HWNDPARENT, parent_hwnd)
+            else:
+                ctypes.windll.user32.SetWindowLongW(my_hwnd, GWLP_HWNDPARENT, parent_hwnd)
+                
+            # We are now an owned window. We stay precisely above the League Client,
+            # but NEVER above other apps like web browsers unless League itself is focused.
+            self.attributes("-topmost", False)
+        except Exception as e:
+            pass
 
     def _hotkey_launch_client(self):
         def _launch():
@@ -535,7 +595,11 @@ class LeagueLoopApp(ctk.CTk, TkinterDnD.DnDWrapper):
                         hwnd = user32.FindWindowW(None, "Riot Client")
 
                 if hwnd != 0:
-                    last_hwnd = hwnd
+                    if hwnd != last_hwnd:
+                        last_hwnd = hwnd
+                        # Bond cleanly to the newly detected HWND
+                        self.after(0, lambda h=hwnd: self._attach_to_hwnd(h))
+
                     rect = ctypes.wintypes.RECT()
                     user32.GetWindowRect(hwnd, ctypes.byref(rect))
                     

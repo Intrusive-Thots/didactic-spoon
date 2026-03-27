@@ -12,7 +12,8 @@ a = Analysis(
     binaries=[],
     datas=[
         (ctk_path, 'customtkinter'),
-        ('assets', 'assets')
+        ('assets', 'assets'),
+        ('config.json', '.')
     ],
     hiddenimports=[
         'requests',

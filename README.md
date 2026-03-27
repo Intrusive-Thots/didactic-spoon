@@ -8,7 +8,6 @@ LeagueLoop sits in your system tray and interacts with the League Client Update 
 - **Auto-Join**: Automatically accepts friend requests or joins lobbies when invited by priority friends.
 - **Auto-Accept Match**: Automatically clicks the "Accept" button when a match is found.
 - **Champion Sniper**: Instantly hovers or locks in your preferred champion during Champion Select based on priority queues.
-- **Spell & Rune Automation**: Equips preferred summoner spells automatically.
 - **Omnibar (Ctrl+K)**: Quick, global command palette for interacting with the application.
 - **Customizable UI**: Built with CustomTkinter for a sleek, dark-themed experience.
 

@@ -189,7 +189,17 @@ class SettingsModal(ctk.CTkToplevel):
             header, text="v1.0",
             font=get_font("caption"),
             text_color=get_color("colors.text.muted"),
-        ).pack(side="right", padx=16, pady=12)
+        ).pack(side="right", padx=(8, 16), pady=12)
+
+        btn_info = ctk.CTkButton(
+            header, text="ⓘ Info", width=50, height=24,
+            font=get_font("caption", "bold"), 
+            fg_color="transparent",
+            text_color=get_color("colors.text.primary"),
+            hover_color=get_color("colors.state.hover"),
+            command=self._open_info_page
+        )
+        btn_info.pack(side="right", padx=(8, 0), pady=12)
 
         # ── Scrollable body ──
         body = ctk.CTkScrollableFrame(
@@ -388,7 +398,7 @@ class SettingsModal(ctk.CTkToplevel):
             border_color=get_color("colors.border.subtle"),
             text_color=get_color("colors.text.muted"),
             hover_color=get_color("colors.state.hover"),
-            command=self._close,
+            command=lambda: self.after(50, self._close),
             cursor="hand2",
         )
         btn_cancel.pack(side="right", padx=(0, 8))
@@ -491,10 +501,23 @@ class SettingsModal(ctk.CTkToplevel):
             except Exception as e:
                 Logger.error("SYS", f"Settings callback failed: {e}")
 
-        self._close()
+        self.after(50, self._close)
+
+    def _open_info_page(self):
+        try:
+            from ui.components.about_page import AboutPage
+            AboutPage(self.master)
+            self.after(50, self._close)
+        except Exception as e:
+            Logger.error("SYS", f"Failed to open About Page: {e}")
 
     def _close(self):
         """Properly clean up recorders and destroy the window."""
+        try:
+            if hasattr(self, "master") and self.master and self.master.winfo_exists():
+                self.master.focus_set()
+        except Exception:
+            pass
         try:
             for recorder in getattr(self, "recorders", {}).values():
                 try:
