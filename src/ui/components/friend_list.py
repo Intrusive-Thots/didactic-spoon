@@ -44,6 +44,7 @@ class SearchableDropdown(ctk.CTkFrame):
     def configure(self, values=None, **kwargs):
         if values is not None:
             self._values = values
+            self._values_lower = [v.lower() for v in values]
             self._filtered_values = values
         super().configure(**kwargs)
         
@@ -58,7 +59,11 @@ class SearchableDropdown(ctk.CTkFrame):
             return
             
         val = self.variable.get().lower()
-        self._filtered_values = [v for v in self._values if val in v.lower()]
+        if hasattr(self, "_values_lower") and len(self._values_lower) == len(self._values):
+            self._filtered_values = [v for v, v_lower in zip(self._values, self._values_lower) if val in v_lower]
+        else:
+            self._filtered_values = [v for v in self._values if val in v.lower()]
+
         if self._dropdown_frame:
             self._populate_dropdown()
         else:
