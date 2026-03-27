@@ -349,11 +349,39 @@ class SettingsModal(ctk.CTkToplevel):
         btn_frame = ctk.CTkFrame(self, fg_color="#0A1428", corner_radius=0)
         btn_frame.pack(fill="x", side="bottom")
 
+        # Malcolm's UI enhancement: Add a Reset button with inline confirmation
+        self._reset_confirm_mode = False
+        self._reset_timer = None
+
         inner = ctk.CTkFrame(btn_frame, fg_color="transparent")
-        inner.pack(padx=16, pady=12)
+        inner.pack(fill="x", padx=16, pady=12)
+
+        self.btn_reset = ctk.CTkButton(
+            inner, text="Reset Defaults", width=100, height=32,
+            font=get_font("body", "bold"),
+            fg_color="transparent",
+            text_color=get_color("colors.text.muted"),
+            hover_color=get_color("colors.state.hover"),
+            command=self._on_reset_clicked,
+            cursor="hand2",
+        )
+        self.btn_reset.pack(side="left")
+        self.tooltip_reset = CTkTooltip(self.btn_reset, "Restore all settings to default")
+
+        btn_save = ctk.CTkButton(
+            inner, text="Save", width=80, height=32,
+            font=get_font("body", "bold"),
+            fg_color="#C8AA6E",
+            text_color="#0A1428",
+            hover_color="#F0E6D2",
+            command=self._save_settings,
+            cursor="hand2",
+        )
+        btn_save.pack(side="right")
+        CTkTooltip(btn_save, "Save changes and close")
 
         btn_cancel = ctk.CTkButton(
-            inner, text="Cancel", width=100, height=32,
+            inner, text="Cancel", width=80, height=32,
             font=get_font("body", "bold"),
             fg_color="transparent",
             border_width=1,
@@ -363,24 +391,81 @@ class SettingsModal(ctk.CTkToplevel):
             command=self._close,
             cursor="hand2",
         )
-        btn_cancel.pack(side="left", padx=(0, 8))
+        btn_cancel.pack(side="right", padx=(0, 8))
         CTkTooltip(btn_cancel, "Discard changes and close")
-
-        btn_save = ctk.CTkButton(
-            inner, text="Save", width=100, height=32,
-            font=get_font("body", "bold"),
-            fg_color="#C8AA6E",
-            text_color="#0A1428",
-            hover_color="#F0E6D2",
-            command=self._save_settings,
-            cursor="hand2",
-        )
-        btn_save.pack(side="left")
-        CTkTooltip(btn_save, "Save changes and close")
 
     # ──────────────────────────────────────────────
     #  Callbacks
     # ──────────────────────────────────────────────
+    def _on_reset_clicked(self):
+        """Malcolm's Infusion: Inline confirmation without popup fatigue."""
+        if not self._reset_confirm_mode:
+            # Enter confirm mode
+            self._reset_confirm_mode = True
+            self.btn_reset.configure(
+                text="Confirm Reset?",
+                text_color="#ffffff",
+                fg_color=get_color("colors.state.danger")
+            )
+            self._reset_timer = self.after(3000, self._cancel_reset)
+        else:
+            # Execute reset
+            if self._reset_timer:
+                self.after_cancel(self._reset_timer)
+            self._execute_reset()
+
+    def _cancel_reset(self):
+        """Revert the reset button to normal state if not clicked."""
+        if not self.winfo_exists(): return
+        self._reset_confirm_mode = False
+        self.btn_reset.configure(
+            text="Reset Defaults",
+            text_color=get_color("colors.text.muted"),
+            fg_color="transparent"
+        )
+
+    def _execute_reset(self):
+        """Restores UI to default state and triggers a delightful confetti toast."""
+        self._cancel_reset()
+
+        # Reset variables
+        self.mode_var.set("ARAM")
+        self.delay_var.set(2.0)
+        self.slider_delay.set(2.0)
+        self._on_delay_slide(2.0)
+
+        # Update LolToggle state safely
+        self.stealth_var.set(False)
+        self.stealth_switch._state = False
+        self.stealth_switch._animate()
+
+        # Default hotkeys
+        default_hotkeys = {
+            "hotkey_launch_client": "ctrl+shift+l",
+            "hotkey_toggle_automation": "ctrl+shift+a",
+            "hotkey_find_match": "ctrl+shift+f",
+            "hotkey_compact_mode": "ctrl+shift+m",
+        }
+        for key, default_val in default_hotkeys.items():
+            if key in self.recorders:
+                recorder = self.recorders[key]
+                recorder._hotkey_value = default_val
+                recorder._stop_recording()
+
+        # Try to show delightful confetti toast using ToastManager
+        try:
+            from ui.components.toast import ToastManager
+            # master is app_sidebar, master.master is the main window
+            main_window = self.master.master if hasattr(self.master, "master") else self.master
+            ToastManager.get_instance(main_window).show(
+                "Settings restored to defaults!",
+                icon="♻️",
+                theme="success",
+                confetti=True
+            )
+        except Exception as e:
+            Logger.error("settings_modal.py", f"Failed to show toast: {e}")
+
     def _on_delay_slide(self, value):
         self.lbl_delay_val.configure(text=f"{value:.1f}s")
 
