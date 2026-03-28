@@ -8,7 +8,7 @@
   - Frequency (F): 8
   - Complexity (C): 7
   - Recency (R): 9
-  - Score: (9 x 0.4) + (8 x 0.2) + (7 x 0.25) + (9 x 0.15) = 8.3
+  - Score: (9 x 0.4) + (8 x 0.2) + (7 x 0.3) + (9 x 0.1) = 8.2
   - Confidence: High
 - **[Inference]** Strong grasp of extending `ctk.CTkFrame`, applying `get_color()`, and avoiding unsupported kwargs for stability.
 
@@ -19,7 +19,7 @@
   - Frequency (F): 7
   - Complexity (C): 5
   - Recency (R): 8
-  - Score: (8 x 0.4) + (7 x 0.2) + (5 x 0.25) + (8 x 0.15) = 7.05
+  - Score: (8 x 0.4) + (7 x 0.2) + (5 x 0.3) + (8 x 0.1) = 6.9
   - Confidence: Medium
 - **[Inference]** Understands asynchronous UI updates and background task notifications.
 
@@ -30,7 +30,7 @@
   - Frequency (F): 5
   - Complexity (C): 4
   - Recency (R): 6
-  - Score: (7 x 0.4) + (5 x 0.2) + (4 x 0.25) + (6 x 0.15) = 5.7
+  - Score: (7 x 0.4) + (5 x 0.2) + (4 x 0.3) + (6 x 0.1) = 5.6
   - Confidence: Low
 - **[Inference]** Familiar with `ui/components/factory.py` design system structure.
 
@@ -42,7 +42,7 @@
   - Frequency (F): 6
   - Complexity (C): 8
   - Recency (R): 8
-  - Score: (8 x 0.4) + (6 x 0.2) + (8 x 0.25) + (8 x 0.15) = 7.6
+  - Score: (8 x 0.4) + (6 x 0.2) + (8 x 0.3) + (8 x 0.1) = 7.6
   - Confidence: High
 - **[Inference]** Understands thread safety (`self.after()`) and decoupling UI from backend processes.
 
@@ -53,7 +53,7 @@
   - Frequency (F): 6
   - Complexity (C): 5
   - Recency (R): 7
-  - Score: (7 x 0.4) + (6 x 0.2) + (5 x 0.25) + (7 x 0.15) = 6.3
+  - Score: (7 x 0.4) + (6 x 0.2) + (5 x 0.3) + (7 x 0.1) = 6.2
   - Confidence: Medium
 - **[Inference]** Follows main thread safety practices for keyboard listener callbacks.
 
@@ -64,7 +64,7 @@
   - Frequency (F): 7
   - Complexity (C): 6
   - Recency (R): 7
-  - Score: (8 x 0.4) + (7 x 0.2) + (6 x 0.25) + (7 x 0.15) = 7.15
+  - Score: (8 x 0.4) + (7 x 0.2) + (6 x 0.3) + (7 x 0.1) = 7.1
   - Confidence: Medium
 - **[Inference]** Experienced in modifying `config.json` state representations and mapping them to UI interactions.
 
@@ -75,7 +75,7 @@
   - Frequency (F): 5
   - Complexity (C): 9
   - Recency (R): 8
-  - Score: (9 x 0.4) + (5 x 0.2) + (9 x 0.25) + (8 x 0.15) = 8.05
+  - Score: (9 x 0.4) + (5 x 0.2) + (9 x 0.3) + (8 x 0.1) = 8.1
   - Confidence: High
 - **[Inference]** Highly proficient at tracing API flows and debugging LCU session state updates.
 
@@ -87,7 +87,7 @@
   - Frequency (F): 8
   - Complexity (C): 7
   - Recency (R): 9
-  - Score: (8 x 0.4) + (8 x 0.2) + (7 x 0.25) + (9 x 0.15) = 7.9
+  - Score: (8 x 0.4) + (8 x 0.2) + (7 x 0.3) + (9 x 0.1) = 7.8
   - Confidence: High
 - **[Inference]** Competent in RESTful interaction with the League Client endpoints using proper authentication headers.
 
@@ -98,7 +98,7 @@
   - Frequency (F): 6
   - Complexity (C): 6
   - Recency (R): 7
-  - Score: (7 x 0.4) + (6 x 0.2) + (6 x 0.25) + (7 x 0.15) = 6.55
+  - Score: (7 x 0.4) + (6 x 0.2) + (6 x 0.3) + (7 x 0.1) = 6.5
   - Confidence: Medium
 - **[Inference]** Understands the lockfile parsing process and SSL certificate validation bypass logic.
 
@@ -110,7 +110,7 @@
   - Frequency (F): 4
   - Complexity (C): 5
   - Recency (R): 6
-  - Score: (6 x 0.4) + (4 x 0.2) + (5 x 0.25) + (6 x 0.15) = 5.35
+  - Score: (6 x 0.4) + (4 x 0.2) + (5 x 0.3) + (6 x 0.1) = 5.3
   - Confidence: Low
 - **[Inference]** Able to extend global command palette logic efficiently.
 
@@ -121,7 +121,7 @@
   - Frequency (F): 5
   - Complexity (C): 7
   - Recency (R): 7
-  - Score: (8 x 0.4) + (5 x 0.2) + (7 x 0.25) + (7 x 0.15) = 7.0
+  - Score: (8 x 0.4) + (5 x 0.2) + (7 x 0.3) + (7 x 0.1) = 7.0
   - Confidence: Medium
 - **[Inference]** Familiar with external API requests, JSON parsing, and fallback/caching strategies.
 
@@ -132,7 +132,7 @@
   - Frequency (F): 9
   - Complexity (C): 4
   - Recency (R): 9
-  - Score: (9 x 0.4) + (9 x 0.2) + (4 x 0.25) + (9 x 0.15) = 7.75
+  - Score: (9 x 0.4) + (9 x 0.2) + (4 x 0.3) + (9 x 0.1) = 7.5
   - Confidence: High
 - **[Inference]** Uses `ConfigManager` properly to avoid race conditions.
 
@@ -143,7 +143,7 @@
   - Frequency (F): 6
   - Complexity (C): 7
   - Recency (R): 8
-  - Score: (8 x 0.4) + (6 x 0.2) + (7 x 0.25) + (8 x 0.15) = 7.35
+  - Score: (8 x 0.4) + (6 x 0.2) + (7 x 0.3) + (8 x 0.1) = 7.3
   - Confidence: Medium
 - **[Inference]** Strong troubleshooting skills using localized traceback outputs.
 
@@ -155,7 +155,7 @@
   - Frequency (F): 3
   - Complexity (C): 8
   - Recency (R): 5
-  - Score: (7 x 0.4) + (3 x 0.2) + (8 x 0.25) + (5 x 0.15) = 6.15
+  - Score: (7 x 0.4) + (3 x 0.2) + (8 x 0.3) + (5 x 0.1) = 6.3
   - Confidence: Medium
 - **[Inference]** Understands spec file configurations and resource bundling for PyInstaller.
 
@@ -166,7 +166,7 @@
   - Frequency (F): 3
   - Complexity (C): 6
   - Recency (R): 5
-  - Score: (6 x 0.4) + (3 x 0.2) + (6 x 0.25) + (5 x 0.15) = 5.25
+  - Score: (6 x 0.4) + (3 x 0.2) + (6 x 0.3) + (5 x 0.1) = 5.3
   - Confidence: Low
 - **[Inference]** Capable of generating deployment installers from build outputs.
 
@@ -177,8 +177,8 @@
   - Frequency (F): 9
   - Complexity (C): 3
   - Recency (R): 9
-  - Score: (9 x 0.4) + (9 x 0.2) + (3 x 0.25) + (9 x 0.15) = 7.5
-  - Confidence: High
+  - Score: (9 x 0.4) + (9 x 0.2) + (3 x 0.3) + (9 x 0.1) = 7.2
+  - Confidence: Medium
 - **[Inference]** Uses Git effectively for version control.
 
 ### Install Dependency
@@ -188,7 +188,7 @@
   - Frequency (F): 6
   - Complexity (C): 3
   - Recency (R): 8
-  - Score: (8 x 0.4) + (6 x 0.2) + (3 x 0.25) + (8 x 0.15) = 6.35
+  - Score: (8 x 0.4) + (6 x 0.2) + (3 x 0.3) + (8 x 0.1) = 6.1
   - Confidence: Medium
 - **[Inference]** Manages Python package dependencies securely.
 
@@ -199,7 +199,7 @@
   - Frequency (F): 10
   - Complexity (C): 2
   - Recency (R): 9
-  - Score: (9 x 0.4) + (10 x 0.2) + (2 x 0.25) + (9 x 0.15) = 7.45
+  - Score: (9 x 0.4) + (10 x 0.2) + (2 x 0.3) + (9 x 0.1) = 7.1
   - Confidence: Medium
 - **[Inference]** Configures environment paths correctly.
 
@@ -210,7 +210,7 @@
   - Frequency (F): 4
   - Complexity (C): 6
   - Recency (R): 6
-  - Score: (7 x 0.4) + (4 x 0.2) + (6 x 0.25) + (6 x 0.15) = 6.0
+  - Score: (7 x 0.4) + (4 x 0.2) + (6 x 0.3) + (6 x 0.1) = 6.0
   - Confidence: Medium
 - **[Inference]** Can manage external asset synchronization and storage.
 
@@ -221,7 +221,7 @@
   - Frequency (F): 8
   - Complexity (C): 7
   - Recency (R): 8
-  - Score: (8 x 0.4) + (8 x 0.2) + (7 x 0.25) + (8 x 0.15) = 7.75
+  - Score: (8 x 0.4) + (8 x 0.2) + (7 x 0.3) + (8 x 0.1) = 7.7
   - Confidence: High
 - **[Inference]** Competent with unittest, xvfb-run, and mocking Tkinter UI dependencies.
 ## Gap Analysis
