@@ -9,3 +9,8 @@
 - Change: Added safety constraint forbidding redundant qualitative text fields (e.g., 'Usage Frequency', 'Complexity').
 - Reason: The current system relies on implicit rules that are not codified in the agent profile. Documenting these rules ensures consistent scoring and formatting while preventing file bloat.
 - Impact: Improved consistency and readability of skills.md.
+
+## Version: v1.1 → v1.2
+- Change: Refined skill scoring weight for recency (decreased from 0.15 to 0.1) and complexity (increased from 0.25 to 0.3)
+- Reason: Overvaluing old experience
+- Impact: More accurate current skill representation
