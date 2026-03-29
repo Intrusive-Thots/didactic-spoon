@@ -19,6 +19,8 @@ class HotkeyRecorder(ctk.CTkButton):
         self._recording = False
         self._pressed_keys = set()
         self._hook = None
+        self._pulse_job = None
+        self._pulse_state = False
 
         super().__init__(
             master,  # type: ignore
@@ -40,7 +42,7 @@ class HotkeyRecorder(ctk.CTkButton):
 
     def _toggle_recording(self):
         if self._recording:
-            self._stop_recording()
+            self._stop_recording(cancel=True)
         else:
             self._start_recording()
 
@@ -48,12 +50,28 @@ class HotkeyRecorder(ctk.CTkButton):
         self._recording = True
         self._pressed_keys = set()
         self.configure(
-            text="⏺ Press keys...",
+            text="⏺ Listening...",
             fg_color=get_color("colors.accent.primary"),
             text_color="#ffffff",
             border_color=get_color("colors.accent.primary"),
         )
         self._hook = keyboard.on_press(self._on_key_press)
+        self._animate_pulse()
+
+    def _animate_pulse(self):
+        """Malcolm's Infusion: Pulse animation while recording to indicate active listening."""
+        if not self._recording or not self.winfo_exists():
+            return
+
+        self._pulse_state = not self._pulse_state
+        if self._pulse_state:
+            # Dimmed state
+            self.configure(fg_color="#A88A4E", border_color="#A88A4E")
+        else:
+            # Bright state
+            self.configure(fg_color=get_color("colors.accent.primary"), border_color=get_color("colors.accent.primary"))
+
+        self._pulse_job = self.after(600, self._animate_pulse)
 
     def _on_key_press(self, event):
         """Capture key presses and build the hotkey combo string."""
@@ -82,13 +100,50 @@ class HotkeyRecorder(ctk.CTkButton):
             parts.extend(sorted(non_modifiers))
             combo = "+".join(parts)
             self._hotkey_value = combo
-            self.after(50, lambda: self._stop_recording())
+            self.after(50, lambda: self._stop_recording(success=True))
 
-    def _stop_recording(self):
+    def _stop_recording(self, success=False, cancel=False):
         self._recording = False
         if self._hook is not None:
             keyboard.unhook(self._hook)
             self._hook = None
+        if self._pulse_job is not None:
+            self.after_cancel(self._pulse_job)
+            self._pulse_job = None
+
+        if cancel:
+            # Check if they only pressed modifiers
+            modifier_names = {"ctrl", "shift", "alt", "win"}
+            non_modifiers = self._pressed_keys - modifier_names
+            if self._pressed_keys and not non_modifiers:
+                # Invalid hotkey (only modifiers)
+                self.configure(
+                    text="! Invalid",
+                    fg_color=get_color("colors.state.warning", "#E67E22"),
+                    text_color="#ffffff",
+                    border_color=get_color("colors.state.warning", "#E67E22"),
+                )
+                self.after(800, self._revert_visuals)
+                return
+            else:
+                self._revert_visuals()
+                return
+
+        if success:
+            # Malcolm's Infusion: Satisfying success flash
+            self.configure(
+                text=f"✓ {self._hotkey_value}",
+                fg_color=get_color("colors.state.success", "#27AE60"),
+                text_color="#ffffff",
+                border_color=get_color("colors.state.success", "#27AE60"),
+            )
+            self.after(800, self._revert_visuals)
+        else:
+            self._revert_visuals()
+
+    def _revert_visuals(self):
+        if not self.winfo_exists():
+            return
         self.configure(
             text=self._hotkey_value or "Click to set",
             fg_color=get_color("colors.background.card"),

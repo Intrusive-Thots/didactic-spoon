@@ -7,3 +7,7 @@
 ## 2024-03-28 - Micro-Interactions in Low-Risk Zones
 **Learning:** Adding unexpected, delightful interactions (like an Easter egg) to typically static and low-risk UI elements (like a footer or "Made by" label) can significantly boost user joy and engagement without compromising the core workflow or introducing friction.
 **Action:** When seeking opportunities for "delight," target functional dead-ends or static attribution areas, applying progressive disclosure (e.g., color hints on hover, requiring multiple clicks) to hide the gamified interaction until explicitly sought.
+
+## 2024-03-29 - Contextual Feedback for Configuration Inputs
+**Learning:** Providing immediate, contextual micro-feedback (like success flashes or error nudges) on configuration inputs (e.g., hotkey recording) transforms a dry, error-prone task into an intuitive, gamified experience, reducing cognitive load and increasing confidence.
+**Action:** When designing data entry or configuration components, always incorporate distinct visual and textual states for 'listening', 'success', and 'invalid' to provide continuous haptic-like feedback.
