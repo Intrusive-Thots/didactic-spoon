@@ -205,9 +205,12 @@ class FriendPriorityList(ctk.CTkFrame):
             self.header, text="▼  FRIEND AUTO-JOIN",
             font=get_font("caption", "bold"),
             text_color=get_color("colors.text.muted"), anchor="w",
+            cursor="hand2"
         )
         self.lbl_section.pack(side="left", padx=2)
         self.lbl_section.bind("<Button-1>", lambda e: self._toggle_collapse())
+        self.lbl_section.bind("<Enter>", lambda e: self.lbl_section.configure(text_color=get_color("colors.text.primary")))
+        self.lbl_section.bind("<Leave>", lambda e: self.lbl_section.configure(text_color=get_color("colors.text.muted")))
 
         # Master Toggle
         self.var_master_enabled = ctk.BooleanVar(value=self.config.get("auto_join_enabled", True))

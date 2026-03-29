@@ -203,10 +203,13 @@ class SidebarWidget(ctk.CTkFrame):
             self.action_container, text="▼  ACTIONS",
             font=get_font("caption", "bold"),
             text_color=get_color("colors.text.muted"), anchor="w",
+            cursor="hand2"
         )
         self.lbl_action_section.pack(fill="x", padx=SPACING_MD, pady=(SPACING_SM, SPACING_SM))
         CTkTooltip(self.lbl_action_section, "Toggle Actions")
         self.lbl_action_section.bind("<Button-1>", self._toggle_action_collapse)
+        self.lbl_action_section.bind("<Enter>", lambda e: self.lbl_action_section.configure(text_color=get_color("colors.text.primary")))
+        self.lbl_action_section.bind("<Leave>", lambda e: self.lbl_action_section.configure(text_color=get_color("colors.text.muted")))
 
         self.btn_frame = ctk.CTkFrame(self.action_container, fg_color="transparent")
         self.btn_frame.pack(fill="x", padx=12, pady=(0, 12))
@@ -294,10 +297,13 @@ class SidebarWidget(ctk.CTkFrame):
             self.auto_container, text="▼  AUTOMATION",
             font=get_font("caption", "bold"),
             text_color=get_color("colors.text.muted"), anchor="w",
+            cursor="hand2"
         )
         self.lbl_auto_section.pack(fill="x", padx=SPACING_MD, pady=(SPACING_SM, SPACING_SM))
         CTkTooltip(self.lbl_auto_section, "Toggle Automation")
         self.lbl_auto_section.bind("<Button-1>", self._toggle_auto_collapse)
+        self.lbl_auto_section.bind("<Enter>", lambda e: self.lbl_auto_section.configure(text_color=get_color("colors.text.primary")))
+        self.lbl_auto_section.bind("<Leave>", lambda e: self.lbl_auto_section.configure(text_color=get_color("colors.text.muted")))
         
         TOGGLE_ROW_HEIGHT = 28
         self.automation_frame = ctk.CTkFrame(self.auto_container, height=120, fg_color="transparent")

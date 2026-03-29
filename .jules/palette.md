@@ -7,3 +7,6 @@
 ## 2024-05-18 - RiotButton Affordance
 **Learning:** In CustomTkinter, custom components that behave as interactive buttons (like `RiotButton`, built by composing `CTkFrame` and `CTkLabel`) lack standard hover affordances. The mouse cursor does not naturally change to a pointing hand, which reduces the immediate visual cue that the element is clickable.
 **Action:** Always manually apply `cursor="hand2"` to the parent frame and all its relevant inner composite components to maintain clear and accessible clickability affordances.
+## 2026-03-29 - Interactive Label Affordances
+**Learning:** In CustomTkinter, `CTkLabel` elements acting as buttons or toggles (like collapsible section headers) do not inherently provide hover affordances. Without explicitly setting `cursor="hand2"` and text color hover states, users lack the visual cue that the element is interactive.
+**Action:** Always apply explicit cursor and hover color bindings to interactive labels to ensure accessibility and intuitive UX.
