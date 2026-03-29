@@ -4,3 +4,6 @@
 ## 2024-03-28 - CTkOptionMenu Affordances
 **Learning:** In CustomTkinter, `CTkOptionMenu` components (dropdowns) do not automatically provide a change in the cursor (e.g., to a pointing hand) when hovered, unlike standard web buttons or links. This omission can make it slightly less obvious that the element is clickable and interactive, particularly when styled to blend into the application background.
 **Action:** Always ensure `cursor="hand2"` is explicitly passed to `CTkOptionMenu` instances alongside other interactive widgets like `CTkButton` to maintain clear affordance and consistent visual UX cues across the application.
+## 2024-05-18 - RiotButton Affordance
+**Learning:** In CustomTkinter, custom components that behave as interactive buttons (like `RiotButton`, built by composing `CTkFrame` and `CTkLabel`) lack standard hover affordances. The mouse cursor does not naturally change to a pointing hand, which reduces the immediate visual cue that the element is clickable.
+**Action:** Always manually apply `cursor="hand2"` to the parent frame and all its relevant inner composite components to maintain clear and accessible clickability affordances.

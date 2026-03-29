@@ -104,6 +104,10 @@ class RiotButton(ctk.CTkFrame):
         self.lbl = ctk.CTkLabel(self.inner, text=text, font=btn_font, text_color=base_text_color)
         self.lbl.pack(expand=True)
         
+        self.configure(cursor="hand2")
+        self.inner.configure(cursor="hand2")
+        self.lbl.configure(cursor="hand2")
+
         for w in (self, self.inner, self.lbl):
             w.bind("<Enter>", lambda e: self._on_enter(hover_color))
             w.bind("<Leave>", lambda e: self._on_leave(inner_color))
