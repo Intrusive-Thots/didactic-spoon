@@ -131,10 +131,13 @@ class PriorityIconGrid(ctk.CTkFrame):
             self.header, text="▼  PRIORITY LIST",
             font=get_font("caption", "bold"),
             text_color=get_color("colors.text.muted"), anchor="w",
+            cursor="hand2"
         )
         self.lbl_section.pack(side="left", padx=2)
         CTkTooltip(self.lbl_section, "Toggle Priority List")
         self.lbl_section.bind("<Button-1>", lambda e: self._toggle_collapse())
+        self.lbl_section.bind("<Enter>", lambda e: self.lbl_section.configure(text_color=get_color("colors.text.primary")))
+        self.lbl_section.bind("<Leave>", lambda e: self.lbl_section.configure(text_color=get_color("colors.text.muted")))
 
         # Edit / Done
         self.btn_edit = ctk.CTkButton(
