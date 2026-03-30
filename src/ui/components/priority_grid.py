@@ -412,11 +412,10 @@ class PriorityIconGrid(ctk.CTkFrame):
         
         # Check if already in priority list
         plist = self._get_priority_list()
-        in_list = False
-        for p in plist:
-            if p.lower() == champ_name.lower():
-                in_list = True
-                break
+        # ⚡ Bolt: Optimize O(N) list traversal by hoisting the target string allocation
+        # outside the loop and using a short-circuiting generator expression.
+        champ_lower = champ_name.lower()
+        in_list = any(p.lower() == champ_lower for p in plist)
                 
         if in_list:
             self.hover_add_btn.configure(state="disabled", text="Added", fg_color="transparent", text_color=get_color("colors.text.disabled"))
@@ -435,11 +434,9 @@ class PriorityIconGrid(ctk.CTkFrame):
     def _add_hovered_champion(self):
         if getattr(self, "_hovered_champ_name", None):
             plist = self._get_priority_list()
-            in_list = False
-            for p in plist:
-                if p.lower() == self._hovered_champ_name.lower():
-                    in_list = True
-                    break
+            # ⚡ Bolt: Fast-path priority check with O(1) early-return
+            champ_lower = self._hovered_champ_name.lower()
+            in_list = any(p.lower() == champ_lower for p in plist)
                     
             if not in_list:
                 plist.append(self._hovered_champ_name)

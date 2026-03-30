@@ -19,3 +19,6 @@
 ## 2024-10-24 - Debouncing UI Event Handlers
 **Learning:** High-frequency event handlers like search input on keystrokes cause severe UI thread latency if they trigger O(N) widget destruction and recreation on every keystroke.
 **Action:** Add a debounce timer (e.g. 150ms) to throttle UI updates during rapid typing.
+## 2026-03-30 - Optimize Hovered Champion Lookups in High-Frequency UI
+**Learning:** High-frequency UI event handlers (like updating hovered champions from LCU data) that perform O(N) list iterations with repeated string `.lower()` allocations on both the target and the list items cause unnecessary CPU overhead and micro-stuttering in Tkinter applications.
+**Action:** Optimize O(N) membership checks inside UI loops by pre-caching the lowercase target string and using a short-circuiting generator expression (`any()`) to minimize string allocations.
