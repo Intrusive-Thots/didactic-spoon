@@ -30,3 +30,8 @@
 - Change: Reverted skill scoring weights for complexity (0.3 -> 0.25) and recency (0.1 -> 0.15) to original model.
 - Reason: Self-audit detected drift where scoring formula in skills.md did not align with original specification.
 - Impact: Restored accurate skill representation and aligned Target System with Self System rules.
+
+## Version: v1.5 → v1.6
+- Change: Enforced exact two-decimal precision (e.g., 8.30, 7.05) for all score calculations and threshold evaluations in `skills.md`.
+- Reason: Self-audit detected arithmetic drift and inconsistent rounding in existing scores (e.g., 8.05 rounded to 8.0, 7.75 rounded to 7.8, and 7.45 triggering rounding anomalies relative to the 7.50 Confidence threshold).
+- Impact: Improved mathematical determinism, accuracy of the scoring model, and exact precision of confidence classification boundaries.
