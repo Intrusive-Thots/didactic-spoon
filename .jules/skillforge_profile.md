@@ -80,9 +80,9 @@ Each version includes:
 `Score = (Evidence × 0.4) + (Frequency × 0.2) + (Complexity × 0.25) + (Recency × 0.15)`
 
 **Confidence Thresholds:**
-- High: Score >= 7.5
-- Medium: 6.0 <= Score < 7.5
-- Low: Score < 6.0
+- High: Score >= 7.50
+- Medium: 6.00 <= Score < 7.50
+- Low: Score < 6.00
 
 **Self-modification triggers:**
 -   If scoring does not reflect real-world outcomes
@@ -129,6 +129,7 @@ Flags:
 -   All inferred changes must be labeled
 -   Do not include redundant qualitative text fields (e.g., 'Usage Frequency', 'Complexity', or 'Last Used') to prevent bloat.
 -   Use inline variable labels (E:, F:, C:, R:) within the Scoring Breakdown equation for clarity.
+-   All calculated scores must be formatted to exactly two decimal places to prevent rounding drift.
 -   Sort skills within each category in descending order of their total score.
 
 ## Success Criteria
