@@ -32,13 +32,16 @@ class DraggableList(ctk.CTkScrollableFrame):
         accent_color = get_color("colors.accent.primary", "#C8AA6E")
         card_hover_color = get_color("colors.background.card", "gray30")
 
+        # ⚡ Bolt: Apply LICM for faster list rendering
+        font_body = get_font("body")
+
         for i, item in enumerate(self.items):
             frame = ctk.CTkFrame(self, fg_color=("gray85", "gray20"))
             frame.pack(fill="x", pady=2, padx=5)
             self._row_frames.append(frame)
             
             # Priority Number
-            lbl_pri = ctk.CTkLabel(frame, text=f"#{i+1}", width=30, font=get_font("body"), text_color="gold")
+            lbl_pri = ctk.CTkLabel(frame, text=f"#{i+1}", width=30, font=font_body, text_color="gold")
             lbl_pri.pack(side="left", padx=5)
             
             # Champion Icon
