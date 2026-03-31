@@ -870,17 +870,23 @@ class SidebarWidget(ctk.CTkFrame):
         # Sort descending by win rate
         champ_stats.sort(key=lambda x: x[1], reverse=True)
 
+        # ⚡ Bolt: Apply LICM for faster lobby stats rendering
+        font_body = get_font("body")
+        font_body_bold = get_font("body", "bold")
+        color_text_primary = get_color("colors.text.primary")
+        color_text_muted = get_color("colors.text.muted")
+
         # Render Top 5
         for i, (cname, wr) in enumerate(champ_stats[:5]):  # type: ignore
             row = ctk.CTkFrame(self.stats_content, fg_color="transparent")
             row.pack(fill="x", pady=1)
 
-            lbl_name = ctk.CTkLabel(row, text=cname, font=get_font("body"), text_color=get_color("colors.text.primary"))
+            lbl_name = ctk.CTkLabel(row, text=cname, font=font_body, text_color=color_text_primary)
             lbl_name.pack(side="left")
 
-            color = "#00cc66" if wr >= 52.0 else "#ff4444" if wr < 48.0 else get_color("colors.text.muted")
+            color = "#00cc66" if wr >= 52.0 else "#ff4444" if wr < 48.0 else color_text_muted
 
-            lbl_wr = ctk.CTkLabel(row, text=f"{wr:.1f}%", font=get_font("body", "bold"), text_color=color)
+            lbl_wr = ctk.CTkLabel(row, text=f"{wr:.1f}%", font=font_body_bold, text_color=color)
             lbl_wr.pack(side="right")
 
 
