@@ -20,3 +20,7 @@
 ## 2026-03-31 - Keyboard Accessibility on CustomTkinter Settings
 **Learning:** High-density configuration modals using CustomTkinter buttons for hotkey recording severely limit keyboard users because they lack default focus rings and space/enter activation.
 **Action:** Explicitly bind <FocusIn>, <FocusOut>, <KeyPress-space>, and <KeyPress-Return> to interactive elements like HotkeyRecorder to guarantee WCAG-compliant keyboard operability.
+
+## 2024-05-20 - Global Button Cursor Affordance
+**Learning:** Base CustomTkinter button components do not default to `cursor="hand2"`. Missing this across shared components like `IconButton`, `PrimaryButton`, and `SidebarItem` causes a systemic lack of visual feedback for interactive elements.
+**Action:** Always ensure `cursor="hand2"` is passed down to `super().__init__` in generic button wrapper classes to guarantee global interaction consistency.
