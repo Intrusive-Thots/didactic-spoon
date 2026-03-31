@@ -40,3 +40,8 @@
 - Change: Ingested recent capabilities involving Advanced UI Mock Testing and Event Loop Optimization into the Target System (`skills.md`). Re-evaluated the Gap Analysis based on these added capabilities.
 - Reason: Routine execution loop to continuously map user capability models against observed outcomes. The previous gap concerning advanced integration testing was successfully resolved by the new UI tests.
 - Impact: Ensured `skills.md` remains highly accurate to real-world outcomes and reflects recent performance engineering implementations.
+
+## Version: v1.7 → v1.8
+- Change: Ingested recent capabilities involving UI Affordances, Drag-and-Drop integration, Background Task testing, and Security mitigations into the Target System (`skills.md`). Re-evaluated the Gap Analysis based on these added capabilities.
+- Reason: Routine execution loop to continuously map user capability models against observed outcomes. New skills were added based on recent system modifications.
+- Impact: Ensured `skills.md` remains highly accurate to real-world outcomes and reflects recent UX, testing, and security engineering implementations.
