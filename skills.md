@@ -1,6 +1,7 @@
 # Target System: skills.md (User Capability Model)
 
 ## Python CustomTkinter UI Development
+
 ### Add UI Component
 - **Description:** Create a new reusable customtkinter UI component following project conventions.
 - **Scoring Breakdown:**
@@ -8,12 +9,33 @@
   - Confidence: High
 - **[Inference]** Strong grasp of extending `ctk.CTkFrame`, applying `get_color()`, and avoiding unsupported kwargs for stability.
 
+### Implement UI Affordances
+- **Description:** Add interactive visual cues like pointer cursors and hover states to CustomTkinter components.
+- **Scoring Breakdown:**
+  - Score: (E:9 x 0.4) + (F:8 x 0.2) + (C:6 x 0.25) + (R:9 x 0.15) = 8.05
+  - Confidence: High
+- **[Inference]** Strong understanding of event binding (`<Enter>`, `<Leave>`) and cursor configuration to improve usability.
+
+### UI State Management & Animation
+- **Description:** Implement robust state removal and event cleanup for animated CustomTkinter widgets.
+- **Scoring Breakdown:**
+  - Score: (E:8 x 0.4) + (F:7 x 0.2) + (C:8 x 0.25) + (R:8 x 0.15) = 7.80
+  - Confidence: High
+- **[Inference]** Competent at binding cleanup logic to `<Destroy>` events using closure guard flags to prevent race conditions during rapid re-renders.
+
 ### Event Loop Optimization
 - **Description:** Eliminate main thread latency by precomputing static variables for high-frequency event handlers.
 - **Scoring Breakdown:**
   - Score: (E:8 x 0.4) + (F:7 x 0.2) + (C:7 x 0.25) + (R:9 x 0.15) = 7.70
   - Confidence: High
 - **[Inference]** Understands how to prevent micro-stuttering in Tkinter/CustomTkinter by moving O(N) operations and variable initializations out of the hot path.
+
+### Implement Drag-and-Drop Wrappers
+- **Description:** Add drag-and-drop capabilities to CustomTkinter components using TkinterDnD.
+- **Scoring Breakdown:**
+  - Score: (E:8 x 0.4) + (F:6 x 0.2) + (C:8 x 0.25) + (R:8 x 0.15) = 7.60
+  - Confidence: High
+- **[Inference]** Understands how to avoid multiple inheritance metaclass conflicts by dynamically binding methods to instances during initialization.
 
 ### Add Toast Notification
 - **Description:** Show a toast notification from anywhere in the application.
@@ -30,6 +52,7 @@
 - **[Inference]** Familiar with `ui/components/factory.py` design system structure.
 
 ## Automation & Background Processing
+
 ### Debug Champ Select
 - **Description:** Diagnose issues with champion select automation (priority sniper, skin equip).
 - **Scoring Breakdown:**
@@ -59,6 +82,7 @@
 - **[Inference]** Follows main thread safety practices for keyboard listener callbacks.
 
 ## LCU API Integration
+
 ### Add LCU API Endpoint
 - **Description:** Make a new League Client API call from the automation engine.
 - **Scoring Breakdown:**
@@ -74,12 +98,20 @@
 - **[Inference]** Understands the lockfile parsing process and SSL certificate validation bypass logic.
 
 ## Application Architecture & Data
+
 ### Edit Config
 - **Description:** Safely modify config.json values with validation.
 - **Scoring Breakdown:**
   - Score: (E:9 x 0.4) + (F:9 x 0.2) + (C:4 x 0.25) + (R:9 x 0.15) = 7.75
   - Confidence: High
 - **[Inference]** Uses `ConfigManager` properly to avoid race conditions.
+
+### Prevent Command Injection
+- **Description:** Safely launch background processes like the Riot Client.
+- **Scoring Breakdown:**
+  - Score: (E:9 x 0.4) + (F:6 x 0.2) + (C:7 x 0.25) + (R:8 x 0.15) = 7.75
+  - Confidence: High
+- **[Inference]** Understands how to pass command arguments as a list using the `subprocess` module to prevent shell injection vulnerabilities.
 
 ### Read Crash Logs
 - **Description:** Parse and diagnose LeagueLoop crash logs and error files.
@@ -103,6 +135,7 @@
 - **[Inference]** Able to extend global command palette logic efficiently.
 
 ## Testing & Quality Assurance
+
 ### Advanced UI Mock Testing
 - **Description:** Test CustomTkinter logic using `sys.modules` patching and headless xvfb environments.
 - **Scoring Breakdown:**
@@ -110,7 +143,22 @@
   - Confidence: High
 - **[Inference]** Capable of testing UI components dynamically by bypassing strict CustomTkinter instantiation limits.
 
+### Robust Path Resolution in Tests
+- **Description:** Write tests that dynamically construct absolute paths relative to the test file.
+- **Scoring Breakdown:**
+  - Score: (E:9 x 0.4) + (F:8 x 0.2) + (C:6 x 0.25) + (R:9 x 0.15) = 8.05
+  - Confidence: High
+- **[Inference]** Consistently avoids hardcoded relative paths to ensure tests run reliably regardless of execution directory.
+
+### Test Background Tasks
+- **Description:** Test classes that initiate background threads on instantiation.
+- **Scoring Breakdown:**
+  - Score: (E:8 x 0.4) + (F:7 x 0.2) + (C:7 x 0.25) + (R:8 x 0.15) = 7.55
+  - Confidence: High
+- **[Inference]** Competent at patching `threading.Thread.start` to prevent background tasks from running, ensuring clean and isolated test states.
+
 ## DevOps & Environment Setup
+
 ### Run Tests
 - **Description:** Run the LeagueLoop test suite and diagnose failures.
 - **Scoring Breakdown:**
@@ -159,10 +207,13 @@
   - Score: (E:6 x 0.4) + (F:3 x 0.2) + (C:6 x 0.25) + (R:5 x 0.15) = 5.25
   - Confidence: Low
 - **[Inference]** Capable of generating deployment installers from build outputs.
+
 ## Gap Analysis
 - **Missing CI/CD Automation:** While `Build Executable` and `Build Installer` skills exist, they are manual processes.
 - **Limited Cross-Platform Testing:** Advanced UI Mock testing focuses on Linux via `xvfb-run`; capability on Windows `windnd` and macOS is untested.
+- **Accessibility Support:** The project requires explicit WCAG checks and structural keyboard-first paradigms.
 
 ## Skill Recommendations
 - **Learn CI/CD Automation:** Implement GitHub Actions to automate the `Build Executable` and `Build Installer` steps to eliminate manual building and reduce friction in deployments.
 - **Expand Test Matrix:** Add multi-os test matrices to GitHub Actions to verify CustomTkinter implementations across diverse environments.
+- **Study CustomTkinter Accessibility:** Explore capabilities to implement screen-reader support and improve semantic layout.
