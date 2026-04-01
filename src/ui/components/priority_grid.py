@@ -941,22 +941,30 @@ class PriorityIconGrid(ctk.CTkFrame):
 
         import string
 
+        # ⚡ Bolt: Apply LICM to hoist static token resolution outside the UI render loop
+        # to prevent redundant parsing and dictionary lookups on the main thread.
+        _radius_sm = get_radius("sm")
+        _color_card = get_color("colors.background.card")
+        _color_gold = get_color("colors.accent.gold", "#C8AA6E")
+        _font_caption = get_font("caption")
+        _color_text_primary = get_color("colors.text.primary")
+
         # Render pills
         for i, champ in enumerate(self._parsed_import):
             display_name = string.capwords(champ.replace("'", "' "), " ").replace("' ", "'")
             pill = ctk.CTkFrame(
                 self.import_scroll,
-                corner_radius=get_radius("sm"),
-                fg_color=get_color("colors.background.card"),
+                corner_radius=_radius_sm,
+                fg_color=_color_card,
                 border_width=1,
-                border_color=get_color("colors.accent.gold", "#C8AA6E")
+                border_color=_color_gold
             )
             pill.pack(side="left", padx=2, pady=2)
 
             ctk.CTkLabel(
                 pill, text=display_name,
-                font=get_font("caption"),
-                text_color=get_color("colors.text.primary")
+                font=_font_caption,
+                text_color=_color_text_primary
             ).pack(padx=8, pady=2)
 
     def _commit_import(self):
