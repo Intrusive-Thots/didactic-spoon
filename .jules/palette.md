@@ -28,3 +28,6 @@
 ## 2024-05-21 - Interactive List Results Affordance
 **Learning:** In CustomTkinter, complex interactive list items (like the search results in the Omnibar) that are built from generic frames and labels (`CTkFrame`, `CTkLabel`) do not inherently show a pointing cursor on hover. Without explicitly setting `cursor="hand2"` on the container and all its children, users miss the critical visual cue that the entire row is clickable.
 **Action:** Always apply `cursor="hand2"` to all sub-components (frames, icons, text labels) of an interactive list item to ensure uniform hover affordances across the entire clickable area.
+## $(date +%Y-%m-%d) - Context-Aware Interaction Feedback
+**Learning:** Hardcoded text states on multi-phase action buttons (like 'Find Match') leave users without visual confirmation of system state transitions.
+**Action:** Dynamically map button text and color to application phases (e.g., '■ Cancel Search' + Danger Color when active) to reduce cognitive load and provide clear status indicators.

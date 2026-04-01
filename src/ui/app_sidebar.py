@@ -758,6 +758,9 @@ class SidebarWidget(ctk.CTkFrame):
 
         if phase == "Matchmaking" and search_state and search_state.get("searchState") == "Searching":
             # Matchmaking is active
+            if hasattr(self, "btn_find_match"):
+                self.btn_find_match.configure(text="■  Cancel Search", text_color="#E74C3C")
+
             time_in_queue = search_state.get("timeInQueue", 0)
             estimated_time = search_state.get("estimatedQueueTime", 0)
 
@@ -766,6 +769,8 @@ class SidebarWidget(ctk.CTkFrame):
                 self._start_local_queue_timer(time_in_queue, estimated_time)
 
         elif phase == "ReadyCheck":
+            if hasattr(self, "btn_find_match"):
+                self.btn_find_match.configure(text="▶  Find Match", text_color="#091428")
             # Ready Check Pop
             self._stop_local_queue_timer()
             self.time_label.configure(text="Match Found!", text_color=get_color("colors.state.success", "#00C853"))
@@ -783,6 +788,8 @@ class SidebarWidget(ctk.CTkFrame):
                     Logger.error("UI", f"Failed to show match found toast: {e}")
 
         elif phase == "ChampSelect":
+            if hasattr(self, "btn_find_match"):
+                self.btn_find_match.configure(text="▶  Find Match", text_color="#091428")
             self._stop_local_queue_timer()
             self.time_label.configure(text="Champ Select", text_color=get_color("colors.accent.purple", "#A855F7"))
             self.estimate_label.configure(text="● Drafting", text_color="#A855F7")
@@ -791,6 +798,8 @@ class SidebarWidget(ctk.CTkFrame):
             self._last_phase_toast = phase
 
         elif phase in ["InProgress", "EndOfGame"]:
+            if hasattr(self, "btn_find_match"):
+                self.btn_find_match.configure(text="▶  Find Match", text_color="#091428")
             self._stop_local_queue_timer()
             self.time_label.configure(text="In Game", text_color=get_color("colors.text.primary"))
             self.estimate_label.configure(text="● Playing", text_color="#3B82F6")
@@ -799,6 +808,8 @@ class SidebarWidget(ctk.CTkFrame):
 
         else:
             # Lobby / None
+            if hasattr(self, "btn_find_match"):
+                self.btn_find_match.configure(text="▶  Find Match", text_color="#091428")
             self._stop_local_queue_timer()
             if getattr(self.master, "lcu", None) and self.master.lcu.is_connected:
                 self.time_label.configure(text="Queue: Idle", text_color=get_color("colors.text.primary"))
