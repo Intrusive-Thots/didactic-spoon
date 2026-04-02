@@ -459,6 +459,7 @@ class SettingsModal(ctk.CTkToplevel):
             dropdown_fg_color=get_color("colors.background.app"),
             dropdown_hover_color=get_color("colors.state.hover"),
             dropdown_font=get_font("caption"),
+            cursor="hand2",
         )
         self.honor_select.pack(side="right")
         CTkTooltip(self.honor_select, "Strategy used by Auto Honor\nrandom = random teammate\nbest_kda = highest KDA\nmvp = most kills+assists")
