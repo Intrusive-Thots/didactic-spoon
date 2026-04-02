@@ -104,7 +104,12 @@ class Omnibar(ctk.CTkFrame):
         self._visible = True
 
         # Refresh commands on open
-        self._all_commands = tuple(self.command_provider())
+        commands = tuple(self.command_provider())
+        for cmd in commands:
+            title = cmd.get("title", "")
+            cmd["_title_lower"] = title.lower()
+            cmd["_search_target"] = f"{title} {cmd.get('subtitle', '')}".lower()
+        self._all_commands = commands
         self.search_input.delete(0, "end")
         self._filter_results("")
 
@@ -154,6 +159,14 @@ class Omnibar(ctk.CTkFrame):
         # Ignore navigation keys
         if event.keysym in ("Up", "Down", "Return", "Escape"):
             return
+
+        # ⚡ Bolt: Debounce search input to reduce UI blocking on rapid keystrokes
+        if hasattr(self, "_debounce_timer") and self._debounce_timer is not None:
+            self.after_cancel(self._debounce_timer)
+
+        self._debounce_timer = self.after(150, self._perform_search)
+
+    def _perform_search(self):
         query = self.search_input.get().strip().lower()
         self._filter_results(query)
 
@@ -166,11 +179,8 @@ class Omnibar(ctk.CTkFrame):
             other_matches = []
 
             for cmd in self._all_commands:
-                title = cmd.get("title", "")
-                search_target = f"{title} {cmd.get('subtitle', '')}".lower()
-
-                if query in search_target:
-                    if title.lower().startswith(query):
+                if query in cmd["_search_target"]:
+                    if cmd["_title_lower"].startswith(query):
                         exact_matches.append(cmd)
                     else:
                         other_matches.append(cmd)
@@ -197,6 +207,14 @@ class Omnibar(ctk.CTkFrame):
             self._result_widgets.append(lbl)
             return
 
+        # ⚡ Bolt: Apply LICM for faster Omnibar rendering
+        _radius_sm = get_radius("sm")
+        _font_body = get_font("body")
+        _font_body_bold = get_font("body", "bold")
+        _font_caption = get_font("caption")
+        _pad_sm = TOKENS.get("spacing.sm", 8)
+        _pad_xs = TOKENS.get("spacing.xs", 4)
+
         for i, cmd in enumerate(self._filtered_commands):
             is_selected = (i == self._selected_index)
 
@@ -207,40 +225,44 @@ class Omnibar(ctk.CTkFrame):
             row = ctk.CTkFrame(
                 self.results_frame,
                 fg_color=bg_color,
-                corner_radius=get_radius("sm"),
-                height=48
+                corner_radius=_radius_sm,
+                height=48,
+                cursor="hand2"
             )
-            row.pack(fill="x", padx=TOKENS.get("spacing.sm", 8), pady=2)
+            row.pack(fill="x", padx=_pad_sm, pady=2)
             row.pack_propagate(False)
 
             # Icon
             ctk.CTkLabel(
                 row,
                 text=cmd.get("icon", "⚡"),
-                font=get_font("body"),
+                font=_font_body,
                 text_color=text_color,
-                width=30
-            ).pack(side="left", padx=(TOKENS.get("spacing.sm", 8), TOKENS.get("spacing.xs", 4)))
+                width=30,
+                cursor="hand2"
+            ).pack(side="left", padx=(_pad_sm, _pad_xs))
 
             # Text Container
-            text_cont = ctk.CTkFrame(row, fg_color="transparent")
+            text_cont = ctk.CTkFrame(row, fg_color="transparent", cursor="hand2")
             text_cont.pack(side="left", fill="both", expand=True)
 
             ctk.CTkLabel(
                 text_cont,
                 text=cmd.get("title", ""),
-                font=get_font("body", "bold"),
+                font=_font_body_bold,
                 text_color=text_color,
-                anchor="w"
+                anchor="w",
+                cursor="hand2"
             ).pack(fill="x", side="top", pady=(4, 0))
 
             if cmd.get("subtitle"):
                 ctk.CTkLabel(
                     text_cont,
                     text=cmd.get("subtitle", ""),
-                    font=get_font("caption"),
+                    font=_font_caption,
                     text_color=sub_color,
-                    anchor="w"
+                    anchor="w",
+                    cursor="hand2"
                 ).pack(fill="x", side="top")
 
             # Click binding
@@ -256,15 +278,18 @@ class Omnibar(ctk.CTkFrame):
 
             self._result_widgets.append(row)
 
-    def _update_selection_visuals(self):
+    def _update_selection_visuals(self, old_index=None):
         """Update the visual state of the existing result widgets and ensure visibility."""
         if not self._result_widgets or not self._filtered_commands:
             return
 
-        for i, row in enumerate(self._result_widgets):
+        def _update_row(i):
+            if i < 0 or i >= len(self._result_widgets):
+                return
+            row = self._result_widgets[i]
             # Skip the "No commands found" label if that's what's rendering
             if isinstance(row, ctk.CTkLabel):
-                continue
+                return
 
             is_selected = (i == self._selected_index)
 
@@ -289,10 +314,21 @@ class Omnibar(ctk.CTkFrame):
                 if len(text_children) >= 2:
                     text_children[1].configure(text_color=sub_color)  # Subtitle
 
+        # ⚡ Bolt: Fast-path O(1) visual updates during keyboard navigation
+        if old_index is not None:
+            _update_row(old_index)
+            _update_row(self._selected_index)
+        else:
+            for i in range(len(self._result_widgets)):
+                _update_row(i)
+
         # Ensure the selected item is visible by manipulating the canvas yview
         if hasattr(self.results_frame, "_parent_canvas"):
             canvas = self.results_frame._parent_canvas
-            canvas.update_idletasks()
+            # ⚡ Bolt: Prevent synchronous layout calculation overhead during high-frequency
+            # scrolling. Only force an update if rendering from scratch.
+            if old_index is None:
+                canvas.update_idletasks()
 
             # A row is height=48 + pady=2 (top+bottom) = ~52px total per row
             # Results frame height is 300px
@@ -315,14 +351,16 @@ class Omnibar(ctk.CTkFrame):
 
     def _on_down(self, event):
         if self._filtered_commands:
+            old_index = self._selected_index
             self._selected_index = (self._selected_index + 1) % len(self._filtered_commands)
-            self._update_selection_visuals()
+            self._update_selection_visuals(old_index)
         return "break"
 
     def _on_up(self, event):
         if self._filtered_commands:
+            old_index = self._selected_index
             self._selected_index = (self._selected_index - 1) % len(self._filtered_commands)
-            self._update_selection_visuals()
+            self._update_selection_visuals(old_index)
         return "break"
 
     def _on_enter(self, event):

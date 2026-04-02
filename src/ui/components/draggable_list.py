@@ -32,21 +32,28 @@ class DraggableList(ctk.CTkScrollableFrame):
         accent_color = get_color("colors.accent.primary", "#C8AA6E")
         card_hover_color = get_color("colors.background.card", "gray30")
 
+        # ⚡ Bolt: Apply LICM for faster list rendering
+        font_body = get_font("body")
+
         for i, item in enumerate(self.items):
             frame = ctk.CTkFrame(self, fg_color=("gray85", "gray20"))
             frame.pack(fill="x", pady=2, padx=5)
             self._row_frames.append(frame)
             
             # Priority Number
-            lbl_pri = ctk.CTkLabel(frame, text=f"#{i+1}", width=30, font=get_font("body"), text_color="gold")
+            lbl_pri = ctk.CTkLabel(frame, text=f"#{i+1}", width=30, font=font_body, text_color="gold")
             lbl_pri.pack(side="left", padx=5)
             
             # Champion Icon
             if self.asset_manager:
-                icon = self.asset_manager.get_icon("champion", item, size=(32, 32))
-                if icon:
-                    lbl_icon = ctk.CTkLabel(frame, text="", image=icon)
-                    lbl_icon.pack(side="left", padx=5)
+                lbl_icon = ctk.CTkLabel(frame, text="", width=32, height=32)
+                lbl_icon.pack(side="left", padx=5)
+
+                def _update_icon(img, lbl=lbl_icon):
+                    if lbl.winfo_exists():
+                        lbl.configure(image=img)
+
+                self.asset_manager.get_icon_async("champion", item, _update_icon, size=(32, 32), widget=lbl_icon)
             
             # Name
             display_name = item
@@ -65,7 +72,7 @@ class DraggableList(ctk.CTkScrollableFrame):
                 actions, text="▲", width=25, height=25,
                 fg_color="transparent", hover_color="gray30",
                 command=lambda idx=i: self._move_item(idx, -1),
-                
+                cursor="hand2",
             )
             btn_up.pack(side="left", padx=2)
             CTkTooltip(btn_up, "Move Up")
@@ -77,7 +84,7 @@ class DraggableList(ctk.CTkScrollableFrame):
                 actions, text="▼", width=25, height=25,
                 fg_color="transparent", hover_color="gray30",
                 command=lambda idx=i: self._move_item(idx, 1),
-                
+                cursor="hand2",
             )
             btn_down.pack(side="left", padx=2)
             CTkTooltip(btn_down, "Move Down")
@@ -89,13 +96,13 @@ class DraggableList(ctk.CTkScrollableFrame):
                 actions, text="❌", width=30, height=25,
                 fg_color="transparent", hover_color=danger_color,
                 command=lambda x=item, f=frame: self._animate_remove(x, f),
-                
+                cursor="hand2",
             )
             btn_remove.pack(side="left", padx=(5, 0))
             CTkTooltip(btn_remove, "Remove Item")
             
             # Optional Drag Handle (Kept for flexibility but less buggy now)
-            lbl_drag = ctk.CTkLabel(frame, text=" ↕ ")
+            lbl_drag = ctk.CTkLabel(frame, text=" ↕ ", cursor="hand2")
             lbl_drag.pack(side="right", padx=5)
             CTkTooltip(lbl_drag, "Drag to reorder")
             

@@ -131,10 +131,13 @@ class PriorityIconGrid(ctk.CTkFrame):
             self.header, text="▶  ARAM LIST",
             font=get_font("caption", "bold"),
             text_color=get_color("colors.text.muted"), anchor="w",
+            cursor="hand2"
         )
         self.lbl_section.pack(side="left", padx=2)
         CTkTooltip(self.lbl_section, "Toggle ARAM List")
         self.lbl_section.bind("<Button-1>", lambda e: self._toggle_collapse())
+        self.lbl_section.bind("<Enter>", lambda e: self.lbl_section.configure(text_color=get_color("colors.text.primary")))
+        self.lbl_section.bind("<Leave>", lambda e: self.lbl_section.configure(text_color=get_color("colors.text.muted")))
 
         # Edit / Done
         self.btn_edit = ctk.CTkButton(
@@ -143,9 +146,8 @@ class PriorityIconGrid(ctk.CTkFrame):
             fg_color="transparent",
             text_color="#C8AA6E",
             hover_color=get_color("colors.state.hover"),
-            command=self._toggle_edit_mode,
-            
-        )
+            command=self._toggle_edit_mode, cursor="hand2",
+            )
         self.btn_edit.pack(side="right", padx=2)
         CTkTooltip(self.btn_edit, "Toggle Edit Mode")
 
@@ -156,9 +158,8 @@ class PriorityIconGrid(ctk.CTkFrame):
             fg_color="transparent",
             text_color=get_color("colors.accent.primary"),
             hover_color=get_color("colors.state.hover"),
-            command=self._show_add_input,
-            
-        )
+            command=self._show_add_input, cursor="hand2",
+            )
         self.btn_add.pack(side="right")
         CTkTooltip(self.btn_add, "Add Champion")
 
@@ -170,9 +171,8 @@ class PriorityIconGrid(ctk.CTkFrame):
             text_color=get_color("colors.text.disabled"),
             hover_color=get_color("colors.state.hover"),
             command=self._undo_action,
-            state="disabled",
-            
-        )
+            state="disabled", cursor="hand2",
+            )
         self.btn_undo.pack(side="right", padx=2)
         CTkTooltip(self.btn_undo, "Undo Last Action")
 
@@ -183,9 +183,8 @@ class PriorityIconGrid(ctk.CTkFrame):
             fg_color="transparent",
             text_color=get_color("colors.text.muted"),
             hover_color=get_color("colors.state.hover"),
-            command=self._show_import_preview,
-            
-        )
+            command=self._show_import_preview, cursor="hand2",
+            )
         self.btn_import.pack(side="right", padx=2)
         CTkTooltip(self.btn_import, "Import ARAM List from Clipboard")
 
@@ -196,9 +195,8 @@ class PriorityIconGrid(ctk.CTkFrame):
             fg_color="transparent",
             text_color=get_color("colors.text.muted"),
             hover_color=get_color("colors.state.hover"),
-            command=self._export_list,
-            
-        )
+            command=self._export_list, cursor="hand2",
+            )
         self.btn_export.pack(side="right")
         CTkTooltip(self.btn_export, "Export ARAM List to Clipboard")
 
@@ -223,9 +221,8 @@ class PriorityIconGrid(ctk.CTkFrame):
             corner_radius=get_radius("sm"), font=get_font("caption", "bold"),
             fg_color=get_color("colors.accent.primary"),
             hover_color=get_color("colors.state.hover"),
-            command=self._add_hovered_champion,
-            
-        )
+            command=self._add_hovered_champion, cursor="hand2",
+            )
         self.hover_add_btn.pack(side="right", padx=(8, 8))
         self._hovered_champ_name = None
 
@@ -274,9 +271,8 @@ class PriorityIconGrid(ctk.CTkFrame):
             corner_radius=get_radius("sm"), font=get_font("caption", "bold"),
             fg_color=get_color("colors.accent.primary"),
             hover_color=get_color("colors.state.hover"),
-            command=self._commit_add,
-            
-        ).pack(side="left")
+            command=self._commit_add, cursor="hand2",
+            ).pack(side="left")
 
         # Suggestions frame (hidden initially)
         self.suggestions_frame = ctk.CTkFrame(self.add_container, fg_color="transparent")
@@ -299,9 +295,8 @@ class PriorityIconGrid(ctk.CTkFrame):
             corner_radius=get_radius("sm"), font=("Arial", 12),
             fg_color="transparent", hover_color="#e81123",
             text_color=get_color("colors.text.muted"),
-            command=lambda: self.import_container.pack_forget(),
-            
-        ).pack(side="right")
+            command=lambda: self.import_container.pack_forget(), cursor="hand2",
+            ).pack(side="right")
 
         self.btn_import_apply = ctk.CTkButton(
             self.import_header, text="✓ Apply", width=60, height=24,
@@ -309,9 +304,8 @@ class PriorityIconGrid(ctk.CTkFrame):
             fg_color=get_color("colors.state.success"),
             hover_color="#00b359",
             text_color="#ffffff",
-            command=self._commit_import,
-            
-        )
+            command=self._commit_import, cursor="hand2",
+            )
         self.btn_import_apply.pack(side="right", padx=(0, 4))
 
         self.import_scroll = ctk.CTkScrollableFrame(
@@ -333,25 +327,29 @@ class PriorityIconGrid(ctk.CTkFrame):
             
         )
 
-        self.btn_top = ctk.CTkButton(self.edit_bar, text="⤒", command=self._move_top, **btn_kw)
-        self.btn_up  = ctk.CTkButton(self.edit_bar, text="▲", command=self._move_up,  **btn_kw)
-        self.btn_down = ctk.CTkButton(self.edit_bar, text="▼", command=self._move_down, **btn_kw)
+        self.btn_top = ctk.CTkButton(self.edit_bar, text="⤒", command=self._move_top, **btn_kw,
+            cursor="hand2",
+        )
+        self.btn_up  = ctk.CTkButton(self.edit_bar, text="▲", command=self._move_up,  **btn_kw,
+            cursor="hand2",
+        )
+        self.btn_down = ctk.CTkButton(self.edit_bar, text="▼", command=self._move_down, **btn_kw,
+            cursor="hand2",
+        )
 
         self.btn_del = ctk.CTkButton(
             self.edit_bar, text="✕", width=30, height=24,
             corner_radius=get_radius("sm"), font=("Segoe UI", 13, "bold"),
             fg_color="transparent", hover_color="#4d1111",
-            text_color="#ff4444", command=self._delete_active,
-            
-        )
+            text_color="#ff4444", command=self._delete_active, cursor="hand2",
+            )
 
         self.btn_clear_all = ctk.CTkButton(
             self.edit_bar, text="🗑️", width=30, height=24,
             corner_radius=get_radius("sm"), font=("Segoe UI", 13),
             fg_color="transparent", hover_color="#4d1111",
-            text_color="#ff4444", command=self._request_clear_all,
-            
-        )
+            text_color="#ff4444", command=self._request_clear_all, cursor="hand2",
+            )
 
         self.btn_top.pack(side="left", padx=1)
         CTkTooltip(self.btn_top, "Move to Top")
@@ -389,9 +387,8 @@ class PriorityIconGrid(ctk.CTkFrame):
             fg_color=get_color("colors.accent.primary"),
             hover_color=get_color("colors.state.hover"),
             text_color="#ffffff",
-            command=self._commit_move_to,
-            
-        )
+            command=self._commit_move_to, cursor="hand2",
+            )
         self._move_go_btn.pack(side="left")
         CTkTooltip(self._move_go_btn, "Move to Position")
         self._move_to_frame.pack(side="left", padx=(6, 0))
@@ -416,11 +413,10 @@ class PriorityIconGrid(ctk.CTkFrame):
         
         # Check if already in priority list
         plist = self._get_priority_list()
-        in_list = False
-        for p in plist:
-            if p.lower() == champ_name.lower():
-                in_list = True
-                break
+        # ⚡ Bolt: Optimize O(N) list traversal by hoisting the target string allocation
+        # outside the loop and using a short-circuiting generator expression.
+        champ_lower = champ_name.lower()
+        in_list = any(p.lower() == champ_lower for p in plist)
                 
         if in_list:
             self.hover_add_btn.configure(state="disabled", text="Added", fg_color="transparent", text_color=get_color("colors.text.disabled"))
@@ -439,11 +435,9 @@ class PriorityIconGrid(ctk.CTkFrame):
     def _add_hovered_champion(self):
         if getattr(self, "_hovered_champ_name", None):
             plist = self._get_priority_list()
-            in_list = False
-            for p in plist:
-                if p.lower() == self._hovered_champ_name.lower():
-                    in_list = True
-                    break
+            # ⚡ Bolt: Fast-path priority check with O(1) early-return
+            champ_lower = self._hovered_champ_name.lower()
+            in_list = any(p.lower() == champ_lower for p in plist)
                     
             if not in_list:
                 plist.append(self._hovered_champ_name)
@@ -468,10 +462,33 @@ class PriorityIconGrid(ctk.CTkFrame):
 
         names = self._get_priority_list()
 
+        if not names:
+            # 🔮 Malcolm's Infusion: Interactive Empty State
+            empty_btn = ctk.CTkButton(
+                self.grid_parent,
+                text="+\nAdd Champion",
+                font=get_font("body", "bold"),
+                fg_color="transparent",
+                border_width=1,
+                border_color=get_color("colors.border.subtle"),
+                text_color=get_color("colors.text.muted"),
+                hover_color=get_color("colors.background.card"),
+                width=180, height=80,
+                corner_radius=8,
+                command=self._show_add_input,
+                cursor="hand2"
+            )
+            empty_btn.grid(row=0, column=0, columnspan=ICONS_PER_ROW, pady=20, padx=10)
+            self._icon_widgets.append((empty_btn, empty_btn, -1))
+            self._sync_edit_bar_state()
+            return
+
         # ⚡ Bolt: Lift static color lookups outside the grid generation loop and event handlers
         # to prevent repetitive string parsing overhead and optimize high-frequency hover events.
         _hover_border = get_color("colors.accent.gold", "#C8AA6E")
         _normal_border = get_color("colors.border.subtle")
+        _bg_card = get_color("colors.background.card")
+        _text_primary = get_color("colors.text.primary")
 
         for i, name in enumerate(names):
             row = i // ICONS_PER_ROW
@@ -483,7 +500,7 @@ class PriorityIconGrid(ctk.CTkFrame):
                 self.grid_parent, width=cell_size, height=cell_size,
                 fg_color="transparent", corner_radius=4,
                 border_width=1,
-                border_color=get_color("colors.border.subtle")
+                border_color=_normal_border
             )
             # Use grid with the requested GRID_GAP
             cell.grid(
@@ -498,9 +515,9 @@ class PriorityIconGrid(ctk.CTkFrame):
             lbl = ctk.CTkLabel(
                 cell, text=name[:2], width=ICON_SIZE, height=ICON_SIZE,
                 font=("Arial", 10, "bold"),
-                fg_color=get_color("colors.background.card"),
+                fg_color=_bg_card,
                 corner_radius=4,
-                text_color=get_color("colors.text.primary"),
+                text_color=_text_primary,
             )
             # Start with centered place for easy animation
             lbl.place(relx=0.5, rely=0.5, anchor="center")
@@ -925,22 +942,30 @@ class PriorityIconGrid(ctk.CTkFrame):
 
         import string
 
+        # ⚡ Bolt: Apply LICM to hoist static token resolution outside the UI render loop
+        # to prevent redundant parsing and dictionary lookups on the main thread.
+        _radius_sm = get_radius("sm")
+        _color_card = get_color("colors.background.card")
+        _color_gold = get_color("colors.accent.gold", "#C8AA6E")
+        _font_caption = get_font("caption")
+        _color_text_primary = get_color("colors.text.primary")
+
         # Render pills
         for i, champ in enumerate(self._parsed_import):
             display_name = string.capwords(champ.replace("'", "' "), " ").replace("' ", "'")
             pill = ctk.CTkFrame(
                 self.import_scroll,
-                corner_radius=get_radius("sm"),
-                fg_color=get_color("colors.background.card"),
+                corner_radius=_radius_sm,
+                fg_color=_color_card,
                 border_width=1,
-                border_color=get_color("colors.accent.gold", "#C8AA6E")
+                border_color=_color_gold
             )
             pill.pack(side="left", padx=2, pady=2)
 
             ctk.CTkLabel(
                 pill, text=display_name,
-                font=get_font("caption"),
-                text_color=get_color("colors.text.primary")
+                font=_font_caption,
+                text_color=_color_text_primary
             ).pack(padx=8, pady=2)
 
     def _commit_import(self):
@@ -964,6 +989,14 @@ class PriorityIconGrid(ctk.CTkFrame):
         if event.keysym in ("Return", "Escape", "Up", "Down", "Left", "Right", "Tab"):
             return
 
+        # ⚡ Bolt: Debounce champion search input to prevent UI thread lag from
+        # O(N) widget destruction and recreation on rapid keystrokes.
+        if hasattr(self, "_debounce_timer") and self._debounce_timer is not None:
+            self.after_cancel(self._debounce_timer)
+
+        self._debounce_timer = self.after(150, self._perform_add_search)
+
+    def _perform_add_search(self):
         query = self.add_entry.get().strip().lower()
 
         # Clear existing suggestions
@@ -1003,8 +1036,7 @@ class PriorityIconGrid(ctk.CTkFrame):
                 border_width=1, border_color=get_color("colors.accent.gold", "#C8AA6E"),
                 hover_color=get_color("colors.state.hover"),
                 text_color=get_color("colors.text.primary"),
-                command=lambda c=display_name, raw=champ: self._select_suggestion(c, raw),
-                
+                command=lambda c=display_name, raw=champ: self._select_suggestion(c, raw), cursor="hand2",
             )
             pill.pack(side="left", padx=(0, 4))
 

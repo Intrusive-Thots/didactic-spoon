@@ -37,7 +37,7 @@
     "stealth_mode": true,
     "auto_spells": true,
     "priority_picker": {
-        "enabled": false,
+        "enabled": true,
         "list": [
             "Fizz",
             "Singed",
