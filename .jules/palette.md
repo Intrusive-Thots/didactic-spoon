@@ -34,3 +34,6 @@
 ## 2024-04-02 - Interactive Collapsible Headers
 **Learning:** In CustomTkinter, structural UI elements acting as toggle buttons (like CardHeader labels) do not natively receive standard click interaction affordances, resulting in a hidden hit area that decreases discoverability. Users intuitively attempt to click the header text itself rather than just a tiny trailing icon button.
 **Action:** When creating collapsible UI sections or composite widgets, explicitly bind `<Button-1>` to the main descriptive label, set `cursor="hand2"`, and implement visual hover feedback via `<Enter>` and `<Leave>` bindings changing `text_color` to expand the actionable target area.
+## 2024-05-24 - CTkOptionMenu Affordance
+**Learning:** In CustomTkinter, \`CTkOptionMenu\` components (dropdowns) do not automatically provide a change in the cursor (e.g., to a pointing hand) when hovered. This omission can make it slightly less obvious that the element is clickable, particularly when styled to blend into the application background.
+**Action:** Always ensure \`cursor="hand2"\` is explicitly passed to \`CTkOptionMenu\` instances alongside other interactive widgets like \`CTkButton\` to maintain clear affordance and consistent visual UX cues across the application.
