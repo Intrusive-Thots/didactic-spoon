@@ -402,6 +402,30 @@ class SidebarWidget(ctk.CTkFrame):
         self.entry_status.bind("<Return>", self._on_status_submit)
         CTkTooltip(self.entry_status, "Press Enter to update your League Client status")
 
+        # ── Quick Status Presets ──
+        self.preset_frame = ctk.CTkFrame(self.profile_frame, fg_color="transparent")
+        self.preset_frame.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_MD))
+
+        presets = [
+            ("🚀", "Grinding Ranked"),
+            ("🎮", "ARAM Time"),
+            ("🌮", "Eating / Brb"),
+            ("💤", "AFK"),
+        ]
+
+        for emoji, text in presets:
+            btn = ctk.CTkButton(
+                self.preset_frame, text=emoji, width=32, height=32,
+                corner_radius=get_radius("sm"),
+                font=("Arial", 16),
+                fg_color=get_color("colors.background.panel"),
+                hover_color=get_color("colors.state.hover"),
+                command=lambda e=emoji, t=text: self._on_quick_status(e, t),
+                cursor="hand2"
+            )
+            btn.pack(side="left", padx=(0, 4))
+            CTkTooltip(btn, f"Set status to: {text}")
+
         # ── Action Log (Bottom) ──
         self.spacer = ctk.CTkFrame(self.main_body, fg_color="transparent")
         self.spacer.pack(fill="both", expand=True)
@@ -733,6 +757,23 @@ class SidebarWidget(ctk.CTkFrame):
         if engine and text:
             import threading
             threading.Thread(target=lambda: engine.set_custom_status(text), daemon=True).start()
+
+    def _on_quick_status(self, emoji, text):
+        """Handler for quick status presets."""
+        status_text = f"{emoji} {text}"
+        self.entry_status.delete(0, "end")
+        self.entry_status.insert(0, status_text)
+        self._on_status_submit()
+        try:
+            from ui.components.toast import ToastManager
+            ToastManager.get_instance(self.winfo_toplevel()).show(
+                message=f"Status set: {text}",
+                icon=emoji,
+                theme="success",
+                duration=2000
+            )
+        except Exception as e:
+            pass
 
     def _update_auto_header(self):
         emojis = []
