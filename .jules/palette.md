@@ -43,3 +43,6 @@
 ## $(date +%Y-%m-%d) - Adding interactive affordances to standalone CTkLabels
 **Learning:** In CustomTkinter, `CTkLabel` elements acting as standalone buttons or toggles (like collapsible section headers) do not inherently provide hover affordances. It is crucial to manually apply `cursor="hand2"` and `<Enter>`/`<Leave>` color change bindings so the user knows they are interactive, as `app_sidebar.py` showed with its `lbl_profile_section`.
 **Action:** Always explicitly set `cursor="hand2"` and bind `<Enter>` and `<Leave>` events to toggle text color on standalone `CTkLabels` acting as buttons/toggles.
+## $(date +%Y-%m-%d) - Drag Handle Hover Affordances
+**Learning:** In CustomTkinter, standard text labels (`CTkLabel`) repurposed as drag handles lack visual interaction cues. Using explicit `cursor="hand2"` is insufficient.
+**Action:** Always implement `<Enter>` and `<Leave>` hover bindings that utilize theme tokens (e.g., `get_color("colors.text.primary")` and `get_color("colors.text.muted")`) to provide clear visual feedback that the element is interactable.
