@@ -108,6 +108,9 @@ class DraggableList(ctk.CTkScrollableFrame):
             
             lbl_drag.bind("<Button-1>", lambda e, f=frame: self._on_drag_start(e, f))
             lbl_drag.bind("<ButtonRelease-1>", self._on_drag_release)
+            lbl_drag.configure(text_color=get_color("colors.text.muted", "gray"))
+            lbl_drag.bind("<Enter>", lambda e, l=lbl_drag: l.configure(text_color=get_color("colors.text.primary", "white")))
+            lbl_drag.bind("<Leave>", lambda e, l=lbl_drag: l.configure(text_color=get_color("colors.text.muted", "gray")))
 
             # Malcolm's Infusion: Row hover states
             def on_enter(e, f=frame):
