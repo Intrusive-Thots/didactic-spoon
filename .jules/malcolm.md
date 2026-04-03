@@ -14,3 +14,6 @@
 ## 2024-05-24 - Interactive Empty States turn Dead Ends into Conversion Points
 **Learning:** Empty lists (like Priority or Friends) present a "dead end" friction point for new users. Instead of leaving a blank space, transforming the empty area into a large, themed, interactive dropzone/button significantly reduces cognitive load and directs immediate user action.
 **Action:** Always verify what the "empty state" of a component looks like. If it lacks clear instruction, replace it with a low-friction, gamified call-to-action button that directly launches the creation flow.
+## 2024-04-03 - Contextual Quick Status Presets
+**Learning:** Users often change their League client status to common states (AFK, Grinding, ARAMs) but manual entry creates friction. Providing visual, one-click preset buttons with micro-feedback significantly reduces cognitive load and encourages personalization.
+**Action:** Implemented a row of interactive emoji preset buttons in the Profile section that instantly update the status and trigger a success toast. Used dynamic restyling on hover to provide clear visual affordances.
