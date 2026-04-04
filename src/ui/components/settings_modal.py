@@ -5,6 +5,7 @@ import keyboard  # type: ignore
 from ui.ui_shared import CTkTooltip  # type: ignore
 from ui.components.factory import get_color, get_font, get_radius, make_button  # type: ignore
 from ui.components.lol_toggle import LolToggle  # type: ignore
+from ui.components.hover import apply_click_animation  # type: ignore
 from utils.logger import Logger  # type: ignore
 
 
@@ -57,6 +58,8 @@ class HotkeyRecorder(ctk.CTkButton):
         # 🎨 Palette: Keyboard Accessibility Focus States
         self._focus_border = get_color("colors.accent.primary", "#0AC8B9")
         self._unfocus_border = get_color("colors.border.subtle")
+
+        apply_click_animation(self, get_color("colors.background.card"), pulse_color=get_color("colors.accent.primary"))
 
         if hasattr(self, "_canvas"):
             self._canvas.configure(takefocus=1)
