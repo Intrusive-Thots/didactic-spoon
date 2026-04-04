@@ -37,7 +37,7 @@
     "stealth_mode": true,
     "auto_spells": true,
     "priority_picker": {
-        "enabled": true,
+        "enabled": false,
         "list": [
             "Fizz",
             "Singed",
@@ -95,6 +95,14 @@
         },
         {
             "name": "palafu",
+            "enabled": true
+        },
+        {
+            "name": "zerb",
+            "enabled": true
+        },
+        {
+            "name": "i am richie89",
             "enabled": true
         }
     ],
