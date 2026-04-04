@@ -109,10 +109,12 @@ class LCUClient:
                 try:
                     cmdline = process.cmdline()
                     for arg in cmdline:
-                        if "--app-port=" in arg:
-                            self.port = arg.split("=")[1]
-                        if "--remoting-auth-token=" in arg:
-                            self.auth_token = arg.split("=")[1]
+                        if arg.startswith("--app-port="):
+                            self.port = arg.split("=", 1)[1]
+                        elif arg.startswith("--remoting-auth-token="):
+                            self.auth_token = arg.split("=", 1)[1]
+                        if self.port and self.auth_token:
+                            break
                 except psutil.AccessDenied:
                     # Access Denied on cmdline is common if running non-admin. Fallback to lockfile.
                     Logger.warning("LCU", "Access denied reading process cmdline. Falling back to lockfile.")
