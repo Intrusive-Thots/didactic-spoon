@@ -1,5 +1,6 @@
 import tkinter as tk
 import customtkinter as ctk
+from ui.components.hover import apply_click_animation
 
 class LolToggle(tk.Canvas):
     """Custom Riot-style animated sliding toggle switch using pure Canvas for maximum fidelity."""
@@ -32,6 +33,8 @@ class LolToggle(tk.Canvas):
         self.bind("<Return>", self.toggle)
         self.bind("<FocusIn>", self._on_focus_in)
         self.bind("<FocusOut>", self._on_focus_out)
+
+        apply_click_animation(self, self.color_inactive, pulse_color=self.color_focus_ring)
 
         self._draw()
 
