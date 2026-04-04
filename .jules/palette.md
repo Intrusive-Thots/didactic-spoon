@@ -46,3 +46,6 @@
 ## $(date +%Y-%m-%d) - Drag Handle Hover Affordances
 **Learning:** In CustomTkinter, standard text labels (`CTkLabel`) repurposed as drag handles lack visual interaction cues. Using explicit `cursor="hand2"` is insufficient.
 **Action:** Always implement `<Enter>` and `<Leave>` hover bindings that utilize theme tokens (e.g., `get_color("colors.text.primary")` and `get_color("colors.text.muted")`) to provide clear visual feedback that the element is interactable.
+## $(date +%Y-%m-%d) - Interactive Grid Icon Affordances
+**Learning:** In CustomTkinter, icon grid items created with `CTkLabel` (like those in `priority_grid.py`) do not inherit click cursors automatically, even when bound to mouse events (`<Button-1>`). This missing visual feedback leaves users guessing if the items are interactive, especially during edit modes.
+**Action:** Always explicitly pass `cursor="hand2"` to `CTkLabel` and `CTkFrame` components that act as interactive grid cells to ensure standard discoverability.

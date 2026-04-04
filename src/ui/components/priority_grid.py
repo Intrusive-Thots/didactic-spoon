@@ -506,6 +506,7 @@ class PriorityIconGrid(ctk.CTkFrame):
                 fg_color=_bg_card,
                 corner_radius=4,
                 text_color=_text_primary,
+                cursor="hand2",
             )
             # Start with centered place for easy animation
             lbl.place(relx=0.5, rely=0.5, anchor="center")
