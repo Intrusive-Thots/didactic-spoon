@@ -97,7 +97,7 @@
     "ban_BOTTOM": "",
     "ban_UTILITY": "",
     "auto_spells": true,
-    "aram_mode": "ARAM Mayhem",
+    "aram_mode": "Arena",
     "auto_join_friend_enabled": true,
     "auto_join_friend": "Palafu",
     "auto_join_list": [
