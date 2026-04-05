@@ -34,8 +34,11 @@ Whether you're dodging queues, insta-locking ARAM priorities, or managing your a
 ### 1. **Complete Automation Engine**
 - **Auto-Accept Match**: Never miss a queue pop.
 - **Priority Sniper & Auto-Pick**: Configure backup roles, custom bans, and insta-lock logic.
+- **Draft Assistant (Role Enforcer)**: Role-based auto-hovering and banning for Ranked/Draft. Includes a teammate respect algorithm that dodges teammate hovers during the ban phase!
+- **Arena Synergy Picker (V2)**: Drag-and-drop fallback priority arrays (`IF Taric, THEN Maestro/Nilah/Vayne`) tailored exclusively for Arena combinations with intelligent global ban evasion.
 - **ARAM Mayhem Prioritization**: Drag-and-drop or select from your customized `ARAM List`. Ships with a default list consisting of top-played ARAM monsters *(Nautilus, Xerath, Heimerdinger, Master Yi, Veigar, etc.)*.
 - **Auto-Honor System**: Instantly honor friends or top-performers algorithmically via LCU APIs.
+- **Auto-Join VIP Lobbies**: Automatically inject yourself into trusted lobbies.
 
 ### 2. **Beautiful, Real-Time Overlay UI**
 - **Dynamic Friendlist**: Glowing indicators for active players with direct Auto-Join injection. Profile icons and LCU states sync live.
@@ -62,7 +65,7 @@ Whether you're dodging queues, insta-locking ARAM priorities, or managing your a
 
 You can run LeagueLoop without compiling anything by downloading the setup file:
 
-1. Download the latest **[LeagueLoop_Installer.exe](https://github.com/Malcolmdotpeewhy/LeagueLoop-Installer)** from the Installer repo.
+1. Download the latest **[LeagueLoop_Installer.exe](https://github.com/Intrusive-Thots/LeagueLoop-Installer)** from the Installer repo.
 2. Run the installer and launch **LeagueLoop**.
 3. **Optional:** Adjust the hotkeys inside the settings modal to your preference.
 
@@ -72,7 +75,7 @@ To construct a new executable instance using the bundled PyInstaller and InnoSet
 
 ```bash
 # Clone Repository
-git clone https://github.com/Malcolmdotpeewhy/LeagueLoop-Lock.git
+git clone https://github.com/Intrusive-Thots/LeagueLoop-Lock.git
 cd LeagueLoop-Lock
 
 # Install Dependencies
