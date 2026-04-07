@@ -1059,11 +1059,29 @@ class SidebarWidget(ctk.CTkFrame):
                 self._show_quick_actions()
             self._last_ui_phase = "ChampSelect"
 
-        elif phase in ["InProgress", "EndOfGame"]:
-            if prev_ui_phase not in ["InProgress", "EndOfGame"]:
+        elif phase == "InProgress":
+            if prev_ui_phase != "InProgress":
                 self._stop_local_queue_timer()
                 self.time_label.configure(text="In Game", text_color=get_color("colors.text.primary"))
                 self.estimate_label.configure(text="● Playing", text_color="#3B82F6")
+                self.progress_bar.set(0)
+                self._hide_quick_actions()
+            self._last_ui_phase = phase
+
+        elif phase == "EndOfGame":
+            if prev_ui_phase != "EndOfGame":
+                self._stop_local_queue_timer()
+                self.time_label.configure(text="Post Game", text_color=get_color("colors.text.primary"))
+                self.estimate_label.configure(text="● Waiting Stats", text_color="#F59E0B")
+                self.progress_bar.set(0)
+                self._hide_quick_actions()
+            self._last_ui_phase = phase
+            
+        elif phase == "Reconnect":
+            if prev_ui_phase != "Reconnect":
+                self._stop_local_queue_timer()
+                self.time_label.configure(text="Reconnect", text_color="#ff4444")
+                self.estimate_label.configure(text="● Crash/DC", text_color="#ff4444")
                 self.progress_bar.set(0)
                 self._hide_quick_actions()
             self._last_ui_phase = phase

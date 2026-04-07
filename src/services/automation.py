@@ -647,18 +647,24 @@ class AutomationEngine:
             self._honor_handled = True
             data = eog.json()
             game_id = data.get("gameId")
-            my_puuid = None
-            me_req = self.lcu.request("GET", "/lol-chat/v1/me")
-            if me_req and me_req.status_code == 200:
-                my_puuid = me_req.json().get("puuid")
+            
+            my_puuid = data.get("localPlayer", {}).get("puuid")
+            if not my_puuid:
+                me_req = self.lcu.request("GET", "/lol-chat/v1/me")
+                if me_req and me_req.status_code == 200:
+                    my_puuid = me_req.json().get("puuid")
 
             teams = data.get("teams", [])
             teammates = []
+            
             for team in teams:
-                for player in team.get("players", []):
-                    puuid = player.get("puuid", "")
-                    if puuid and puuid != my_puuid:
-                        teammates.append(player)
+                is_my_team = team.get("isPlayerTeam", False)
+                team_puuids = [p.get("puuid", "") for p in team.get("players", [])]
+                if is_my_team or (my_puuid and my_puuid in team_puuids):
+                    for player in team.get("players", []):
+                        puuid = player.get("puuid", "")
+                        if puuid and puuid != my_puuid:
+                            teammates.append(player)
 
             if not teammates:
                 return
@@ -688,17 +694,21 @@ class AutomationEngine:
                 target = random.choice(candidates)
 
             summoner_id = target.get("summonerId", 0)
+            puuid = target.get("puuid", "")
             honor_body = {
                 "gameId": game_id,
                 "honorCategory": "HEART",
+                "honorType": "HEART",
                 "summonerId": summoner_id,
+                "puuid": puuid
             }
             res = self.lcu.request("POST", "/lol-honor-v2/v1/honor-player", honor_body)
             name = target.get("summonerName", "teammate")
             if res and res.status_code in [200, 204]:
                 self._log(f"Honored {name} ({strategy})")
             else:
-                Logger.debug("Auto", f"Honor request returned {res.status_code if res else 'None'}")
+                Logger.debug("Auto", f"Honor request returned {res.status_code if res else 'None'}. Full target: {name}")
+                
         except Exception as e:
             Logger.debug("Auto", f"Auto-honor error: {e}")
 

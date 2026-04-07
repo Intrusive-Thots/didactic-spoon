@@ -51,7 +51,7 @@
     "hotkey_compact_mode": "alt+esc",
     "hotkey_omnibar": "ctrl+alt+a",
     "priority_picker": {
-        "enabled": true,
+        "enabled": false,
         "list": [
             "Fizz",
             "Singed",
@@ -127,7 +127,7 @@
         },
         {
             "name": "cr\u00e8me de la crem",
-            "enabled": true
+            "enabled": false
         },
         {
             "name": "deardiaries",
