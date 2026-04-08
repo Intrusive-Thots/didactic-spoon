@@ -6,7 +6,6 @@ Icons loaded from cache/assets/champion_{Name}.png.
 import os
 import tkinter as tk
 import customtkinter as ctk
-from PIL import Image
 
 from utils.path_utils import get_asset_path
 from ui.components.factory import get_color, get_font, get_radius, TOKENS, make_input
