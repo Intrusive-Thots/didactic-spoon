@@ -33,7 +33,7 @@ class TestPoroSnacks(unittest.TestCase):
             code = ""
             import os
             filepath = os.path.join(os.path.dirname(__file__), "..", "src", "ui", "app_sidebar.py")
-            with open(filepath, "r") as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 code = f.read()
 
             # A bit hacky but it works to extract the function logic
