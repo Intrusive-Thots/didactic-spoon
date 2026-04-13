@@ -1067,8 +1067,8 @@ class SidebarWidget(ctk.CTkFrame):
                 self._hide_quick_actions(show_find_match=False)
             self._last_ui_phase = phase
 
-        elif phase == "EndOfGame":
-            if prev_ui_phase != "EndOfGame":
+        elif phase in ["EndOfGame", "PreEndOfGame"]:
+            if prev_ui_phase not in ["EndOfGame", "PreEndOfGame"]:
                 self._stop_local_queue_timer()
                 self.time_label.configure(text="Post Game", text_color=get_color("colors.text.primary"))
                 self.estimate_label.configure(text="● Waiting Stats", text_color="#F59E0B")

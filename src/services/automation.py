@@ -128,6 +128,18 @@ class AutomationEngine:
         phase_req = f_phase.result()
         phase = phase_req.json() if phase_req and phase_req.status_code == 200 else "None"
 
+        # LCU Ghost ChampSelect Bug Fix: if gameflow says we're in ChampSelect but we have no session, we're actually in the Lobby
+        if phase == "ChampSelect":
+            if not f_session:
+                f_session = self.executor.submit(self.lcu.request, "GET", "/lol-champ-select/v1/session", None, True)
+            try:
+                sess_req = f_session.result()
+                if not sess_req or sess_req.status_code in [404, 500]:
+                    Logger.debug("AutoLoop", "Ghost ChampSelect phase detected. Correcting to Lobby.")
+                    phase = "Lobby"
+            except Exception:
+                pass
+
         search_state = None
         if phase == "Matchmaking":
             search_req = self.lcu.request("GET", "/lol-lobby/v2/lobby/matchmaking/search-state")
@@ -240,7 +252,12 @@ class AutomationEngine:
             if sf is not None:
                 sf([], [])
             return
-        if not session: return
+            
+        if not session:
+            sf = self.stats_func
+            if sf is not None:
+                sf([], [])
+            return
 
         my_team = session.get("myTeam", [])
         bench = session.get("benchChampions", [])
@@ -627,7 +644,7 @@ class AutomationEngine:
 
     # ── Auto-Honor ──
     def _handle_auto_honor(self, phase):
-        if phase != "EndOfGame":
+        if phase not in ["PreEndOfGame", "EndOfGame"]:
             self._honor_handled = False
             return
 
@@ -637,7 +654,7 @@ class AutomationEngine:
             return
 
         try:
-            eog = self.lcu.request("GET", "/lol-end-of-game/v1/eog-stats-block")
+            eog = self.lcu.request("GET", "/lol-end-of-game/v1/eog-stats-block", silent=True)
             if not eog or eog.status_code != 200:
                 return
             
@@ -713,6 +730,11 @@ class AutomationEngine:
                 self._log(f"Honored {name} ({strategy})")
             else:
                 Logger.debug("Auto", f"Honor request returned {res.status_code if res else 'None'}. Full target: {name}")
+
+            # Auto proceed to lobby ("Play Again")
+            play_again = self.lcu.request("POST", "/lol-lobby/v2/play-again", silent=True)
+            if play_again and play_again.status_code in [200, 204]:
+                self._log("Proceeded to Lobby (Skipped Stats)")
                 
         except Exception as e:
             Logger.debug("Auto", f"Auto-honor error: {e}")
