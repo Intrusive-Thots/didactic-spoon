@@ -5,8 +5,8 @@
 
 [Setup]
 AppName=LeagueLoop
-AppVersion=1-04-264-0219
-VersionInfoVersion=1.4.264.219
+AppVersion={#AppVersion}
+VersionInfoVersion={#VersionInfoVersion}
 AppPublisher=Malcolm
 AppPublisherURL=https://github.com/Intrusive-Thots/LeagueLoop-Installer
 AppSupportURL=https://github.com/Intrusive-Thots/LeagueLoop-Lock/issues

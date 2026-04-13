@@ -47,8 +47,10 @@ echo        Output: dist\LeagueLoop\
 echo.
 
 :: ── Step 4: Inno Setup Installer ────────────────
-echo  [3/4] Creating installer with Inno Setup...
-"C:\InnoSetup\ISCC.exe" installer.iss
+echo  [3/4] Creating installer with Inno Setup (Version: %VER%)...
+:: Convert 1-04-264-0219 format to 1.4.264.219 for Windows VersionInfo format
+set "VER_FORMATTED=%VER:-=.%"
+"C:\InnoSetup\ISCC.exe" /DAppVersion="%VER%" /DVersionInfoVersion="%VER_FORMATTED%" installer.iss
 echo.
 
 if not exist dist\LeagueLoop_Installer.exe (
