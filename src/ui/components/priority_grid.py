@@ -562,11 +562,30 @@ class PriorityIconGrid(ctk.CTkFrame):
         tk.Label(tip_frame, text=display, bg="#1E2328", fg="#C8AA6E",
                  font=("Segoe UI", 10, "bold"), padx=8, pady=4).pack(anchor="w")
                  
-        # Rich Stats
-        import random
-        stats_text = f"Picked: {random.randint(10, 85)}\nWinrate: {random.randint(48, 62)}%\nPriority: High"
-        tk.Label(tip_frame, text=stats_text, bg="#1E2328", fg="#e0e0e0", justify="left",
-                 font=("Segoe UI", 9), padx=8, pady=2).pack(anchor="w")
+        # Rich Stats — pull real winrate from StatsScraper
+        winrate = 50.0
+        try:
+            root = self.winfo_toplevel()
+            scraper = getattr(root, "scraper", None)
+            if scraper:
+                winrate = scraper.get_winrate(name)
+        except Exception:
+            pass
+
+        # Color-code the winrate
+        if winrate >= 53.0:
+            wr_color = "#00C853"  # green — strong
+        elif winrate >= 50.0:
+            wr_color = "#F0E6D2"  # gold-white — neutral
+        else:
+            wr_color = "#ff4444"  # red — weak
+
+        priority_label = "High" if idx is not None and idx < 3 else ("Medium" if idx is not None and idx < 7 else "Low")
+        stats_text = f"Winrate: {winrate:.1f}%\nPriority: {priority_label}"
+        tk.Label(tip_frame, text=f"Winrate: {winrate:.1f}%", bg="#1E2328", fg=wr_color, justify="left",
+                 font=("Segoe UI", 9, "bold"), padx=8, pady=2).pack(anchor="w")
+        tk.Label(tip_frame, text=f"Priority: {priority_label}", bg="#1E2328", fg="#e0e0e0", justify="left",
+                 font=("Segoe UI", 9), padx=8, pady=(0, 2)).pack(anchor="w")
                  
         if self._edit_mode and len(self._selected_indices) == 1 and idx not in self._selected_indices:
             tk.Label(tip_frame, text="⇧Click to move here", bg="#1E2328",
@@ -594,15 +613,36 @@ class PriorityIconGrid(ctk.CTkFrame):
         self._delete_marked.clear()
         if self._edit_mode:
             self.btn_edit.configure(text="Done", text_color="#ff4444")
+            # Staged reveal: sweep gold borders across grid cells before showing edit bar
+            self._sweep_edit_borders(entering=True)
             self.edit_bar.pack(fill="x", padx=2, pady=(4, 0))
+            self._shake_phase = 0
             self._shake_tick()
         else:
             self.btn_edit.configure(text="Edit", text_color=get_color("colors.accent.primary"))
+            self._sweep_edit_borders(entering=False)
             self.edit_bar.pack_forget()
         self._refresh_visuals()
 
+    def _sweep_edit_borders(self, entering=True):
+        """Staggered gold border sweep across grid cells for edit mode transition."""
+        gold = SEL_BORDER
+        normal = get_color("colors.border.subtle")
+        for i, (cell, lbl, idx) in enumerate(self._icon_widgets):
+            if idx < 0:
+                continue
+            delay = i * 30  # 30ms stagger per cell
+            if entering:
+                # Flash gold then settle
+                self.after(delay, lambda c=cell: c.configure(border_width=2, border_color=gold) if c.winfo_exists() else None)
+                self.after(delay + 200, lambda c=cell: c.configure(border_width=1, border_color=normal) if c.winfo_exists() else None)
+            else:
+                # Brief flash then remove
+                self.after(delay, lambda c=cell: c.configure(border_width=1, border_color=gold) if c.winfo_exists() else None)
+                self.after(delay + 150, lambda c=cell: c.configure(border_width=0, border_color=normal) if c.winfo_exists() else None)
+
     def _shake_tick(self):
-        """iOS style wiggle for icons while in edit mode."""
+        """iOS-style wiggle using smooth sinusoidal motion while in edit mode."""
         if not getattr(self, "_edit_mode", False):
             # Reset all coordinates
             for cell, lbl, idx in getattr(self, "_icon_widgets", []):
@@ -613,16 +653,20 @@ class PriorityIconGrid(ctk.CTkFrame):
                     pass
             return
 
-        import random
-        for cell, lbl, idx in getattr(self, "_icon_widgets", []):
+        import math
+        phase = getattr(self, "_shake_phase", 0)
+        for i, (cell, lbl, idx) in enumerate(getattr(self, "_icon_widgets", [])):
             try:
                 if lbl.winfo_exists():
-                    dx = random.choice([-1, 0, 1])
-                    dy = random.choice([-1, 0, 1])
-                    lbl.place_configure(relx=0.5, rely=0.5, x=dx, y=dy)
+                    # Each icon gets a unique phase offset for organic feel
+                    offset = phase + i * 1.2
+                    dx = math.sin(offset) * 1.2
+                    dy = math.cos(offset * 0.8) * 0.8
+                    lbl.place_configure(relx=0.5, rely=0.5, x=int(dx), y=int(dy))
             except Exception:
                 pass
-        self.after(50, self._shake_tick)
+        self._shake_phase = phase + 0.4
+        self.after(60, self._shake_tick)
 
     def _sync_edit_bar_state(self):
         """Hides move controls if multiple champions are selected (mass-delete only)."""

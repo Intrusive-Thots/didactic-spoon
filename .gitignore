@@ -38,3 +38,13 @@ sys_test.py
 raw_lobby_test.py
 queues.json
 queues.txt
+benchmark*.py
+capture_queue.py
+fix_cursors.py
+mock_benchmark.py
+test_compile.py
+test_script.py
+test_runner.py
+run_tests_mocked.py
+launch_kopied.vbs
+skills.md

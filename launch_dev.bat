@@ -1,5 +1,5 @@
 @echo off
-cd /d "C:\Users\Administrator\Desktop\LeagueLoop"
+cd /d "%~dp0"
 set PYTHONPATH=%CD%\src
 
 :: Initialize error log if it doesn't exist so the tail command doesn't fail
