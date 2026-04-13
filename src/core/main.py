@@ -593,16 +593,23 @@ def _kill_other_instances():
             if proc.pid in safe_pids:
                 continue
             pname = (proc.info.get("name") or "").lower()
-            if "python" not in pname:
+            is_leagueloop_exe = "leagueloop" in pname
+            is_python_script = "python" in pname
+
+            if not (is_leagueloop_exe or is_python_script):
                 continue
-            # Only read cmdline for python processes (expensive call)
-            try:
-                cmdline = proc.cmdline()
-            except (psutil.AccessDenied, psutil.ZombieProcess):
-                continue
-            cmdline_str = " ".join(cmdline).lower()
-            if "core.main" in cmdline_str or "core\\main" in cmdline_str:
-                Logger.info("SYS", f"Killing stale instance PID {proc.pid}")
+                
+            if is_python_script:
+                try:
+                    cmdline = proc.cmdline()
+                except (psutil.AccessDenied, psutil.ZombieProcess):
+                    continue
+                cmdline_str = " ".join(cmdline).lower()
+                if "core.main" not in cmdline_str and "core\\main" not in cmdline_str:
+                    continue
+            
+            # Reachable if it's LeagueLoop.exe OR the python core.main script
+            Logger.info("SYS", f"Killing stale instance PID {proc.pid} ({pname})")
                 proc.kill()
                 killed += 1  # type: ignore
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
