@@ -7,8 +7,12 @@ import os
 import sys
 from logging.handlers import RotatingFileHandler
 
-# Resolve a writable log directory — prefer %APPDATA%/LeagueLoop, fall back to cwd
-_log_dir = os.path.join(os.environ.get("APPDATA", ""), "LeagueLoop")
+import tempfile
+
+# Resolve a writable log directory — prefer %LOCALAPPDATA%/LeagueLoop, fall back to TEMP
+_appdata = os.environ.get("LOCALAPPDATA", os.path.join(os.path.expanduser("~"), "AppData", "Local"))
+_log_dir = os.path.join(_appdata, "LeagueLoop")
+
 try:
     os.makedirs(_log_dir, exist_ok=True)
     # Quick write-test
@@ -17,7 +21,8 @@ try:
         _f.write("ok")
     os.remove(_test_path)
 except Exception:
-    _log_dir = os.getcwd()
+    _log_dir = os.path.join(tempfile.gettempdir(), "LeagueLoop")
+    os.makedirs(_log_dir, exist_ok=True)
 
 # Set up the Python rotating file logger
 _log_format = '[%(asctime)s.%(msecs)03d] [%(threadName)s] %(message)s'
