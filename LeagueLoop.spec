@@ -24,7 +24,9 @@ a = Analysis(
         'logging.handlers',
         'bs4',
         'beautifulsoup4',
-        'winreg'
+        'winreg',
+        'tkinter',
+        'tkinterdnd2'
     ],
     hookspath=[],
     hooksconfig={},
