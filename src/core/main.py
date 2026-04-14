@@ -146,7 +146,10 @@ class LeagueLoopApp(ctk.CTk, TkinterDnD.DnDWrapper):
             try:
                 task, args, kwargs = self._ui_queue.get_nowait()
                 if task:
-                    task(*args, **kwargs)
+                    try:
+                        task(*args, **kwargs)
+                    except Exception as e:
+                        Logger.error("UI_QUEUE", f"Error in UI task: {e}")
             except queue.Empty:
                 pass
         super().after(16, self._process_ui_queue)
@@ -512,6 +515,11 @@ class LeagueLoopApp(ctk.CTk, TkinterDnD.DnDWrapper):
                         my_h = client_h if is_expanded else 44
                         target_x = client_x + client_w
                         target_y = client_y
+                        
+                        # Clamp target_x so application doesn't get pushed off-screen if client is on the edge
+                        screen_w = self.winfo_screenwidth()
+                        if target_x + my_w > screen_w:
+                            target_x = client_x - my_w
                         
                         curr_geom = (target_x, target_y, my_w, my_h)
                         if any(abs(curr_geom[i] - last_geom[i]) > GEOMETRY_THRESHOLD for i in range(4)):  # type: ignore

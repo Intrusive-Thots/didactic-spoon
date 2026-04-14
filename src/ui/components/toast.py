@@ -76,7 +76,7 @@ class Toast(ctk.CTkFrame):
         """Malcolm's Infusion: Spawns delightful confetti particles across the top-level window."""
         try:
             import random
-            top = self.winfo_toplevel()
+            top = self.master.master
             if not top: return
 
             # Get window dimensions
