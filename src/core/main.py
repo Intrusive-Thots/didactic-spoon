@@ -533,7 +533,6 @@ class LeagueLoopApp(ctk.CTk, TkinterDnD.DnDWrapper):
                                 self.after(0, lambda: self.attributes("-alpha", 1.0))
                                 self.after(0, lambda: self.attributes("-topmost", True))
                             else:
-                                self.after(0, lambda: self.attributes("-alpha", 0.0))
                                 self.after(0, lambda: self.attributes("-topmost", False))
                         
                     time.sleep(DOCKING_POLL_INTERVAL)
