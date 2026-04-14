@@ -47,11 +47,11 @@
     "stealth_mode": true,
     "hotkey_launch_client": "ctrl+alt+win+c",
     "hotkey_toggle_automation": "ctrl+alt+win+x",
-    "hotkey_find_match": "shift+alt+z",
+    "hotkey_find_match": "down",
     "hotkey_compact_mode": "alt+esc",
     "hotkey_omnibar": "ctrl+alt+a",
     "priority_picker": {
-        "enabled": false,
+        "enabled": true,
         "list": [
             "Fizz",
             "Singed",
@@ -255,7 +255,7 @@
         "Palafu#NA1",
         "NicholasLobo\u2069 #\u2066NA1\u2069"
     ],
-    "auto_join_enabled": false,
+    "auto_join_enabled": true,
     "auto_honor_enabled": true,
     "honor_strategy": "random",
     "vip_invite_list": "",

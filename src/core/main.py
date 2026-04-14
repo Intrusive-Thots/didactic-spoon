@@ -270,7 +270,7 @@ class LeagueLoopApp(ctk.CTk, TkinterDnD.DnDWrapper):
                 if os.path.exists(c):
                     if hasattr(self, "sidebar") and self.sidebar.winfo_exists():
                         self.sidebar.update_action_log("Launching Riot Client...")
-                    subprocess.Popen([c, "--launch-product=league_of_legends", "--launch-patchline=live"])
+                    subprocess.Popen([c, "--launch-product=league_of_legends", "--launch-patchline=live"], creationflags=subprocess.CREATE_NO_WINDOW)
                     return
             if hasattr(self, "sidebar") and self.sidebar.winfo_exists():
                 self.sidebar.update_action_log("Error: Could not find Riot Client.")
@@ -410,7 +410,7 @@ class LeagueLoopApp(ctk.CTk, TkinterDnD.DnDWrapper):
             
             if not success:
                 import subprocess
-                subprocess.run(["taskkill", "/IM", "LeagueClientUx.exe", "/F"], capture_output=True)
+                subprocess.run(["taskkill", "/IM", "LeagueClientUx.exe", "/F"], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
                 
             self.after(0, lambda: self.sidebar.update_action_log("UX Restart Triggered."))
                 
