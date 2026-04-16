@@ -273,7 +273,23 @@ class LeagueLoopApp(ctk.CTk, TkinterDnD.DnDWrapper):
                 if os.path.exists(c):
                     if hasattr(self, "sidebar") and self.sidebar.winfo_exists():
                         self.sidebar.update_action_log("Launching Riot Client...")
-                    subprocess.Popen([c, "--launch-product=league_of_legends", "--launch-patchline=live"], creationflags=subprocess.CREATE_NO_WINDOW)
+                    args = "--launch-product=league_of_legends --launch-patchline=live"
+                    try:
+                        # Use ShellExecuteW to handle UAC elevation gracefully
+                        ret = ctypes.windll.shell32.ShellExecuteW(
+                            None, "open", c, args, None, 1  # SW_SHOWNORMAL
+                        )
+                        if ret <= 32:
+                            # ShellExecute failed, fall back to subprocess
+                            subprocess.Popen([c] + args.split(), creationflags=subprocess.CREATE_NO_WINDOW)
+                    except Exception:
+                        try:
+                            subprocess.Popen([c] + args.split(), creationflags=subprocess.CREATE_NO_WINDOW)
+                        except OSError:
+                            # WinError 740: requires elevation — retry with runas
+                            ctypes.windll.shell32.ShellExecuteW(
+                                None, "runas", c, args, None, 1
+                            )
                     return
             if hasattr(self, "sidebar") and self.sidebar.winfo_exists():
                 self.sidebar.update_action_log("Error: Could not find Riot Client.")

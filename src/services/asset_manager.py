@@ -96,7 +96,9 @@ DEFAULT_CONFIG = {
             "Jhin"
         ]
     },
-    "arena_pairs": []
+    "arena_pairs": [],
+    "arena_auto_lock": False,
+    "arena_synergy_enabled": True
 }
 
 

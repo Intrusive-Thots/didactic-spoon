@@ -1,9 +1,20 @@
 """
-Arena Synergy Picker V2
+Arena Synergy Picker V4
 ─────────────────────────────────────
 Two-step guided pair creation:
   Step 1 → Pick the teammate champion (IF they lock X)
   Step 2 → Build a fallback priority array of YOUR champions (THEN I lock Y₁, Y₂, …)
+
+V4 Improvements:
+  • Move up/down for pair priority ordering (first match wins)
+  • Inline edit — re-enter step 2 to modify fallbacks without deleting
+  • Rich empty state with explanation of how synergy works
+  • Per-pair enable/disable toggle
+  • Clone (duplicate) pair button
+  • Pair count badge in header
+  • Master toggle + Auto-lock toggle
+  • Live status indicator during champ select (active pair glows)
+  • Undo history
 
 Champion lookup uses the same pill-style autocomplete as PriorityIconGrid.
 Pairs render with champion icons and removable tags.
@@ -22,7 +33,7 @@ _CLEAN_TRANS = str.maketrans("", "", " '.")
 
 
 class ArenaTool(ctk.CTkFrame):
-    """Arena Synergy Picker V2: IF Teammate locks X → I lock Y (fallback priority)."""
+    """Arena Synergy Picker V4: IF Teammate locks X → I lock Y (fallback priority)."""
 
     def __init__(self, master, config, assets, **kw):
         super().__init__(master, fg_color="#0F1A24", corner_radius=8, **kw)
@@ -37,6 +48,12 @@ class ArenaTool(ctk.CTkFrame):
         self._pending_teammate = ""
         self._pending_me_list = []
         self._debounce_timer = None
+
+        # Live status — index of the pair currently being acted on by the engine
+        self._active_pair_idx = -1
+
+        # Edit mode — index of pair being edited, -1 = new pair
+        self._editing_pair_idx = -1
 
         # Undo
         self._undo_stack = []
@@ -110,6 +127,15 @@ class ArenaTool(ctk.CTkFrame):
         self.lbl_section.bind("<Leave>", lambda e: self.lbl_section.configure(
             text_color=get_color("colors.text.muted")))
 
+        # Pair count badge
+        self.lbl_count = ctk.CTkLabel(
+            self.header, text="",
+            font=("Inter", 9, "bold"),
+            text_color="#A855F7", anchor="w",
+            width=20
+        )
+        self.lbl_count.pack(side="left", padx=(2, 0))
+
         # + Add button
         self.btn_add_pair = ctk.CTkButton(
             self.header, text="+", width=20, height=20,
@@ -135,9 +161,71 @@ class ArenaTool(ctk.CTkFrame):
         self.btn_undo.pack(side="right", padx=2)
         CTkTooltip(self.btn_undo, "Undo Last Action")
 
+    def _update_header_count(self):
+        """Update pair count badge in header."""
+        pairs = self._get_pairs()
+        count = len(pairs)
+        enabled_count = sum(1 for p in pairs if p.get("enabled", True))
+        if count > 0:
+            self.lbl_count.configure(text=f"({enabled_count}/{count})")
+        else:
+            self.lbl_count.configure(text="")
+
     # ───────────── body ─────────────
     def _build_body(self):
         self.body = ctk.CTkFrame(self, fg_color="transparent")
+
+        # ── Master toggle ──
+        self.master_row = ctk.CTkFrame(self.body, fg_color="transparent", height=26)
+        self.master_row.pack(fill="x", padx=4, pady=(4, 0))
+        self.master_row.pack_propagate(False)
+
+        ctk.CTkLabel(
+            self.master_row, text="⚡ Arena Synergy",
+            font=get_font("caption", "bold"), text_color=get_color("colors.text.primary"),
+            anchor="w"
+        ).pack(side="left", padx=(2, 0))
+
+        self.var_synergy_enabled = ctk.BooleanVar(value=self.config.get("arena_synergy_enabled", True))
+        self.sw_synergy = ctk.CTkSwitch(
+            self.master_row,
+            variable=self.var_synergy_enabled,
+            width=36, height=18,
+            switch_width=32, switch_height=16,
+            fg_color="#1E2328",
+            progress_color="#A855F7",
+            button_color="#C8AA6E",
+            button_hover_color="#D9C382",
+            text="", command=self._on_toggle_synergy_enabled
+        )
+        self.sw_synergy.pack(side="right")
+        CTkTooltip(self.sw_synergy, "Master switch — enables/disables all arena synergy automation")
+
+        # ── Auto-lock toggle ──
+        self.lock_row = ctk.CTkFrame(self.body, fg_color="transparent", height=26)
+        self.lock_row.pack(fill="x", padx=4, pady=(2, 0))
+        self.lock_row.pack_propagate(False)
+
+        ctk.CTkLabel(
+            self.lock_row, text="🔒 Auto-Lock Pick",
+            font=get_font("caption"), text_color=get_color("colors.text.muted"),
+            anchor="w"
+        ).pack(side="left", padx=(2, 0))
+
+        self.var_auto_lock = ctk.BooleanVar(value=self.config.get("arena_auto_lock", False))
+        self.sw_auto_lock = ctk.CTkSwitch(
+            self.lock_row,
+            variable=self.var_auto_lock,
+            width=36, height=18,
+            switch_width=32, switch_height=16,
+            fg_color="#1E2328",
+            progress_color=get_color("colors.accent.primary"),
+            button_color="#C8AA6E",
+            button_hover_color="#D9C382",
+            text="", command=self._on_toggle_auto_lock
+        )
+        self.sw_auto_lock.pack(side="right")
+        CTkTooltip(self.sw_auto_lock, "When ON, auto-locks your pick when teammate locks theirs")
 
         # ── Add-champion input (hidden initially) ──
         self.add_container = ctk.CTkFrame(self.body, fg_color="transparent")
@@ -199,6 +287,12 @@ class ArenaTool(ctk.CTkFrame):
             pass
         self.list_frame.pack(fill="x")
 
+    def _on_toggle_synergy_enabled(self):
+        self.config.set("arena_synergy_enabled", self.var_synergy_enabled.get())
+
+    def _on_toggle_auto_lock(self):
+        self.config.set("arena_auto_lock", self.var_auto_lock.get())
+
     # ───────────── collapse ─────────────
     def _toggle_collapse(self):
         self._expanded = not self._expanded
@@ -209,6 +303,7 @@ class ArenaTool(ctk.CTkFrame):
             self.body.pack_forget()
             self._cancel_add()
             self.lbl_section.configure(text="▶  ARENA SYNERGY")
+        self._update_header_count()
 
     # ───────────── two-step add flow ─────────────
     def _show_add_input(self):
@@ -250,6 +345,7 @@ class ArenaTool(ctk.CTkFrame):
         self._add_step = 0
         self._pending_teammate = ""
         self._pending_me_list = []
+        self._editing_pair_idx = -1
         self.add_container.pack_forget()
         self.tags_frame.pack_forget()
         self.add_entry.delete(0, "end")
@@ -288,30 +384,38 @@ class ArenaTool(ctk.CTkFrame):
 
         pairs = self._get_pairs()
 
-        # If teammate already has a pair, update it
-        updated = False
-        for pair in pairs:
-            if pair.get("teammate", "").lower() == self._pending_teammate.lower():
-                pair["me"] = list(self._pending_me_list)
-                updated = True
-                break
+        # Edit mode: update the specific pair we're editing
+        if self._editing_pair_idx >= 0 and self._editing_pair_idx < len(pairs):
+            pairs[self._editing_pair_idx]["me"] = list(self._pending_me_list)
+            action_word = "Updated"
+        else:
+            # New pair: check if teammate already has a pair, update it
+            updated = False
+            for pair in pairs:
+                if pair.get("teammate", "").lower() == self._pending_teammate.lower():
+                    pair["me"] = list(self._pending_me_list)
+                    updated = True
+                    break
 
-        if not updated:
-            pairs.append({
-                "teammate": self._pending_teammate,
-                "me": list(self._pending_me_list)
-            })
+            if not updated:
+                pairs.append({
+                    "teammate": self._pending_teammate,
+                    "me": list(self._pending_me_list),
+                    "enabled": True
+                })
+            action_word = "Saved"
 
         saved_teammate = self._pending_teammate
         saved_count = len(self._pending_me_list)
         self._save_pairs(pairs)
+        self._editing_pair_idx = -1
         self._cancel_add()
 
         try:
             from ui.components.toast import ToastManager
             ToastManager.get_instance().show(
-                f"Synergy saved: {saved_teammate} → {saved_count} fallback(s)",
-                icon="🎯", theme="success"
+                f"Synergy {action_word.lower()}: {saved_teammate} → {saved_count} fallback(s)",
+                icon="🎯" if action_word == "Saved" else "✎", theme="success"
             )
         except Exception:
             pass
@@ -376,8 +480,6 @@ class ArenaTool(ctk.CTkFrame):
             command=self._save_completed_pair, cursor="hand2"
         ).pack(side="right", padx=(4, 0))
 
-
-
     def _remove_pending_tag(self, idx):
         if 0 <= idx < len(self._pending_me_list):
             self._pending_me_list.pop(idx)
@@ -389,40 +491,81 @@ class ArenaTool(ctk.CTkFrame):
         self.after(800, lambda: self.add_entry.winfo_exists() and self.add_entry.configure(
             border_color=get_color("colors.border.subtle")))
 
+    # ───────────── live status ─────────────
+    def set_active_pair(self, idx):
+        """Called externally to indicate which pair the engine is acting on."""
+        if idx != self._active_pair_idx:
+            self._active_pair_idx = idx
+            self._render_pairs()
+
     # ───────────── render saved pairs ─────────────
     def _render_pairs(self):
         for widget in self.list_frame.winfo_children():
             widget.destroy()
 
         pairs = self._get_pairs()
+        self._update_header_count()
 
         if not pairs:
-            # Interactive empty state (matches Priority Grid pattern)
+            # Rich empty state explaining how Arena Synergy works
+            empty_frame = ctk.CTkFrame(self.list_frame, fg_color="transparent")
+            empty_frame.pack(fill="x", pady=8, padx=6)
+
+            ctk.CTkLabel(
+                empty_frame,
+                text="How Arena Synergy Works",
+                font=get_font("caption", "bold"),
+                text_color=get_color("colors.text.primary"),
+                anchor="w"
+            ).pack(fill="x", pady=(0, 4))
+
+            for line in [
+                "① Your teammate hovers or locks a champion",
+                "② LeagueLoop detects a matching synergy rule",
+                "③ Your champion is auto-hovered (or locked)",
+                "④ If banned, the next fallback is used",
+            ]:
+                ctk.CTkLabel(
+                    empty_frame, text=line,
+                    font=("Inter", 10), text_color=get_color("colors.text.muted"),
+                    anchor="w"
+                ).pack(fill="x", padx=(8, 0))
+
             empty_btn = ctk.CTkButton(
-                self.list_frame,
-                text="+\nAdd Synergy Pair",
+                empty_frame,
+                text="+ Create First Synergy Rule",
                 font=get_font("body", "bold"),
                 fg_color="transparent",
                 border_width=1,
-                border_color=get_color("colors.border.subtle"),
-                text_color=get_color("colors.text.muted"),
+                border_color="#A855F7",
+                text_color="#A855F7",
                 hover_color=get_color("colors.background.card"),
-                width=180, height=60,
+                height=36,
                 corner_radius=8,
                 command=self._show_add_input,
                 cursor="hand2"
             )
-            empty_btn.pack(pady=12, padx=10)
+            empty_btn.pack(fill="x", pady=(8, 0))
             return
 
         _card_bg = get_color("colors.background.card")
         _radius = get_radius("sm")
         _muted = get_color("colors.text.muted")
+        _disabled_bg = "#0A0E14"
 
         for i, pair in enumerate(pairs):
+            is_enabled = pair.get("enabled", True)
+            is_active = (i == self._active_pair_idx)
+
+            card_bg = _card_bg if is_enabled else _disabled_bg
+            # Active pair gets a subtle glow border
+            border_color = "#A855F7" if is_active else card_bg
+
             row = ctk.CTkFrame(
-                self.list_frame, fg_color=_card_bg,
-                corner_radius=_radius
+                self.list_frame, fg_color=card_bg,
+                corner_radius=_radius,
+                border_width=1 if is_active else 0,
+                border_color=border_color
             )
             row.pack(fill="x", pady=2, padx=2)
 
@@ -431,6 +574,17 @@ class ArenaTool(ctk.CTkFrame):
             top.pack(fill="x", padx=6, pady=(6, 0))
 
             teammate_name = pair.get("teammate", "?")
+
+            # ── Action buttons FIRST (right side) so they're never pushed off ──
+            btn_frame = ctk.CTkFrame(top, fg_color="transparent")
+            btn_frame.pack(side="right")
+
+            # Live status dot
+            if is_active:
+                ctk.CTkLabel(
+                    top, text="●", font=("Arial", 8),
+                    text_color="#00C853", width=10
+                ).pack(side="left", padx=(0, 2))
 
             # Teammate icon
             t_icon_lbl = ctk.CTkLabel(top, text="", width=ICON_SIZE, height=ICON_SIZE, fg_color="transparent")
@@ -448,27 +602,94 @@ class ArenaTool(ctk.CTkFrame):
                 size=(ICON_SIZE, ICON_SIZE), widget=t_icon_lbl
             )
 
+            # IF label (dimmed when disabled, truncated to prevent overflow)
+            text_alpha = "#A855F7" if is_enabled else "#4A2D6B"
             ctk.CTkLabel(
                 top, text=f"IF  {teammate_name}",
                 font=get_font("caption", "bold"),
-                text_color="#A855F7", anchor="w"
-            ).pack(side="left", padx=(0, 6))
+                text_color=text_alpha, anchor="w"
+            ).pack(side="left", padx=(0, 4), fill="x", expand=True)
 
             ctk.CTkLabel(
                 top, text="→", font=get_font("body", "bold"),
-                text_color=_muted
+                text_color=_muted if is_enabled else "#333"
             ).pack(side="left")
+
+            # Enable/Disable toggle
+            var_enabled = ctk.BooleanVar(value=is_enabled)
+            sw = ctk.CTkSwitch(
+                btn_frame,
+                variable=var_enabled,
+                width=32, height=16,
+                switch_width=28, switch_height=14,
+                fg_color="#1E2328",
+                progress_color="#A855F7",
+                button_color="#C8AA6E",
+                button_hover_color="#D9C382",
+                text="",
+                command=lambda idx=i, v=var_enabled: self._toggle_pair_enabled(idx, v.get())
+            )
+            sw.pack(side="left", padx=(0, 2))
+            CTkTooltip(sw, "Enable/Disable")
+
+            # Move up
+            if i > 0:
+                ctk.CTkButton(
+                    btn_frame, text="▲", width=18, height=18,
+                    corner_radius=get_radius("sm"),
+                    font=("Arial", 9),
+                    fg_color="transparent", hover_color=get_color("colors.state.hover"),
+                    text_color=get_color("colors.text.muted"),
+                    command=lambda idx=i: self._move_pair(idx, -1),
+                    cursor="hand2"
+                ).pack(side="left", padx=0)
+
+            # Move down
+            if i < len(pairs) - 1:
+                ctk.CTkButton(
+                    btn_frame, text="▼", width=18, height=18,
+                    corner_radius=get_radius("sm"),
+                    font=("Arial", 9),
+                    fg_color="transparent", hover_color=get_color("colors.state.hover"),
+                    text_color=get_color("colors.text.muted"),
+                    command=lambda idx=i: self._move_pair(idx, 1),
+                    cursor="hand2"
+                ).pack(side="left", padx=0)
+
+            # Edit button
+            ctk.CTkButton(
+                btn_frame, text="✎", width=20, height=20,
+                corner_radius=get_radius("sm"),
+                font=("Segoe UI", 11),
+                fg_color="transparent", hover_color=get_color("colors.state.hover"),
+                text_color="#A855F7",
+                command=lambda idx=i: self._edit_pair(idx),
+                cursor="hand2"
+            ).pack(side="left", padx=(0, 2))
+            CTkTooltip(btn_frame.winfo_children()[-1], "Edit Fallbacks")
+
+            # Clone button
+            ctk.CTkButton(
+                btn_frame, text="⧉", width=20, height=20,
+                corner_radius=get_radius("sm"),
+                font=("Segoe UI", 11),
+                fg_color="transparent", hover_color=get_color("colors.state.hover"),
+                text_color=get_color("colors.text.muted"),
+                command=lambda idx=i: self._clone_pair(idx),
+                cursor="hand2"
+            ).pack(side="left", padx=(0, 2))
+            CTkTooltip(btn_frame.winfo_children()[-1], "Duplicate")
 
             # Delete button
             ctk.CTkButton(
-                top, text="✕", width=22, height=22,
+                btn_frame, text="✕", width=20, height=20,
                 corner_radius=get_radius("sm"),
                 font=("Segoe UI", 11, "bold"),
                 fg_color="transparent", hover_color="#4d1111",
                 text_color="#ff4444",
                 command=lambda idx=i: self._remove_pair(idx),
                 cursor="hand2"
-            ).pack(side="right")
+            ).pack(side="left")
 
             # ── Bottom: My champions as icon tags ──
             bottom = ctk.CTkFrame(row, fg_color="transparent")
@@ -479,6 +700,8 @@ class ArenaTool(ctk.CTkFrame):
 
             for j, me_champ in enumerate(me_list):
                 color_str = "#00C853" if j == 0 else "#4CAF50"
+                if not is_enabled:
+                    color_str = "#2A3A2A" if j == 0 else "#1E2E1E"
 
                 tag = ctk.CTkFrame(
                     bottom, fg_color="#0A1428",
@@ -514,6 +737,81 @@ class ArenaTool(ctk.CTkFrame):
                     font=("Inter", 10),
                     text_color=color_str
                 ).pack(side="left", padx=(2, 6), pady=2)
+
+    # ───────────── pair actions ─────────────
+    def _toggle_pair_enabled(self, idx, enabled):
+        pairs = self._get_pairs()
+        if 0 <= idx < len(pairs):
+            pairs[idx]["enabled"] = enabled
+            self._save_pairs(pairs)
+
+    def _move_pair(self, idx, direction):
+        """Move a pair up (-1) or down (+1) in the list."""
+        pairs = self._get_pairs()
+        new_idx = idx + direction
+        if 0 <= new_idx < len(pairs):
+            pairs[idx], pairs[new_idx] = pairs[new_idx], pairs[idx]
+            self._save_pairs(pairs)
+            try:
+                from ui.components.toast import ToastManager
+                name = pairs[new_idx].get('teammate', 'Pair')
+                ToastManager.get_instance().show(
+                    f"Moved {name} {'up' if direction < 0 else 'down'}",
+                    icon="↕", theme="success"
+                )
+            except Exception:
+                pass
+
+    def _edit_pair(self, idx):
+        """Open step 2 pre-populated with the pair's existing fallbacks for editing."""
+        pairs = self._get_pairs()
+        if not (0 <= idx < len(pairs)):
+            return
+
+        pair = pairs[idx]
+        self._editing_pair_idx = idx
+        self._pending_teammate = pair.get("teammate", "")
+        me_val = pair.get("me", [])
+        self._pending_me_list = list(me_val) if isinstance(me_val, list) else [me_val]
+        self._add_step = 2
+
+        self.step_label.configure(
+            text=f"EDITING ─ {self._pending_teammate} → fallbacks:",
+            text_color="#FFA726"
+        )
+        self.add_entry.delete(0, "end")
+        self.add_entry.configure(placeholder_text="Add champion...")
+        self.btn_commit.configure(text="Add",
+                                  fg_color=get_color("colors.accent.primary"))
+
+        self.tags_frame.pack(fill="x", pady=(4, 0))
+        self._render_tags()
+
+        self.list_frame.pack_forget()
+        self.add_container.pack(fill="x", padx=4, pady=(4, 0))
+        self.list_frame.pack(fill="x")
+        self.add_entry.focus_set()
+
+    def _clone_pair(self, idx):
+        pairs = self._get_pairs()
+        if 0 <= idx < len(pairs):
+            original = pairs[idx]
+            clone = {
+                "teammate": original.get("teammate", ""),
+                "me": list(original.get("me", [])),
+                "enabled": True
+            }
+            # Insert clone right after the original
+            pairs.insert(idx + 1, clone)
+            self._save_pairs(pairs)
+            try:
+                from ui.components.toast import ToastManager
+                ToastManager.get_instance().show(
+                    f"Cloned: {clone['teammate']}",
+                    icon="⧉", theme="success"
+                )
+            except Exception:
+                pass
 
     def _remove_pair(self, idx):
         pairs = self._get_pairs()

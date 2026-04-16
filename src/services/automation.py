@@ -5,6 +5,8 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, Callable, List
 
+import psutil
+
 from .api_handler import LCUClient  # type: ignore
 from .asset_manager import AssetManager, ConfigManager  # type: ignore
 from utils.logger import Logger  # type: ignore
@@ -57,6 +59,12 @@ class AutomationEngine:
         self._honor_handled: bool = False
         self._cached_search_state: Optional[dict] = None
 
+        # Game process tracking — League of Legends.exe is a separate PID
+        # from LeagueClient.exe, so we monitor it independently to maintain
+        # InProgress phase awareness even when the LCU API connection drops.
+        self._game_pid: Optional[int] = None
+        self._last_game_scan: float = 0.0
+
     def start(self, start_paused: bool = False) -> None:
         if self.running: return
         self.running = True
@@ -81,6 +89,38 @@ class AutomationEngine:
             log_hook(msg)
         Logger.debug("Auto", msg)
 
+    def _is_game_running(self) -> bool:
+        """Check if League of Legends.exe (the game) is running.
+
+        This is the actual game process — a different PID from LeagueClient.exe.
+        We cache the PID to avoid full process scans every tick.
+        """
+        now = time.time()
+
+        # Fast-path: reuse cached PID if still alive
+        if self._game_pid is not None:
+            try:
+                p = psutil.Process(self._game_pid)
+                if p.is_running() and p.name().lower() == "league of legends.exe":
+                    return True
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+            self._game_pid = None
+
+        # Throttle full scans to every 3 seconds
+        if now - self._last_game_scan < 3.0:
+            return False
+        self._last_game_scan = now
+
+        for p in psutil.process_iter(attrs=["name"]):
+            try:
+                if (p.info["name"] or "").lower() == "league of legends.exe":
+                    self._game_pid = p.pid
+                    return True
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess, KeyError):
+                continue
+        return False
+
     def _loop(self):
         while self.running:
             if self.paused:
@@ -98,6 +138,30 @@ class AutomationEngine:
                     if default_status:
                         threading.Thread(target=lambda: self.set_custom_status(default_status), daemon=True).start()
                 else:
+                    # ── Fallback game-process tracking ──
+                    # LCU is down but the game (League of Legends.exe) might still
+                    # be running under a different PID.  Keep the UI informed.
+                    game_alive = self._is_game_running()
+                    inferred_phase = "InProgress" if game_alive else "None"
+
+                    # Fire callbacks so the UI / window state stay accurate
+                    wf = self.window_func
+                    if wf is not None and inferred_phase != self.last_phase:
+                        if inferred_phase == "InProgress":
+                            wf("minimize")
+                            Logger.info("AutoLoop", "Game detected (process). Minimizing.")
+                        elif self.last_phase == "InProgress":
+                            if self.config.get("stealth_mode", False):
+                                wf("restore_quiet")
+                            else:
+                                wf("restore")
+                            Logger.info("AutoLoop", "Game ended (process). Restoring.")
+
+                    qf = self.queue_func
+                    if qf is not None:
+                        qf(inferred_phase, None)
+
+                    self.last_phase = inferred_phase
                     self._stop_event.wait(2)
                 continue
 
@@ -140,6 +204,12 @@ class AutomationEngine:
             except Exception:
                 pass
 
+        # Cross-check: LCU says "None" but the game process is alive → correct to InProgress.
+        # This catches race conditions during game launch / LCU restart transitions.
+        if phase == "None" and self._is_game_running():
+            Logger.debug("AutoLoop", "LCU reports None but League of Legends.exe is running. Correcting to InProgress.")
+            phase = "InProgress"
+
         search_state = None
         if phase == "Matchmaking":
             search_req = self.lcu.request("GET", "/lol-lobby/v2/lobby/matchmaking/search-state")
@@ -160,6 +230,8 @@ class AutomationEngine:
                     wf("restore_quiet")
                 else:
                     wf("restore")
+                # Clear stale game PID now that the game has ended
+                self._game_pid = None
 
         self.last_phase = phase
 
@@ -278,7 +350,8 @@ class AutomationEngine:
             if priority_cfg.get("enabled", False):
                 self._perform_priority_sniper(session, priority_cfg.get("list", []))
         elif is_arena:
-            self._perform_arena_synergy(session)
+            if self.config.get("arena_synergy_enabled", True):
+                self._perform_arena_synergy(session)
         elif is_draft:
             self._perform_draft_assistant(session)
 
@@ -362,16 +435,23 @@ class AutomationEngine:
         if not teammate_champ_name:
             return
 
-        # Find matching pair
+        # Find matching pair (respect enabled flag, default True for backwards compat)
         mapped_me_list = []
-        for pair in pairs:
+        matched_pair_idx = -1
+        for idx, pair in enumerate(pairs):
+            if not pair.get("enabled", True):
+                continue
             if pair.get("teammate", "").lower() == teammate_champ_name.lower():
                 val = pair.get("me", [])
                 mapped_me_list = val if isinstance(val, list) else [val]
+                matched_pair_idx = idx
                 break
 
         if not mapped_me_list:
             return
+
+        # Track which pair is active (for UI live-status indicator)
+        self._active_arena_pair_idx = matched_pair_idx
 
         banned_ids = []
         for b in session.get("bannedChampions", []):
@@ -426,8 +506,9 @@ class AutomationEngine:
                     self.lcu.request("PATCH", f"/lol-champ-select/v1/session/actions/{my_action_id}", data={"championId": mapped_my_id})
                     self._last_synergy_patch = now
                 
-                # If teammate LOCKED, and we just patched or already have the right intent, we LOCK.
-                if teammate_champ_id != 0 and my_current_intent == mapped_my_id:
+                # Auto-lock: only if config allows AND teammate has LOCKED their pick
+                auto_lock = self.config.get("arena_auto_lock", False)
+                if auto_lock and teammate_champ_id != 0 and my_current_intent == mapped_my_id:
                     self._log(f"Synergy: Teammate locked {teammate_champ_name}, locking {mapped_me_champ}!")
                     self.lcu.request("POST", f"/lol-champ-select/v1/session/actions/{my_action_id}/complete")
                     
@@ -490,6 +571,11 @@ class AutomationEngine:
                     self._log(f"Draft: Hovering Ban {ban_str}")
                     self.lcu.request("PATCH", f"/lol-champ-select/v1/session/actions/{action_id}", data={"championId": ban_id})
                     self._last_draft_action_time = now
+                elif my_action.get("championId") == ban_id and self.config.get("auto_lock_in", False):
+                    if now - self._last_draft_action_time > 0.5:
+                        self._log(f"Draft: Locking Ban {ban_str}")
+                        self.lcu.request("POST", f"/lol-champ-select/v1/session/actions/{action_id}/complete")
+                        self._last_draft_action_time = now
                 break
 
         elif action_type == "pick":
@@ -510,6 +596,11 @@ class AutomationEngine:
                     self._log(f"Draft: Hovering Pick {pick_str}")
                     self.lcu.request("PATCH", f"/lol-champ-select/v1/session/actions/{action_id}", data={"championId": pick_id})
                     self._last_draft_action_time = now
+                elif my_action.get("championId") == pick_id and self.config.get("auto_lock_in", False):
+                    if now - self._last_draft_action_time > 0.5:
+                        self._log(f"Draft: Locking Pick {pick_str}")
+                        self.lcu.request("POST", f"/lol-champ-select/v1/session/actions/{action_id}/complete")
+                        self._last_draft_action_time = now
                 break
 
     def _perform_priority_sniper(self, session, priority_list):

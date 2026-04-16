@@ -71,7 +71,7 @@
  [],
  False,
  False,
- 1776143015,
+ 1776145401,
  [('runw.exe',
    'C:\\Users\\Administrator\\Desktop\\LeagueLoop\\.venv\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\runw.exe',
    'EXECUTABLE')],
