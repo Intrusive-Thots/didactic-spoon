@@ -190,6 +190,36 @@ class AssetManager:
             except Exception as e:
                 Logger.error("asset_manager.py", f"Handled exception: {type(e).__name__}: {e}")
 
+    def get_search_cache(self):
+        """Returns a cached list of sorted champion names for searching."""
+        if not hasattr(self, '_search_cache'):
+            # Precompute it once
+            known = self.get_known_champions()
+            self._search_cache = sorted([(v.lower(), v) for v in known.values()], key=lambda x: x[1])
+        return self._search_cache
+
+    def get_known_champions(self):
+        """Returns a cached dictionary of lowercase to real champion names."""
+        if not hasattr(self, '_known_champions'):
+            from utils.path_utils import get_asset_path, get_data_dir
+            known = {}
+            # Bundled assets
+            cache_dir = get_asset_path("assets")
+            if os.path.isdir(cache_dir):
+                for f in os.listdir(cache_dir):
+                    if f.startswith("champion_") and f.endswith(".png"):
+                        real = f[len("champion_"):-len(".png")]
+                        known[real.lower()] = real
+            # Downloaded cache
+            app_cache_dir = os.path.join(get_data_dir(), "cache", "assets")
+            if os.path.isdir(app_cache_dir):
+                for f in os.listdir(app_cache_dir):
+                    if f.startswith("champion_") and f.endswith(".png"):
+                        real = f[len("champion_"):-len(".png")]
+                        known[real.lower()] = real
+            self._known_champions = known
+        return self._known_champions
+
     def _download_worker(self):
         """Worker thread for background downloads."""
         while True:

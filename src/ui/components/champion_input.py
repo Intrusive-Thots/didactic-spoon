@@ -8,9 +8,10 @@ from ui.components.factory import get_color, get_font, get_radius, make_input
 _CLEAN_TRANS = str.maketrans("", "", " '.")
 
 class ChampionInput(ctk.CTkFrame):
-    def __init__(self, master, width=120, height=28, placeholder="Champion...", on_commit=None, **kwargs):
+    def __init__(self, master, width=120, height=28, placeholder="Champion...", on_commit=None, assets=None, **kwargs):
         super().__init__(master, fg_color="transparent", **kwargs)
         self.on_commit = on_commit
+        self.assets = assets
         
         self.entry = make_input(self, width=width, height=height, placeholder=placeholder, font=get_font("caption"))
         self.entry.pack(fill="x")
@@ -37,16 +38,21 @@ class ChampionInput(ctk.CTkFrame):
         self._scan_known_champions()
 
     def _scan_known_champions(self):
-        # Bundled assets
-        cache_dir = get_asset_path("assets")
-        self._load_from_dir(cache_dir)
-        # Downloaded cache
-        app_cache_dir = os.path.join(get_data_dir(), "cache", "assets")
-        self._load_from_dir(app_cache_dir)
-        
-        self._search_cache = sorted(
-            [(v.lower(), v) for v in self._known_champions.values()], key=lambda x: x[1]
-        )
+        if self.assets:
+            self._known_champions = self.assets.get_known_champions()
+            self._search_cache = self.assets.get_search_cache()
+        else:
+            # Fallback for standalone usage
+            # Bundled assets
+            cache_dir = get_asset_path("assets")
+            self._load_from_dir(cache_dir)
+            # Downloaded cache
+            app_cache_dir = os.path.join(get_data_dir(), "cache", "assets")
+            self._load_from_dir(app_cache_dir)
+
+            self._search_cache = sorted(
+                [(v.lower(), v) for v in self._known_champions.values()], key=lambda x: x[1]
+            )
 
     def _load_from_dir(self, d):
         if os.path.isdir(d):

@@ -47,19 +47,10 @@ class PriorityIconGrid(ctk.CTkFrame):
 
     # ───────────── helpers ─────────────
     def _scan_known_champions(self):
-        # ⚡ Bolt: Fast-path dictionary lookup to map normalized names to real asset names
-        # avoiding os.listdir() overhead on every lookup in _resolve_champion_name.
-        known = {}
-        cache_dir = get_asset_path("assets")
-        if os.path.isdir(cache_dir):
-            for f in os.listdir(cache_dir):
-                if f.startswith("champion_") and f.endswith(".png"):
-                    real = f[len("champion_"):-len(".png")]
-                    known[real.lower()] = real
-
-        # ⚡ Bolt: Precompute and sort normalized names to eliminate .lower() and sorted()
-        # allocations from the hot-path _on_add_typing loop
-        self._search_cache = sorted([(v.lower(), v) for v in known.values()], key=lambda x: x[1])
+        # ⚡ Bolt: Use centralized asset manager cache to avoid redundant filesystem scans
+        # and list sorting across multiple UI components.
+        known = self.assets.get_known_champions()
+        self._search_cache = self.assets.get_search_cache()
         return known
 
     def _resolve_champion_name(self, raw):

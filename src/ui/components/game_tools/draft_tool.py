@@ -71,7 +71,7 @@ class DraftTool(ctk.CTkFrame):
             
             for i in range(1, 4):
                 key = f"pick_{role}_{i}"
-                entry = ChampionInput(pick_frame, placeholder=f"Pick {i}", height=28)
+                entry = ChampionInput(pick_frame, placeholder=f"Pick {i}", height=28, assets=self.assets)
                 entry.pack(fill="x", pady=2)
                 self._entries[key] = entry
                 
@@ -82,7 +82,7 @@ class DraftTool(ctk.CTkFrame):
             
             for i in range(1, 4):
                 key = f"ban_{role}_{i}"
-                entry = ChampionInput(ban_frame, placeholder=f"Ban {i}", height=28)
+                entry = ChampionInput(ban_frame, placeholder=f"Ban {i}", height=28, assets=self.assets)
                 entry.pack(fill="x", pady=2)
                 self._entries[key] = entry
                 

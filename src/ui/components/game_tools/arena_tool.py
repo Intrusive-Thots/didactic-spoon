@@ -87,18 +87,8 @@ class ArenaTool(ctk.CTkFrame):
 
     # ───────────── champion resolution ─────────────
     def _scan_known_champions(self):
-        from utils.path_utils import get_asset_path
-        known = {}
-        cache_dir = get_asset_path("assets")
-        if os.path.isdir(cache_dir):
-            for f in os.listdir(cache_dir):
-                if f.startswith("champion_") and f.endswith(".png"):
-                    real = f[len("champion_"):-len(".png")]
-                    known[real.lower()] = real
-
-        self._search_cache = sorted(
-            [(v.lower(), v) for v in known.values()], key=lambda x: x[1]
-        )
+        known = self.assets.get_known_champions()
+        self._search_cache = self.assets.get_search_cache()
         return known
 
     def _resolve_champion_name(self, raw):
@@ -247,7 +237,8 @@ class ArenaTool(ctk.CTkFrame):
             placeholder="Champion name...",
             width=130,
             height=24,
-            on_commit=lambda c: self._commit_add_step(c)
+            on_commit=lambda c: self._commit_add_step(c),
+            assets=self.assets
         )
         self.add_entry.pack(side="left", padx=(0, 4))
         self.add_entry.bind("<Escape>", lambda e: self._cancel_add(), add="+")
