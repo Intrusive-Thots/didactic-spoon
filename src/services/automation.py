@@ -557,7 +557,8 @@ class AutomationEngine:
         if not hasattr(self, "_last_draft_action_time"): self._last_draft_action_time = 0
 
         if action_type == "ban":
-            teammate_hovers = set(p.get("championPickIntent", 0) for p in my_team if p.get("cellId") != me.get("cellId") and p.get("championPickIntent", 0) > 0)
+            my_cell_id = me.get("cellId")
+            teammate_hovers = {intent for p in my_team if p.get("cellId") != my_cell_id and (intent := p.get("championPickIntent", 0)) > 0}
             
             for i in range(1, 4):
                 ban_str = self.config.get(f"ban_{assigned}_{i}", "")
