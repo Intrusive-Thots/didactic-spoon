@@ -93,9 +93,9 @@
     },
     "arena_pairs": [
         {
-            "teammate": "Bravery",
+            "teammate": "Brand",
             "me": [
-                "Bravery"
+                "Leona"
             ],
             "enabled": true
         }
