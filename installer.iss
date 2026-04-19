@@ -1,7 +1,7 @@
 ; LeagueLoop Installer — Inno Setup Script
-; Reads version from src/core/version.py at compile time
 
-#define VersionFile ReadIni(SourcePath + "\src\core\version.py", "", "", "")
+#define AppVersion "1-04-264-0219"
+#define VersionInfoVersion "1.4.264.219"
 
 [Setup]
 AppName=LeagueLoop
