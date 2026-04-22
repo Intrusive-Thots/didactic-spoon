@@ -140,7 +140,7 @@ class ArenaTool(ctk.CTkFrame):
         # + Add button
         self.btn_add_pair = ctk.CTkButton(
             self.header, text="+", width=20, height=20,
-            corner_radius=10, font=("Arial", 14, "bold"),
+            corner_radius=10, font=get_font("body", "bold"),
             fg_color="transparent",
             text_color=get_color("colors.accent.primary"),
             hover_color=get_color("colors.state.hover"),
@@ -152,7 +152,7 @@ class ArenaTool(ctk.CTkFrame):
         # Undo button
         self.btn_undo = ctk.CTkButton(
             self.header, text="↶", width=20, height=20,
-            corner_radius=10, font=("Segoe UI", 14),
+            corner_radius=10, font=get_font("body"),
             fg_color="transparent",
             text_color=get_color("colors.text.disabled"),
             hover_color=get_color("colors.state.hover"),
@@ -266,7 +266,7 @@ class ArenaTool(ctk.CTkFrame):
         # Cancel button
         ctk.CTkButton(
             self.add_row, text="✕", width=24, height=24,
-            corner_radius=get_radius("sm"), font=("Segoe UI", 11, "bold"),
+            corner_radius=get_radius("sm"), font=get_font("caption", "bold"),
             fg_color="transparent", hover_color=get_color("colors.state.danger.muted", "#4d1111"),
             text_color=get_color("colors.state.danger", "#ff4444"),
             command=self._cancel_add, cursor="hand2"
@@ -462,7 +462,7 @@ class ArenaTool(ctk.CTkFrame):
 
             ctk.CTkButton(
                 tag, text="×", width=14, height=14,
-                corner_radius=7, font=("Arial", 10),
+                corner_radius=7, font=get_font("caption"),
                 fg_color="transparent", hover_color=get_color("colors.state.danger.muted", "#4d1111"),
                 text_color=get_color("colors.state.danger", "#ff4444"),
                 command=lambda idx=i: self._remove_pending_tag(idx),
@@ -580,8 +580,8 @@ class ArenaTool(ctk.CTkFrame):
             # Live status dot
             if is_active:
                 ctk.CTkLabel(
-                    top, text="●", font=("Arial", 8),
-                    text_color="#00C853", width=10
+                    top, text="●", font=get_font("caption"),
+                    text_color=get_color("colors.state.success", "#00C853"), width=10
                 ).pack(side="left", padx=(0, 2))
 
             # Teammate icon
@@ -635,7 +635,7 @@ class ArenaTool(ctk.CTkFrame):
                 ctk.CTkButton(
                     btn_frame, text="▲", width=18, height=18,
                     corner_radius=get_radius("sm"),
-                    font=("Arial", 9),
+                    font=get_font("caption"),
                     fg_color="transparent", hover_color=get_color("colors.state.hover"),
                     text_color=get_color("colors.text.muted"),
                     command=lambda idx=i: self._move_pair(idx, -1),
@@ -647,7 +647,7 @@ class ArenaTool(ctk.CTkFrame):
                 ctk.CTkButton(
                     btn_frame, text="▼", width=18, height=18,
                     corner_radius=get_radius("sm"),
-                    font=("Arial", 9),
+                    font=get_font("caption"),
                     fg_color="transparent", hover_color=get_color("colors.state.hover"),
                     text_color=get_color("colors.text.muted"),
                     command=lambda idx=i: self._move_pair(idx, 1),
@@ -658,9 +658,9 @@ class ArenaTool(ctk.CTkFrame):
             ctk.CTkButton(
                 btn_frame, text="✎", width=20, height=20,
                 corner_radius=get_radius("sm"),
-                font=("Segoe UI", 11),
+                font=get_font("caption"),
                 fg_color="transparent", hover_color=get_color("colors.state.hover"),
-                text_color="#A855F7",
+                text_color=get_color("colors.accent.purple", "#A855F7"),
                 command=lambda idx=i: self._edit_pair(idx),
                 cursor="hand2"
             ).pack(side="left", padx=(0, 2))
@@ -670,7 +670,7 @@ class ArenaTool(ctk.CTkFrame):
             ctk.CTkButton(
                 btn_frame, text="⧉", width=20, height=20,
                 corner_radius=get_radius("sm"),
-                font=("Segoe UI", 11),
+                font=get_font("caption"),
                 fg_color="transparent", hover_color=get_color("colors.state.hover"),
                 text_color=get_color("colors.text.muted"),
                 command=lambda idx=i: self._clone_pair(idx),
@@ -682,7 +682,7 @@ class ArenaTool(ctk.CTkFrame):
             ctk.CTkButton(
                 btn_frame, text="✕", width=20, height=20,
                 corner_radius=get_radius("sm"),
-                font=("Segoe UI", 11, "bold"),
+                font=get_font("caption", "bold"),
                 fg_color="transparent", hover_color=get_color("colors.state.danger.muted", "#4d1111"),
                 text_color=get_color("colors.state.danger", "#ff4444"),
                 command=lambda idx=i: self._remove_pair(idx),

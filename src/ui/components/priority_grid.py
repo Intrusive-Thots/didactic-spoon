@@ -156,7 +156,7 @@ class PriorityIconGrid(ctk.CTkFrame):
         # +
         self.btn_add = ctk.CTkButton(
             self.header, text="+", width=20, height=20,
-            corner_radius=10, font=("Arial", 14, "bold"),
+            corner_radius=10, font=get_font("body", "bold"),
             fg_color="transparent",
             text_color=get_color("colors.accent.primary"),
             hover_color=get_color("colors.state.hover"),
@@ -168,7 +168,7 @@ class PriorityIconGrid(ctk.CTkFrame):
         # Undo
         self.btn_undo = ctk.CTkButton(
             self.header, text="↶", width=20, height=20,
-            corner_radius=10, font=("Segoe UI", 14),
+            corner_radius=10, font=get_font("body"),
             fg_color="transparent",
             text_color=get_color("colors.text.disabled"),
             hover_color=get_color("colors.state.hover"),
@@ -181,7 +181,7 @@ class PriorityIconGrid(ctk.CTkFrame):
         # Import
         self.btn_import = ctk.CTkButton(
             self.header, text="⎗", width=20, height=20,
-            corner_radius=10, font=("Arial", 14),
+            corner_radius=10, font=get_font("body"),
             fg_color="transparent",
             text_color=get_color("colors.text.muted"),
             hover_color=get_color("colors.state.hover"),
@@ -193,7 +193,7 @@ class PriorityIconGrid(ctk.CTkFrame):
         # Export
         self.btn_export = ctk.CTkButton(
             self.header, text="⎘", width=20, height=20,
-            corner_radius=10, font=("Arial", 14),
+            corner_radius=10, font=get_font("body"),
             fg_color="transparent",
             text_color=get_color("colors.text.muted"),
             hover_color=get_color("colors.state.hover"),
@@ -294,8 +294,8 @@ class PriorityIconGrid(ctk.CTkFrame):
 
         ctk.CTkButton(
             self.import_header, text="✕", width=24, height=24,
-            corner_radius=get_radius("sm"), font=("Arial", 12),
-            fg_color="transparent", hover_color="#e81123",
+            corner_radius=get_radius("sm"), font=get_font("body"),
+            fg_color="transparent", hover_color=get_color("colors.state.danger", "#e81123"),
             text_color=get_color("colors.text.muted"),
             command=lambda: self.import_container.pack_forget(), cursor="hand2",
             ).pack(side="right")
@@ -323,7 +323,7 @@ class PriorityIconGrid(ctk.CTkFrame):
 
         btn_kw = dict(
             width=30, height=24, corner_radius=get_radius("sm"),
-            font=("Segoe UI", 13, "bold"), fg_color="transparent",
+            font=get_font("body", "bold"), fg_color="transparent",
             hover_color=get_color("colors.state.hover"),
             text_color=get_color("colors.text.primary"),
             
@@ -341,14 +341,14 @@ class PriorityIconGrid(ctk.CTkFrame):
 
         self.btn_del = ctk.CTkButton(
             self.edit_bar, text="✕", width=30, height=24,
-            corner_radius=get_radius("sm"), font=("Segoe UI", 13, "bold"),
+            corner_radius=get_radius("sm"), font=get_font("body", "bold"),
             fg_color="transparent", hover_color=get_color("colors.state.danger.muted", "#4d1111"),
             text_color=get_color("colors.state.danger", "#ff4444"), command=self._delete_active, cursor="hand2",
             )
 
         self.btn_clear_all = ctk.CTkButton(
             self.edit_bar, text="🗑️", width=30, height=24,
-            corner_radius=get_radius("sm"), font=("Segoe UI", 13),
+            corner_radius=get_radius("sm"), font=get_font("body"),
             fg_color="transparent", hover_color=get_color("colors.state.danger.muted", "#4d1111"),
             text_color=get_color("colors.state.danger", "#ff4444"), command=self._request_clear_all, cursor="hand2",
             )
@@ -368,7 +368,7 @@ class PriorityIconGrid(ctk.CTkFrame):
         self._move_to_frame = ctk.CTkFrame(self.edit_bar, fg_color="transparent")
         move_lbl = ctk.CTkLabel(
             self._move_to_frame, text="#",
-            font=("Segoe UI", 12, "bold"),
+            font=get_font("body", "bold"),
             text_color=get_color("colors.accent.primary"),
             width=12,
         )
@@ -378,14 +378,14 @@ class PriorityIconGrid(ctk.CTkFrame):
             placeholder="pos",
             width=34,
             height=22,
-            font=("Segoe UI", 11),
+            font=get_font("caption"),
             justify="center"
         )
         self._move_entry.pack(side="left", padx=(0, 2))
         self._move_entry.bind("<Return>", lambda e: self._commit_move_to())
         self._move_go_btn = ctk.CTkButton(
             self._move_to_frame, text="Go", width=28, height=22,
-            corner_radius=4, font=("Segoe UI", 10, "bold"),
+            corner_radius=4, font=get_font("caption", "bold"),
             fg_color=get_color("colors.accent.primary"),
             hover_color=get_color("colors.state.hover"),
             text_color="#ffffff",
@@ -529,7 +529,7 @@ class PriorityIconGrid(ctk.CTkFrame):
             # Set a placeholder label first
             lbl = ctk.CTkLabel(
                 cell, text=name[:2], width=ICON_SIZE, height=ICON_SIZE,
-                font=("Arial", 10, "bold"),
+                font=get_font("caption", "bold"),
                 fg_color=_bg_card,
                 corner_radius=4,
                 text_color=_text_primary,
@@ -597,7 +597,7 @@ class PriorityIconGrid(ctk.CTkFrame):
         tk.Label(tip_frame, text=display,
                  bg=get_color("colors.background.card", "#1E2328"),
                  fg=get_color("colors.accent.gold", "#C8AA6E"),
-                 font=("Segoe UI", 10, "bold"), padx=8, pady=4).pack(anchor="w")
+                 font=get_font("caption", "bold"), padx=8, pady=4).pack(anchor="w")
                  
         # Rich Stats — pull real winrate from StatsScraper
         winrate = 50.0
@@ -620,13 +620,13 @@ class PriorityIconGrid(ctk.CTkFrame):
         _tip_bg = get_color("colors.background.card", "#1E2328")
         priority_label = "High" if idx is not None and idx < 3 else ("Medium" if idx is not None and idx < 7 else "Low")
         tk.Label(tip_frame, text=f"Winrate: {winrate:.1f}%", bg=_tip_bg, fg=wr_color, justify="left",
-                 font=("Segoe UI", 9, "bold"), padx=8, pady=2).pack(anchor="w")
+                 font=get_font("caption", "bold"), padx=8, pady=2).pack(anchor="w")
         tk.Label(tip_frame, text=f"Priority: {priority_label}", bg=_tip_bg, fg="#e0e0e0", justify="left",
-                 font=("Segoe UI", 9), padx=8, pady=(0, 2)).pack(anchor="w")
+                 font=get_font("caption"), padx=8, pady=(0, 2)).pack(anchor="w")
                  
         if self._edit_mode and len(self._selected_indices) == 1 and idx not in self._selected_indices:
             tk.Label(tip_frame, text="⇧Click to move here", bg=_tip_bg,
-                     fg="#4da6ff", font=("Segoe UI", 8), padx=8, pady=4).pack(anchor="w")
+                     fg=get_color("colors.accent.blue", "#4da6ff"), font=get_font("caption"), padx=8, pady=4).pack(anchor="w")
 
     def _hide_tooltip(self):
         if self._tip:

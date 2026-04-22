@@ -65,7 +65,7 @@ class AccountsTool(ctk.CTkFrame):
         # + Add button
         self.btn_add = ctk.CTkButton(
             self.header, text="+", width=20, height=20,
-            corner_radius=10, font=("Arial", 14, "bold"),
+            corner_radius=10, font=get_font("body", "bold"),
             fg_color="transparent",
             text_color=get_color("colors.accent.primary"),
             hover_color=get_color("colors.state.hover"),
@@ -143,7 +143,7 @@ class AccountsTool(ctk.CTkFrame):
         # Password visibility toggle
         self.btn_eye = ctk.CTkButton(
             pw_row, text="👁", width=24, height=24,
-            corner_radius=get_radius("sm"), font=("Segoe UI", 11),
+            corner_radius=get_radius("sm"), font=get_font("caption"),
             fg_color="transparent", hover_color=get_color("colors.state.hover"),
             text_color=get_color("colors.text.muted"),
             command=self._toggle_password_visibility, cursor="hand2",
@@ -373,7 +373,7 @@ class AccountsTool(ctk.CTkFrame):
             # Active indicator — Item #118: Use Unicode dot with token colors instead of emojis
             dot_color = get_color("colors.state.success", "#00C853") if is_active else get_color("colors.text.disabled")
             ctk.CTkLabel(
-                top, text="●", font=("Segoe UI", 10),
+                top, text="●", font=get_font("caption"),
                 text_color=dot_color,
                 width=14
             ).pack(side="left", padx=(0, 4))
@@ -453,7 +453,7 @@ class AccountsTool(ctk.CTkFrame):
             if i > 0:
                 ctk.CTkButton(
                     action_frame, text="▲", width=18, height=18,
-                    corner_radius=get_radius("sm"), font=("Arial", 9),
+                    corner_radius=get_radius("sm"), font=get_font("caption"),
                     fg_color="transparent", hover_color=get_color("colors.state.hover"),
                     text_color=get_color("colors.text.muted"),
                     command=lambda idx=i: self._move_account(idx, -1),
@@ -464,7 +464,7 @@ class AccountsTool(ctk.CTkFrame):
             if i < len(accounts) - 1:
                 ctk.CTkButton(
                     action_frame, text="▼", width=18, height=18,
-                    corner_radius=get_radius("sm"), font=("Arial", 9),
+                    corner_radius=get_radius("sm"), font=get_font("caption"),
                     fg_color="transparent", hover_color=get_color("colors.state.hover"),
                     text_color=get_color("colors.text.muted"),
                     command=lambda idx=i: self._move_account(idx, 1),
@@ -474,7 +474,7 @@ class AccountsTool(ctk.CTkFrame):
             # Edit
             ctk.CTkButton(
                 action_frame, text="✎", width=20, height=20,
-                corner_radius=get_radius("sm"), font=("Segoe UI", 11),
+                corner_radius=get_radius("sm"), font=get_font("caption"),
                 fg_color="transparent", hover_color=get_color("colors.state.hover"),
                 text_color=get_color("colors.accent.gold", "#C8AA6E"),
                 command=lambda idx=i: self._show_edit_form(idx),
@@ -484,7 +484,7 @@ class AccountsTool(ctk.CTkFrame):
             # Delete
             ctk.CTkButton(
                 action_frame, text="✕", width=20, height=20,
-                corner_radius=get_radius("sm"), font=("Segoe UI", 11, "bold"),
+                corner_radius=get_radius("sm"), font=get_font("caption", "bold"),
                 fg_color="transparent", hover_color=get_color("colors.state.danger.muted", "#4d1111"),
                 text_color=get_color("colors.state.danger", "#ff4444"),
                 command=lambda idx=i: self._delete_account(idx),
