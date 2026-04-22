@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 from typing import Dict, Optional
+from concurrent.futures import ThreadPoolExecutor
 
 import psutil
 import requests
@@ -57,12 +58,14 @@ class LCUClient:
         
         # 3.5 Offline Retry Queue
         self._offline_queue = []
+        self._offline_queue_max = 50  # Item #179: Prevent unbounded growth
         
         # WebSocket internals
         self._subscriptions = {}  # event_name -> list of callbacks
         self._ws_thread = None
         self._ws_should_run = False
         self._ws_connection = None
+        self._ws_executor = ThreadPoolExecutor(max_workers=4)
 
         # Do NOT connect immediately to avoid blocking UI startup.
         # Connection is handled by the background loop in main.py.
@@ -212,28 +215,35 @@ class LCUClient:
             if not self.connect(silent=silent):
                 if method in ["POST", "PUT", "PATCH", "DELETE"]:
                     # 3.5 Offline Retry Queue: save state mutations for when we reconnect
-                    self._offline_queue.append((method, endpoint, data))
+                    # Item #179: Cap queue size to prevent unbounded growth
+                    if len(self._offline_queue) < self._offline_queue_max:
+                        self._offline_queue.append((method, endpoint, data))
                 return None
 
         # Flush 3.5 Offline Retry Queue on successful connection
-        if getattr(self, "_offline_queue", []):
+        with self._lock:
             oq = self._offline_queue.copy()
             self._offline_queue.clear()
+        if oq:
+            # Item #177: Use bounded executor instead of spawning raw threads
             for m, e, d in oq:
-                threading.Thread(target=self.request, args=(m, e, d, True), daemon=True).start()
+                self._ws_executor.submit(self.request, m, e, d, True)
 
         # 3.3 Strict Token Bucket Rate-Limiter
-        with getattr(self, "_rate_lock", threading.Lock()):
+        # Item #178: Calculate sleep time inside lock, but sleep outside to prevent deadlock
+        sleep_time = 0.0
+        with self._rate_lock:
             now = time.time()
-            if hasattr(self, "_tokens"):
-                self._tokens = min(self._token_capacity, self._tokens + (now - self._last_token_update) * self._token_rate)
-                self._last_token_update = now
-                if self._tokens < 1.0:
-                    time.sleep((1.0 - self._tokens) / self._token_rate)
-                    self._tokens = 0.0
-                    self._last_token_update = time.time()
-                else:
-                    self._tokens -= 1.0
+            self._tokens = min(self._token_capacity, self._tokens + (now - self._last_token_update) * self._token_rate)
+            self._last_token_update = now
+            if self._tokens < 1.0:
+                sleep_time = (1.0 - self._tokens) / self._token_rate
+                self._tokens = 0.0
+                self._last_token_update = time.time()
+            else:
+                self._tokens -= 1.0
+        if sleep_time > 0:
+            time.sleep(sleep_time)
 
         url = f"{self.base_url}{endpoint}"
         t_start = time.time()
@@ -371,8 +381,8 @@ class LCUClient:
                                 
                                 for cb in callbacks:
                                     try:
-                                        # Run callback in background so we don't stall the websocket
-                                        threading.Thread(target=cb, args=(event_name, payload), daemon=True).start()
+                                        # Run callback in bounded pool so we don't stall the websocket
+                                        self._ws_executor.submit(cb, event_name, payload)
                                     except Exception as e:
                                         Logger.error("LCU_WS", f"Callback error in {event_name}: {e}")
 

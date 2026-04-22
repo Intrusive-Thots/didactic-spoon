@@ -10,7 +10,7 @@ class LeagueLoopAPIHandler(BaseHTTPRequestHandler):
         return self.server.app_instance
 
     def _set_cors_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Origin', 'http://127.0.0.1')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
 
@@ -37,8 +37,9 @@ class LeagueLoopAPIHandler(BaseHTTPRequestHandler):
                     phase = app.automation.last_phase
                 if hasattr(app, "sidebar") and app.sidebar:
                     power_state = getattr(app.sidebar, "power_state", False)
-                    if hasattr(app.sidebar, "var_game_mode"):
-                        queue_mode = app.sidebar.var_game_mode.get()
+                    queue_mode = getattr(app.sidebar, "queue_label_text", "None")
+                    if callable(queue_mode):
+                        queue_mode = queue_mode()
 
             data = {
                 "phase": phase,
@@ -59,9 +60,23 @@ class LeagueLoopAPIHandler(BaseHTTPRequestHandler):
             try:
                 body = json.loads(post_data.decode('utf-8'))
                 action = body.get("action", "")
-            except:
-                pass
-                
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                self.send_response(400)
+                self._set_cors_headers()
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "error", "message": "Invalid JSON"}).encode('utf-8'))
+                return
+
+            valid_actions = {"find_match", "launch_client", "toggle_automation"}
+            if action not in valid_actions:
+                self.send_response(400)
+                self._set_cors_headers()
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "error", "message": f"Unknown action: {action}"}).encode('utf-8'))
+                return
+
             app = self.app_instance
             if app:
                 if action == "find_match":
@@ -78,7 +93,10 @@ class LeagueLoopAPIHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"status": "success", "action": action}).encode('utf-8'))
         else:
             self.send_response(404)
+            self._set_cors_headers()
+            self.send_header('Content-type', 'application/json')
             self.end_headers()
+            self.wfile.write(json.dumps({"status": "error", "message": "Not found"}).encode('utf-8'))
 
     # Disable default logging to avoid terminal spam
     def log_message(self, format, *args):
@@ -98,7 +116,7 @@ def get_local_ip():
 
 def start_api_server(app_instance, port=8337):
     # Port 8337 = LEET -> L E E T -> 8337 (sort of)
-    host = '0.0.0.0'
+    host = '127.0.0.1'
     try:
         server = ThreadingHTTPServer((host, port), LeagueLoopAPIHandler)
         server.app_instance = app_instance

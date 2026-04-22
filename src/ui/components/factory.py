@@ -1,8 +1,8 @@
-from utils.logger import Logger
 """
 New UI Component Factory using Design Tokens.
 Centralizes the creation of styled widgets (Panels, Cards, Buttons) ensuring visual consistency.
 """
+from utils.logger import Logger
 import functools
 import customtkinter as ctk
 from ..theme.token_loader import TOKENS
@@ -126,8 +126,11 @@ class RiotButton(ctk.CTkFrame):
                 w.bind("<Return>", lambda e: self._on_click(e))
 
         self._inner_color = inner_color
+        self._disabled = False  # Item #194: Track disabled state
         
     def _on_enter(self, h_color):
+        if getattr(self, "_disabled", False):
+            return
         self.configure()
         self.inner.configure(fg_color=h_color)
         
@@ -136,6 +139,8 @@ class RiotButton(ctk.CTkFrame):
         self.inner.configure(fg_color=i_color)
         
     def _on_click(self, e):
+        if getattr(self, "_disabled", False):
+            return
         # Optional: Add small press scale if desired
         if hasattr(self, "_canvas"):
             self._canvas.focus_set()
@@ -153,6 +158,21 @@ class RiotButton(ctk.CTkFrame):
             self._inner_color = inner_c
         if "command" in kwargs:
             self.command = kwargs.pop("command")
+        # Item #194: Support disabled state
+        if "state" in kwargs:
+            state = kwargs.pop("state")
+            if state == "disabled":
+                self._disabled = True
+                self.lbl.configure(text_color=get_color("colors.text.disabled"))
+                self.inner.configure(fg_color=get_color("colors.background.card"))
+                for w in (self, self.inner, self.lbl):
+                    w.configure(cursor="")
+            else:
+                self._disabled = False
+                self.lbl.configure(text_color=self.lbl.cget("text_color"))
+                self.inner.configure(fg_color=self._inner_color)
+                for w in (self, self.inner, self.lbl):
+                    w.configure(cursor="hand2")
         if kwargs:
             super().configure(**kwargs)
 

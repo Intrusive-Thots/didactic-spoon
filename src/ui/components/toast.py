@@ -213,7 +213,7 @@ class ToastManager:
     Manages the lifecycle and positioning of toasts.
     """
     _instance = None
-    _toasts = []
+    MAX_TOASTS = 5  # Item #189: Prevent unbounded toast accumulation
 
     @classmethod
     def get_instance(cls, root=None):
@@ -225,12 +225,23 @@ class ToastManager:
 
     def __init__(self, root):
         self.root = root
+        self._toasts = []  # Item #184: Instance-level list, not class-level
         self.container = ctk.CTkFrame(self.root, fg_color="transparent")
         # Position at bottom-right
         self.container.place(relx=0.98, rely=0.95, anchor="se")
         
     def show(self, message, icon="✨", duration=3000, theme="primary", confetti=False):
         """Create and show a toast."""
+        # Item #189: Evict oldest toast if at capacity
+        while len(self._toasts) >= self.MAX_TOASTS:
+            oldest = self._toasts[0]
+            try:
+                oldest.dismiss()
+            except Exception:
+                pass
+            if oldest in self._toasts:
+                self._toasts.remove(oldest)
+
         toast = Toast(self.container, message, icon, duration, theme, confetti)
         # Pack with initial high padding for animation
         toast.pack(pady=(50, 0), fill="x")
@@ -245,3 +256,4 @@ class ToastManager:
                 self._toasts.remove(toast)
         
         toast.bind("<Destroy>", on_destroy)
+

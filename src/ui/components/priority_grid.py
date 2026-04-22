@@ -3,6 +3,7 @@ Priority Icon Grid — Collapsible, scrollable champion icon grid.
 Reorder via select + ▲▼⤒ buttons (no drag-and-drop).
 Icons loaded from cache/assets/champion_{Name}.png.
 """
+import math
 import os
 import tkinter as tk
 import customtkinter as ctk
@@ -30,7 +31,7 @@ class PriorityIconGrid(ctk.CTkFrame):
     """Icon grid with collapse, add, edit (select → ▲▼⤒ reorder + multi-delete)."""
 
     def __init__(self, master, config, assets, **kw):
-        super().__init__(master, fg_color="#0F1A24", corner_radius=8, **kw)
+        super().__init__(master, fg_color=get_color("colors.background.panel", "#0F1A24"), corner_radius=8, **kw)
         self.config = config
         self.assets = assets
 
@@ -584,7 +585,6 @@ class PriorityIconGrid(ctk.CTkFrame):
             wr_color = "#ff4444"  # red — weak
 
         priority_label = "High" if idx is not None and idx < 3 else ("Medium" if idx is not None and idx < 7 else "Low")
-        stats_text = f"Winrate: {winrate:.1f}%\nPriority: {priority_label}"
         tk.Label(tip_frame, text=f"Winrate: {winrate:.1f}%", bg="#1E2328", fg=wr_color, justify="left",
                  font=("Segoe UI", 9, "bold"), padx=8, pady=2).pack(anchor="w")
         tk.Label(tip_frame, text=f"Priority: {priority_label}", bg="#1E2328", fg="#e0e0e0", justify="left",
@@ -656,7 +656,7 @@ class PriorityIconGrid(ctk.CTkFrame):
                     pass
             return
 
-        import math
+
         phase = getattr(self, "_shake_phase", 0)
         for i, (cell, lbl, idx) in enumerate(getattr(self, "_icon_widgets", [])):
             try:

@@ -8,7 +8,7 @@ from core.constants import SPACING_SM, SPACING_MD
 
 class FriendPriorityList(ctk.CTkFrame):
     def __init__(self, master, config, lcu=None, **kw):
-        super().__init__(master, fg_color="#0F1A24", corner_radius=8, **kw)
+        super().__init__(master, fg_color=get_color("colors.background.panel"), corner_radius=8, **kw)
 
         self.config = config
         self.lcu = lcu
@@ -71,8 +71,8 @@ class FriendPriorityList(ctk.CTkFrame):
 
     def _export_list(self):
         """Copies the active Friend Auto-Join list to the clipboard."""
+        from ui.components.toast import ToastManager
         if not self._friends_data:
-            from ui.components.toast import ToastManager
             ToastManager.get_instance().show("Friend list is empty!", icon="⚠️", theme="error")
             return
 
@@ -83,7 +83,6 @@ class FriendPriorityList(ctk.CTkFrame):
         self.clipboard_append(export_str)
         self.update()
 
-        from ui.components.toast import ToastManager
         ToastManager.get_instance().show(
             "Friend List Copied!",
             icon="📋",
@@ -132,14 +131,23 @@ class FriendPriorityList(ctk.CTkFrame):
                         
                     friends.sort(key=sort_key)
                     self._friends_data = friends
-                    self.after(0, self._render_list)
+                    # Item #152: Schedule render AND next poll from main thread only
+                    self.after(0, self._render_and_reschedule)
             except Exception:
-                pass
-            finally:
-                if self.winfo_exists():
-                    self.after(5000, self._fetch_lcu_friends_loop)
+                # Still reschedule on error
+                self.after(0, self._schedule_next_fetch)
                     
         threading.Thread(target=task, daemon=True).start()
+
+    def _render_and_reschedule(self):
+        """Called on main thread: render the list then schedule next fetch."""
+        self._render_list()
+        self._schedule_next_fetch()
+
+    def _schedule_next_fetch(self):
+        """Schedule next friend fetch from the main thread."""
+        if self.winfo_exists():
+            self.after(5000, self._fetch_lcu_friends_loop)
 
     def _toggle_collapse(self):
         self._expanded = not self._expanded
@@ -152,15 +160,7 @@ class FriendPriorityList(ctk.CTkFrame):
 
     def _toggle_auto_join(self, name):
         name_lower = name.lower()
-        if name_lower in self._auto_join_names:
-            current = self._auto_join_names[name_lower]
-            if current:
-                self._auto_join_names[name_lower] = False
-            else:
-                self._auto_join_names[name_lower] = True
-        else:
-            self._auto_join_names[name_lower] = True
-            
+        self._auto_join_names[name_lower] = not self._auto_join_names.get(name_lower, False)
         self._save_priority_list()
         self._render_list()
 
@@ -225,7 +225,7 @@ class FriendPriorityList(ctk.CTkFrame):
 
             # Hover Feedback
             def on_enter(e, r=row):
-                r.configure(fg_color="#182531")
+                r.configure(fg_color=get_color("colors.state.hover"))
             def on_leave(e, r=row):
                 r.configure(fg_color="transparent")
 
@@ -245,7 +245,7 @@ class FriendPriorityList(ctk.CTkFrame):
                 assets.get_icon_async("profileicon", icon_id, lambda img, l=icon_lbl: l.configure(image=img) if l.winfo_exists() else None, size=(36, 36), widget=icon_lbl)
 
             # Online Status Dot (Green/Red)
-            dot_color = "#39FF14" if avail != "offline" else get_color("colors.state.error")
+            dot_color = get_color("colors.state.success") if avail != "offline" else get_color("colors.state.error")
             status_dot = ctk.CTkLabel(row, text="●", text_color=dot_color, font=("Arial", 14), cursor="hand2", width=14)
             status_dot.pack(side="left", padx=(2, 4))
             CTkTooltip(status_dot, f"Status: {avail}")
@@ -254,10 +254,10 @@ class FriendPriorityList(ctk.CTkFrame):
             text_frame = ctk.CTkFrame(row, fg_color="transparent", cursor="hand2")
             text_frame.pack(side="left", expand=True, fill="x")
 
-            name_color = "#00FFCC" if avail != "offline" else get_color("colors.text.disabled")
+            name_color = get_color("colors.accent.primary") if avail != "offline" else get_color("colors.text.disabled")
             lbl_name = ctk.CTkLabel(
                 text_frame, text=name,
-                font=("Arial", 14, "bold"),
+                font=get_font("body", "bold"),
                 text_color=name_color,
                 cursor="hand2"
             )
@@ -266,8 +266,8 @@ class FriendPriorityList(ctk.CTkFrame):
             lbl_sub = ctk.CTkLabel(
                 text_frame,
                 text=status_msg,
-                text_color="#A0A7B0" if avail != "offline" else get_color("colors.text.disabled"),
-                font=("Segoe UI", 10),
+                text_color=get_color("colors.text.muted") if avail != "offline" else get_color("colors.text.disabled"),
+                font=get_font("caption"),
                 cursor="hand2"
             )
             lbl_sub.pack(anchor="w", pady=(0, 4))

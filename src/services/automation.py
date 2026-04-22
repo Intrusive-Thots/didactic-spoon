@@ -1,4 +1,6 @@
+import json
 import random
+import subprocess
 import threading
 import time
 import traceback
@@ -62,7 +64,13 @@ class AutomationEngine:
         self._last_priority_swap: float = 0.0
         self._last_search_state_time: float = 0.0
         self._honor_handled: bool = False
+        self._runes_equipped: bool = False
         self._cached_search_state: Optional[dict] = None
+
+        # Synergy / Draft / Friend action throttles (Items #163-165)
+        self._last_synergy_patch: float = 0.0
+        self._last_draft_action_time: float = 0.0
+        self._last_friend_check: float = 0.0
 
         # Game process tracking — League of Legends.exe is a separate PID
         # from LeagueClient.exe, so we monitor it independently to maintain
@@ -99,12 +107,14 @@ class AutomationEngine:
         """Called whenever the LCU pushes a state change we care about."""
         self._wake_event.set()
 
+    def stop(self) -> None:
+        """Stop the automation engine and clean up resources."""
         self.running = False
         self._stop_event.set()
         self._wake_event.set()
         try:
             self.lcu.stop_websocket()
-        except:
+        except Exception:
             pass
         self.discord_rpc.disconnect()
 
@@ -364,6 +374,8 @@ class AutomationEngine:
         if phase != "ChampSelect":
             self.setup_done = False
             self._skin_equipped = False
+            self._runes_equipped = False  # Item #167: Reset so runes re-equip next game
+            self._chat_warden_warned = False  # Item #166: Reset so toxicity is re-checked next game
             sf = self.stats_func
             if sf is not None:
                 sf([], [])
@@ -504,13 +516,13 @@ class AutomationEngine:
             
             req = self.lcu.request("GET", f"/lol-summoner/v1/summoners/{su_id}", silent=True)
             if req and req.status_code == 200:
-                name = req.json().get("gameName", "").lower()
-                tag = req.json().get("tagLine", "").lower()
+                summoner_data = req.json()  # Item #160: Parse JSON once
+                name = summoner_data.get("gameName", "").lower()
+                tag = summoner_data.get("tagLine", "").lower()
                 full_name = f"{name}#{tag}"
                 
                 if name in self._blacklist or full_name in self._blacklist:
                     self._log(f"BLACKLIST MATCH: {full_name}. Dodging immediately.")
-                    import subprocess
                     subprocess.run(["taskkill", "/IM", "LeagueClient.exe", "/F"], creationflags=subprocess.CREATE_NO_WINDOW)
                     return
 
@@ -533,7 +545,7 @@ class AutomationEngine:
                     try:
                         from ui.components.toast import ToastManager
                         ToastManager.get_instance().show(f"Toxicity Warning: A teammate typed '{kw}'", theme="error")
-                    except: pass
+                    except Exception: pass
                     return
 
     def _perform_arena_synergy(self, session):
@@ -630,7 +642,6 @@ class AutomationEngine:
             if my_action_id:
                 # Patch hover
                 now = time.time()
-                if not hasattr(self, "_last_synergy_patch"): self._last_synergy_patch = 0
                 
                 # Prevent spamming PATCH on every tick if already attempting
                 if now - self._last_synergy_patch > 0.5:
@@ -682,7 +693,6 @@ class AutomationEngine:
             else: banned_champ_ids.append(b)
 
         now = time.time()
-        if not hasattr(self, "_last_draft_action_time"): self._last_draft_action_time = 0
 
         if action_type == "ban":
             my_cell_id = me.get("cellId")
@@ -806,7 +816,6 @@ class AutomationEngine:
 
         now = time.time()
         # Rate limit checks to every ~5 seconds to avoid spamming the friends endpoint
-        if not hasattr(self, "_last_friend_check"): self._last_friend_check = 0.0
         if now - self._last_friend_check < 5.0:
             return
         self._last_friend_check = now
@@ -841,7 +850,6 @@ class AutomationEngine:
             if lol.get("ptyType") == "open":
                 pty_str = lol.get("pty", "")
                 if pty_str:
-                    import json
                     try:
                         pty_data = json.loads(pty_str)
                         party_id = pty_data.get("partyId")
