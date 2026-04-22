@@ -304,6 +304,9 @@ class LCUClient:
                 self._ws_connection.close()
             except Exception:
                 pass
+        # Item #181: Join thread with timeout for clean shutdown
+        if self._ws_thread and self._ws_thread.is_alive():
+            self._ws_thread.join(timeout=3)
 
     def subscribe(self, event_name: str, callback):
         """Subscribes an event callback to the LCU WAMP WebSocket."""
@@ -352,7 +355,12 @@ class LCUClient:
                                 pass
 
                     while self._ws_should_run:
-                        message = ws.recv()
+                        # Item #180: Use timeout to prevent blocking forever on stale connections
+                        try:
+                            ws.settimeout(30)
+                            message = ws.recv()
+                        except TimeoutError:
+                            continue
                         if not message:
                             continue
                             

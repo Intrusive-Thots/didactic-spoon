@@ -131,7 +131,7 @@ class PriorityIconGrid(ctk.CTkFrame):
             self.header, text="Edit", width=40, height=20,
             corner_radius=get_radius("sm"), font=get_font("caption"),
             fg_color="transparent",
-            text_color="#C8AA6E",
+            text_color=get_color("colors.accent.gold", "#C8AA6E"),
             hover_color=get_color("colors.state.hover"),
             command=self._toggle_edit_mode, cursor="hand2",
             )
@@ -327,15 +327,15 @@ class PriorityIconGrid(ctk.CTkFrame):
         self.btn_del = ctk.CTkButton(
             self.edit_bar, text="✕", width=30, height=24,
             corner_radius=get_radius("sm"), font=("Segoe UI", 13, "bold"),
-            fg_color="transparent", hover_color="#4d1111",
-            text_color="#ff4444", command=self._delete_active, cursor="hand2",
+            fg_color="transparent", hover_color=get_color("colors.state.danger.muted", "#4d1111"),
+            text_color=get_color("colors.state.danger", "#ff4444"), command=self._delete_active, cursor="hand2",
             )
 
         self.btn_clear_all = ctk.CTkButton(
             self.edit_bar, text="🗑️", width=30, height=24,
             corner_radius=get_radius("sm"), font=("Segoe UI", 13),
-            fg_color="transparent", hover_color="#4d1111",
-            text_color="#ff4444", command=self._request_clear_all, cursor="hand2",
+            fg_color="transparent", hover_color=get_color("colors.state.danger.muted", "#4d1111"),
+            text_color=get_color("colors.state.danger", "#ff4444"), command=self._request_clear_all, cursor="hand2",
             )
 
         self.btn_top.pack(side="left", padx=1)
@@ -532,8 +532,14 @@ class PriorityIconGrid(ctk.CTkFrame):
 
             def _on_leave(e, c=cell, nb=_normal_border):
                 self._hide_tooltip()
-                if not self._edit_mode and c._border_color != SEL_BORDER and c._border_color != DEL_BORDER:
-                    c.configure(border_color=nb)
+                # Item #135: Use cget() instead of accessing private c._border_color
+                if not self._edit_mode:
+                    try:
+                        cur_border = c.cget("border_color")
+                    except Exception:
+                        cur_border = nb
+                    if cur_border != SEL_BORDER and cur_border != DEL_BORDER:
+                        c.configure(border_color=nb)
 
             lbl.bind("<Enter>", _on_enter)
             lbl.bind("<Leave>", _on_leave)
@@ -587,14 +593,15 @@ class PriorityIconGrid(ctk.CTkFrame):
         else:
             wr_color = "#ff4444"  # red — weak
 
+        _tip_bg = get_color("colors.background.card", "#1E2328")
         priority_label = "High" if idx is not None and idx < 3 else ("Medium" if idx is not None and idx < 7 else "Low")
-        tk.Label(tip_frame, text=f"Winrate: {winrate:.1f}%", bg="#1E2328", fg=wr_color, justify="left",
+        tk.Label(tip_frame, text=f"Winrate: {winrate:.1f}%", bg=_tip_bg, fg=wr_color, justify="left",
                  font=("Segoe UI", 9, "bold"), padx=8, pady=2).pack(anchor="w")
-        tk.Label(tip_frame, text=f"Priority: {priority_label}", bg="#1E2328", fg="#e0e0e0", justify="left",
+        tk.Label(tip_frame, text=f"Priority: {priority_label}", bg=_tip_bg, fg="#e0e0e0", justify="left",
                  font=("Segoe UI", 9), padx=8, pady=(0, 2)).pack(anchor="w")
                  
         if self._edit_mode and len(self._selected_indices) == 1 and idx not in self._selected_indices:
-            tk.Label(tip_frame, text="⇧Click to move here", bg="#1E2328",
+            tk.Label(tip_frame, text="⇧Click to move here", bg=_tip_bg,
                      fg="#4da6ff", font=("Segoe UI", 8), padx=8, pady=4).pack(anchor="w")
 
     def _hide_tooltip(self):
@@ -618,7 +625,7 @@ class PriorityIconGrid(ctk.CTkFrame):
         self._selected_indices.clear()
         self._delete_marked.clear()
         if self._edit_mode:
-            self.btn_edit.configure(text="Done", text_color="#ff4444")
+            self.btn_edit.configure(text="Done", text_color=get_color("colors.state.danger", "#ff4444"))
             # Staged reveal: sweep gold borders across grid cells before showing edit bar
             self._sweep_edit_borders(entering=True)
             self.edit_bar.pack(fill="x", padx=2, pady=(4, 0))
@@ -809,7 +816,7 @@ class PriorityIconGrid(ctk.CTkFrame):
     def _commit_clear_all(self):
         """Execute the clear operation."""
         self._clear_confirm = False
-        self.btn_clear_all.configure(text="🗑️", text_color="#ff4444")
+        self.btn_clear_all.configure(text="🗑️", text_color=get_color("colors.state.danger", "#ff4444"))
 
         names = self._get_priority_list()
         if names:

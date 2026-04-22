@@ -485,8 +485,10 @@ class AutomationEngine:
             champ_id = me.get("championId", 0)
             if not champ_id: return
 
-            # Get recommended pages
-            pos = me.get("assignedPosition", "UTILITY") if me.get("assignedPosition") else "UTILITY"
+            # Item #168: Use empty string for ARAM/Arena (no assigned position)
+            # so the API returns the best generic page instead of defaulting to UTILITY
+            assigned = me.get("assignedPosition", "")
+            pos = assigned if assigned else ""
             req = self.lcu.request("GET", f"/lol-perks/v1/recommended-pages/{champ_id}?position={pos}", silent=True)
             if not req or req.status_code != 200: return
             
@@ -974,6 +976,14 @@ class AutomationEngine:
     # ── Mass Invite ──
     def mass_invite_friends(self):
         """Invite all online friends (or VIP list) to the current lobby."""
+        # Item #170: Rate-limit mass invites to prevent API spam
+        import time as _time
+        now = _time.time()
+        if now - getattr(self, '_last_mass_invite', 0) < 10:
+            self._log("Mass invite on cooldown (10s).")
+            return 0
+        self._last_mass_invite = now
+
         try:
             vip_raw = self.config.get("vip_invite_list", "")
             vip_names = set()
@@ -1037,7 +1047,9 @@ class AutomationEngine:
             self.discord_rpc.disconnect()
             return
 
-        self.discord_rpc.connect()
+        # Item #171: Guard against reconnect spam — only connect if not already connected
+        if not self.discord_rpc.is_connected:
+            self.discord_rpc.connect()
 
         state_text = self.config.get("custom_status", "LeagueLoop API").strip()
         custom_status = f"Phase: {phase}" if not state_text else state_text

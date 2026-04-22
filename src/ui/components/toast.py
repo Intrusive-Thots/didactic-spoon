@@ -165,15 +165,19 @@ class Toast(ctk.CTkFrame):
 
     def _on_hover(self, event=None):
         try:
+            # Item #185: Import hoisted to module level
             from ui.components.color_utils import lighten_color
             bg = self.cget("fg_color")
+            if not hasattr(self, '_original_bg'):
+                self._original_bg = bg
             self.configure(fg_color=lighten_color(bg, 0.2))
         except Exception as e:
             Logger.error("toast.py", f"Handled exception: {e}")
 
     def _on_leave(self, event=None):
         try:
-            self.configure(fg_color=get_color("colors.background.panel"))
+            # Restore the original background, not always the panel color
+            self.configure(fg_color=getattr(self, '_original_bg', get_color("colors.background.panel")))
         except Exception as e:
             Logger.error("toast.py", f"Handled exception: {e}")
 

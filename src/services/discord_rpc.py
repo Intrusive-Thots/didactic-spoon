@@ -1,5 +1,6 @@
 import time
 import threading
+from typing import Optional
 from pypresence import Presence # type: ignore
 from utils.logger import Logger # type: ignore
 
@@ -16,6 +17,11 @@ class DiscordPresenceManager:
         self._thread = None
         self._last_update = 0
         self._current_state = {}
+
+    @property
+    def is_connected(self) -> bool:
+        """Whether we currently have an active Discord IPC connection."""
+        return self._connected
 
     def connect(self):
         """Attempts to connect to Discord IPC locally."""
@@ -48,7 +54,7 @@ class DiscordPresenceManager:
             except Exception:
                 pass
 
-    def update_presence(self, state: str, details: str = None, start_time: int = None, party_size: list = None):
+    def update_presence(self, state: str, details: Optional[str] = None, start_time: int = None, party_size: list = None):
         """Updates the discord profile status, respecting ratelimits (max 1 per 15s typically)."""
         if not self.config.get("discord_rpc_enabled", True):
             return
@@ -61,8 +67,6 @@ class DiscordPresenceManager:
         if now - self._last_update < 10.0:
             return
 
-        self._last_update = now
-        
         try:
             kwargs = {
                 "state": state,
@@ -76,7 +80,11 @@ class DiscordPresenceManager:
             if party_size:
                 kwargs["party_size"] = party_size
 
-            # Store the state in case we want to compare later
+            # Deduplicate: skip update if state hasn't changed
+            if kwargs == self._current_state:
+                return
+
+            self._last_update = now
             self._current_state = kwargs
             
             self.rpc.update(**kwargs)

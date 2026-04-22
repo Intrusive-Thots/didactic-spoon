@@ -210,6 +210,10 @@ class FriendPriorityList(ctk.CTkFrame):
             lbl.pack(pady=20)
             return
 
+        # Item #157: Hoist root/assets lookup outside the per-friend loop
+        root = self.winfo_toplevel()
+        assets = getattr(root, "assets", None)
+
         for item in self._friends_data:
             name = item.get("gameName", "")
             if not name: continue
@@ -238,8 +242,6 @@ class FriendPriorityList(ctk.CTkFrame):
             icon_frame.pack_propagate(False)
             icon_lbl = ctk.CTkLabel(icon_frame, text="")
             icon_lbl.pack(expand=True, fill="both")
-            root = self.winfo_toplevel()
-            assets = getattr(root, "assets", None)
             if assets and hasattr(assets, "get_icon_async"):
                 icon_id = str(item.get("icon", 1))
                 assets.get_icon_async("profileicon", icon_id, lambda img, l=icon_lbl: l.configure(image=img) if l.winfo_exists() else None, size=(36, 36), widget=icon_lbl)
