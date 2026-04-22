@@ -102,6 +102,8 @@
     ],
     "arena_auto_lock": true,
     "arena_synergy_enabled": true,
+    "run_in_tray": true,
+    "discord_rpc_enabled": true,
     "ban_TOP": "",
     "ban_JUNGLE": "",
     "ban_MIDDLE": "",
@@ -138,7 +140,7 @@
         },
         {
             "name": "cr\u00e8me de la crem",
-            "enabled": true
+            "enabled": false
         },
         {
             "name": "deardiaries",
@@ -265,9 +267,9 @@
         "Palafu#NA1",
         "NicholasLobo\u2069 #\u2066NA1\u2069"
     ],
-    "auto_join_enabled": false,
+    "auto_join_enabled": true,
     "auto_honor_enabled": true,
-    "honor_strategy": "random",
+    "honor_strategy": "best_kda",
     "vip_invite_list": "",
     "startup_status": ""
 }

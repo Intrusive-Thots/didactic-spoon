@@ -168,7 +168,7 @@ class SidebarWidget(ctk.CTkFrame):
             text_color=get_color("colors.accent.gold", "#C8AA6E"),
             cursor="hand2"
         )
-        self.queue_label.grid(row=0, column=0, padx=8, pady=(10, 2), sticky="w")
+        self.queue_label.grid(row=0, column=0, padx=SPACING_SM, pady=(SPACING_MD, 2), sticky="w")
         self.queue_label.bind("<Button-1>", lambda e: self.master._open_settings() if hasattr(self.master, "_open_settings") else None)
         CTkTooltip(self.queue_label, "Click to change game mode")
 
@@ -183,7 +183,7 @@ class SidebarWidget(ctk.CTkFrame):
             height=24,
             command=self._on_power_click
         )
-        self.btn_power_status.grid(row=0, column=2, padx=8, pady=(10, 2), sticky="e")
+        self.btn_power_status.grid(row=0, column=2, padx=SPACING_SM, pady=(SPACING_MD, 2), sticky="e")
         hk_auto = self.config.get("hotkey_toggle_automation", "ctrl+shift+a").upper()
         CTkTooltip(self.btn_power_status, f"Toggle Automation ({hk_auto})")
 
@@ -193,7 +193,7 @@ class SidebarWidget(ctk.CTkFrame):
             font=get_font("caption"),
             text_color=get_color("colors.text.primary")
         )
-        self.time_label.grid(row=1, column=0, padx=8, pady=(0, 10), sticky="w")
+        self.time_label.grid(row=1, column=0, padx=SPACING_SM, pady=(0, SPACING_MD), sticky="w")
 
         self.estimate_label = ctk.CTkLabel(
             self.session_frame,
@@ -201,7 +201,7 @@ class SidebarWidget(ctk.CTkFrame):
             font=get_font("caption"),
             text_color=get_color("colors.state.success", "#00C853")
         )
-        self.estimate_label.grid(row=1, column=1, padx=8, pady=(0, 10), sticky="e")
+        self.estimate_label.grid(row=1, column=1, padx=SPACING_SM, pady=(0, SPACING_MD), sticky="e")
 
         self.session_separator = ctk.CTkFrame(
             self.session_frame,
@@ -224,7 +224,7 @@ class SidebarWidget(ctk.CTkFrame):
         self.action_container.pack(fill="x", pady=(0, SPACING_LG))
 
         self.btn_frame = ctk.CTkFrame(self.action_container, fg_color="transparent")
-        self.btn_frame.pack(fill="x", padx=12, pady=12)
+        self.btn_frame.pack(fill="x", padx=SPACING_MD, pady=SPACING_MD)
 
         # Session Block relocated above self.action_container
 
@@ -503,12 +503,12 @@ class SidebarWidget(ctk.CTkFrame):
             self.stats_frame, text="LOBBY STATS", font=get_font("caption", "bold"),
             text_color=get_color("colors.accent.gold", "#C8AA6E"), anchor="w"
         )
-        self.lbl_stats_title.pack(fill="x", padx=14, pady=(8, 2))
+        self.lbl_stats_title.pack(fill="x", padx=SPACING_MD, pady=(SPACING_SM, 2))
         
-        ctk.CTkFrame(self.stats_frame, height=1, fg_color=get_color("colors.border.subtle")).pack(fill="x", padx=14, pady=(0, 8))
+        ctk.CTkFrame(self.stats_frame, height=1, fg_color=get_color("colors.border.subtle")).pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
         
         self.stats_content = ctk.CTkFrame(self.stats_frame, fg_color="transparent")
-        self.stats_content.pack(fill="x", padx=14)
+        self.stats_content.pack(fill="x", padx=SPACING_MD)
         # stats_frame is NOT packed yet — it appears only during ChampSelect
 
         # ── Fixed Footer (pinned to bottom of sidebar, never clips) ──
@@ -612,7 +612,7 @@ class SidebarWidget(ctk.CTkFrame):
             self.lbl_title.pack_forget()
             
             self.header.pack_configure(fill="both", expand=True, padx=0, pady=0)
-            self.btn_collapse.pack_configure(side="top", pady=10, padx=0)
+            self.btn_collapse.pack_configure(side="top", pady=SPACING_MD, padx=0)
             
             self.btn_collapse.configure(text="▶")
             self.master.geometry("44x44")
