@@ -12,7 +12,7 @@ class DraftTool(ctk.CTkFrame):
     ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"]
 
     def __init__(self, master, config, assets, **kw):
-        super().__init__(master, fg_color="#0F1A24", corner_radius=get_radius("md"), **kw)
+        super().__init__(master, fg_color=get_color("colors.background.panel", "#0F1A24"), corner_radius=get_radius("md"), **kw)
         self.config = config
         self.assets = assets
 
@@ -48,7 +48,7 @@ class DraftTool(ctk.CTkFrame):
             self.body,
             width=280, height=200,
             fg_color=get_color("colors.background.card"),
-            segmented_button_fg_color="#0A1428",
+            segmented_button_fg_color=get_color("colors.background.app", "#0A1428"),
             segmented_button_selected_color=get_color("colors.accent.primary"),
             segmented_button_selected_hover_color=get_color("colors.state.hover"),
             segmented_button_unselected_hover_color=get_color("colors.state.hover"),
@@ -67,7 +67,7 @@ class DraftTool(ctk.CTkFrame):
             # Pick Priority Column
             pick_frame = ctk.CTkFrame(tab, fg_color="transparent")
             pick_frame.pack(side="left", fill="both", expand=True, padx=(0, 4))
-            ctk.CTkLabel(pick_frame, text="Picks", font=get_font("caption", "bold"), text_color="#00C853").pack(anchor="w")
+            ctk.CTkLabel(pick_frame, text="Picks", font=get_font("caption", "bold"), text_color=get_color("colors.state.success")).pack(anchor="w")
             
             for i in range(1, 4):
                 key = f"pick_{role}_{i}"
@@ -78,7 +78,7 @@ class DraftTool(ctk.CTkFrame):
             # Ban Priority Column
             ban_frame = ctk.CTkFrame(tab, fg_color="transparent")
             ban_frame.pack(side="right", fill="both", expand=True, padx=(4, 0))
-            ctk.CTkLabel(ban_frame, text="Bans", font=get_font("caption", "bold"), text_color="#E67E22").pack(anchor="w")
+            ctk.CTkLabel(ban_frame, text="Bans", font=get_font("caption", "bold"), text_color=get_color("colors.state.warning", "#E67E22")).pack(anchor="w")
             
             for i in range(1, 4):
                 key = f"ban_{role}_{i}"
@@ -116,7 +116,14 @@ class DraftTool(ctk.CTkFrame):
     def _save_config(self):
         saved_count = 0
         for key, entry in self._entries.items():
-            val = entry.get().strip().title()
+            val = entry.get().strip()
+            # Item #126: Use the entry's resolved value if available,
+            # avoiding .title() which corrupts multi-word names like "Dr. Mundo"
+            if hasattr(entry, 'resolved_name') and entry.resolved_name:
+                val = entry.resolved_name
+            elif val:
+                # Fallback: capitalize first letter of each word but preserve existing casing
+                val = val.strip()
             self.config.set(key, val)
             if val:
                 saved_count += 1
@@ -129,11 +136,13 @@ class DraftTool(ctk.CTkFrame):
         try:
             from ui.components.toast import ToastManager
             ToastManager.get_instance().show("Draft Profiles Saved", theme="success", icon="🛡️")
-        except:
+        except Exception:
             pass
 
-        def revert():
-            if self.winfo_exists():
-                self.btn_save.configure(text=orig_text, fg_color=orig_color)
-                
-        self.after(1000, revert)
+        # Item #132: Store timer ID so it can be cancelled if widget is destroyed
+        self._revert_timer = self.after(1000, self._revert_save_button, orig_text, orig_color)
+
+    def _revert_save_button(self, text, color):
+        """Safely revert save button text after flash."""
+        if self.winfo_exists() and self.btn_save.winfo_exists():
+            self.btn_save.configure(text=text, fg_color=color)

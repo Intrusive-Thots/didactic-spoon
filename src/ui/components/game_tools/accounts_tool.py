@@ -8,6 +8,7 @@ Uses the same visual language as ArenaTool (collapsible header,
 card-based list, icon badges).
 """
 import customtkinter as ctk
+import threading
 from datetime import datetime
 
 from ui.components.factory import get_color, get_font, get_radius
@@ -19,7 +20,7 @@ class AccountsTool(ctk.CTkFrame):
     """Multi-account manager with encrypted credential storage."""
 
     def __init__(self, master, account_manager, lcu=None, **kw):
-        super().__init__(master, fg_color="#0F1A24", corner_radius=8, **kw)
+        super().__init__(master, fg_color=get_color("colors.background.panel", "#0F1A24"), corner_radius=8, **kw)
         self.acct_mgr = account_manager
         self.lcu = lcu
 
@@ -27,6 +28,7 @@ class AccountsTool(ctk.CTkFrame):
         self._adding = False
         self._editing_idx = -1
         self._show_password = False
+        self._detect_in_progress = False  # Item #116: Guard against concurrent detection threads
 
         self._build_header()
         self._build_body()
@@ -322,11 +324,18 @@ class AccountsTool(ctk.CTkFrame):
     # ─────────── Active Detection ───────────
     def _detect_active(self):
         """Background detection of which account is currently logged in."""
-        import threading
+        # Item #116: Prevent duplicate threads from rapid expand/collapse
+        if self._detect_in_progress:
+            return
+        self._detect_in_progress = True
+
         def _detect():
-            self.acct_mgr.detect_active_account()
-            if self.winfo_exists():
-                self.after(0, self._render_accounts)
+            try:
+                self.acct_mgr.detect_active_account()
+                if self.winfo_exists():
+                    self.after(0, self._render_accounts)
+            finally:
+                self._detect_in_progress = False
         threading.Thread(target=_detect, daemon=True).start()
 
     # ─────────── Render Account List ───────────
@@ -361,10 +370,11 @@ class AccountsTool(ctk.CTkFrame):
             top = ctk.CTkFrame(card, fg_color="transparent")
             top.pack(fill="x", padx=6, pady=(6, 0))
 
-            # Active indicator
-            status_dot = "🟢" if is_active else "⚪"
+            # Active indicator — Item #118: Use Unicode dot with token colors instead of emojis
+            dot_color = get_color("colors.state.success", "#00C853") if is_active else get_color("colors.text.disabled")
             ctk.CTkLabel(
-                top, text=status_dot, font=("Segoe UI", 9),
+                top, text="●", font=("Segoe UI", 10),
+                text_color=dot_color,
                 width=14
             ).pack(side="left", padx=(0, 4))
 
@@ -398,9 +408,9 @@ class AccountsTool(ctk.CTkFrame):
                     corner_radius=get_radius("sm"),
                     font=get_font("caption", "bold"),
                     fg_color="transparent",
-                    hover_color="#4d1111",
-                    text_color="#ff4444",
-                    border_width=1, border_color="#ff4444",
+                    hover_color=get_color("colors.state.danger.muted", "#4d1111"),
+                    text_color=get_color("colors.state.danger", "#ff4444"),
+                    border_width=1, border_color=get_color("colors.state.danger", "#ff4444"),
                     command=self._sign_out_active,
                     cursor="hand2",
                 )
@@ -587,7 +597,9 @@ class AccountsTool(ctk.CTkFrame):
         """Convert ISO timestamp to relative time string."""
         try:
             dt = datetime.fromisoformat(iso_str)
-            diff = datetime.now() - dt
+            # Item #125: Handle timezone-aware ISO strings by comparing in same tz
+            now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
+            diff = now - dt
             seconds = int(diff.total_seconds())
 
             if seconds < 60:

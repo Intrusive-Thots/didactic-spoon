@@ -85,52 +85,38 @@ class StatsScraper:
         self.set_mode(mode)
 
     def _fetch_live_data_background(self, mode):
-        # 4.2 Auto-clearing cache validation
-        now = time.time()
-        if now - self._cache_timestamps.get(mode, 0) < 3600 * 24:
-            return  # Cache is valid for 24 hours
-            
-        def fetch():
-            try:
-                # 4.1 Live Data Hook mapping
-                req = requests.get(f"https://league-stats-api.example/v1/winrates?mode={mode}", timeout=3)
-                if req.status_code == 200:
-                    data = req.json()
-                    sanitized = {}
-                    for k, v in data.items():
-                        # 4.4 Data sanitization regex
-                        c_k = re.sub(r'[^a-zA-Z0-9]', '', k).lower()
-                        sanitized[c_k] = float(v)
-                    self.live_winrates[mode] = sanitized
-                    self._cache_timestamps[mode] = time.time()
-                else:
-                    raise Exception(f"HTTP {req.status_code}")
-            except Exception as e:
-                # 4.3 Fallback to Local Assets on HTTP 500
-                Logger.debug("Stats", f"Live scrape failed for {mode}, falling back to local. Error: {e}")
-                self._cache_timestamps[mode] = time.time() - 3600 * 23  # Retry in 1 hour if failed
-
-        # 4.5 Concurrent Scraper Threading
-        self._executor.submit(fetch)
+        # Item #195: Live API URL is a placeholder — skip entirely until a real endpoint is configured.
+        # When a real API is available, replace this with actual fetch logic.
+        pass
 
     def set_mode(self, mode):
         """Switch active dataset based on game mode string."""
         self.mode = mode
         ml = str(mode).lower()
+        # Item #197: Reference baseline dicts directly instead of copying every time.
+        # The automation engine only reads from win_rates, never mutates it.
         if "aram" in ml:
-            self.win_rates = dict(BASELINE_ARAM_WINRATES)
+            self.win_rates = BASELINE_ARAM_WINRATES
         elif "arena" in ml:
-            self.win_rates = dict(BASELINE_ARENA_WINRATES)
+            self.win_rates = BASELINE_ARENA_WINRATES
         elif "quickplay" in ml or "nexus" in ml or "one for all" in ml or "ultimate" in ml:
-            self.win_rates = dict(BASELINE_QUICKPLAY_WINRATES)
+            self.win_rates = BASELINE_QUICKPLAY_WINRATES
         else:
-            self.win_rates = dict(BASELINE_RANKED_WINRATES)
+            self.win_rates = BASELINE_RANKED_WINRATES
         self._fetch_live_data_background(self.mode)
 
     def set_mode_by_queue_id(self, queue_id):
         """Switch active dataset by numeric queue ID for precise mode resolution."""
         dataset = _QUEUE_DATASET_MAP.get(queue_id, BASELINE_ARAM_WINRATES)
         self.win_rates = dict(dataset)
+        # Update self.mode string so is_offline returns accurate results
+        _QUEUE_MODE_NAMES = {
+            450: "ARAM", 2400: "ARAM Mayhem", 420: "Ranked Solo/Duo",
+            440: "Ranked Flex", 400: "Draft Pick", 1700: "Arena",
+            490: "Quickplay", 900: "URF", 1010: "ARURF",
+            1300: "Nexus Blitz", 1020: "One For All", 1400: "Ultimate Spellbook",
+        }
+        self.mode = _QUEUE_MODE_NAMES.get(queue_id, self.mode)
         self._fetch_live_data_background(self.mode)
 
     def get_winrate(self, champ_name):

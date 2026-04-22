@@ -557,13 +557,16 @@ class PriorityIconGrid(ctk.CTkFrame):
         
         display = f"#{idx + 1}  {name}" if idx is not None else name
         tip_frame = tk.Frame(
-            self._tip, bg="#1E2328",
-            highlightbackground="#C8AA6E", highlightthickness=1, highlightcolor="#C8AA6E"
+            self._tip, bg=get_color("colors.background.card", "#1E2328"),
+            highlightbackground=get_color("colors.accent.gold", "#C8AA6E"),
+            highlightthickness=1, highlightcolor=get_color("colors.accent.gold", "#C8AA6E")
         )
         tip_frame.pack()
         
         # Header (Rank and Name)
-        tk.Label(tip_frame, text=display, bg="#1E2328", fg="#C8AA6E",
+        tk.Label(tip_frame, text=display,
+                 bg=get_color("colors.background.card", "#1E2328"),
+                 fg=get_color("colors.accent.gold", "#C8AA6E"),
                  font=("Segoe UI", 10, "bold"), padx=8, pady=4).pack(anchor="w")
                  
         # Rich Stats — pull real winrate from StatsScraper

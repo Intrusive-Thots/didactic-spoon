@@ -25,7 +25,9 @@ import customtkinter as ctk
 
 from ui.components.factory import get_color, get_font, get_radius
 from ui.components.champion_input import ChampionInput
+from ui.components.toast import ToastManager  # Item #112: Hoist from inline imports
 from ui.ui_shared import CTkTooltip
+from utils.path_utils import get_asset_path  # Item #102: Hoist from _scan_known_champions
 from core.constants import SPACING_SM, SPACING_MD
 
 ICON_SIZE = 28
@@ -36,7 +38,7 @@ class ArenaTool(ctk.CTkFrame):
     """Arena Synergy Picker V4: IF Teammate locks X → I lock Y (fallback priority)."""
 
     def __init__(self, master, config, assets, **kw):
-        super().__init__(master, fg_color="#0F1A24", corner_radius=8, **kw)
+        super().__init__(master, fg_color=get_color("colors.background.panel", "#0F1A24"), corner_radius=8, **kw)
         self.config = config
         self.assets = assets
 
@@ -87,7 +89,6 @@ class ArenaTool(ctk.CTkFrame):
 
     # ───────────── champion resolution ─────────────
     def _scan_known_champions(self):
-        from utils.path_utils import get_asset_path
         known = {}
         cache_dir = get_asset_path("assets")
         if os.path.isdir(cache_dir):
@@ -266,8 +267,8 @@ class ArenaTool(ctk.CTkFrame):
         ctk.CTkButton(
             self.add_row, text="✕", width=24, height=24,
             corner_radius=get_radius("sm"), font=("Segoe UI", 11, "bold"),
-            fg_color="transparent", hover_color="#4d1111",
-            text_color="#ff4444",
+            fg_color="transparent", hover_color=get_color("colors.state.danger.muted", "#4d1111"),
+            text_color=get_color("colors.state.danger", "#ff4444"),
             command=self._cancel_add, cursor="hand2"
         ).pack(side="right", padx=(4, 0))
 
@@ -314,7 +315,7 @@ class ArenaTool(ctk.CTkFrame):
         self._add_step = 1
         self._pending_teammate = ""
         self._pending_me_list = []
-        self.step_label.configure(text="STEP 1 ─ IF teammate picks:", text_color="#A855F7")
+        self.step_label.configure(text="STEP 1 ─ IF teammate picks:", text_color=get_color("colors.accent.purple", "#A855F7"))
         self.add_entry.delete(0, "end")
         self.add_entry.configure(placeholder_text="Teammate champion...")
         self.btn_commit.configure(text="Next →",
@@ -330,7 +331,7 @@ class ArenaTool(ctk.CTkFrame):
         self._add_step = 2
         self.step_label.configure(
             text=f"STEP 2 ─ IF {self._pending_teammate} → THEN I pick:",
-            text_color="#00C853"
+            text_color=get_color("colors.state.success", "#00C853")
         )
         self.add_entry.delete(0, "end")
         self.add_entry.configure(placeholder_text="My champion...")
@@ -362,9 +363,6 @@ class ArenaTool(ctk.CTkFrame):
             return
 
         if self._add_step == 1:
-            if not resolved:
-                self._flash_entry()
-                return
             self._pending_teammate = resolved
             self._advance_to_step2()
 
@@ -445,7 +443,7 @@ class ArenaTool(ctk.CTkFrame):
                 fg_color=get_color("colors.background.card"),
                 corner_radius=10,
                 border_width=1,
-                border_color="#00C853" if i == 0 else "#2E7D32"
+                border_color=get_color("colors.state.success", "#00C853") if i == 0 else get_color("colors.state.success.muted", "#2E7D32")
             )
             tag.pack(side="left", padx=2, pady=2)
 
@@ -465,8 +463,8 @@ class ArenaTool(ctk.CTkFrame):
             ctk.CTkButton(
                 tag, text="×", width=14, height=14,
                 corner_radius=7, font=("Arial", 10),
-                fg_color="transparent", hover_color="#4d1111",
-                text_color="#ff4444",
+                fg_color="transparent", hover_color=get_color("colors.state.danger.muted", "#4d1111"),
+                text_color=get_color("colors.state.danger", "#ff4444"),
                 command=lambda idx=i: self._remove_pending_tag(idx),
                 cursor="hand2"
             ).pack(side="left", padx=(0, 4))
@@ -537,8 +535,8 @@ class ArenaTool(ctk.CTkFrame):
                 font=get_font("body", "bold"),
                 fg_color="transparent",
                 border_width=1,
-                border_color="#A855F7",
-                text_color="#A855F7",
+                border_color=get_color("colors.accent.purple", "#A855F7"),
+                text_color=get_color("colors.accent.purple", "#A855F7"),
                 hover_color=get_color("colors.background.card"),
                 height=36,
                 corner_radius=8,
@@ -551,7 +549,7 @@ class ArenaTool(ctk.CTkFrame):
         _card_bg = get_color("colors.background.card")
         _radius = get_radius("sm")
         _muted = get_color("colors.text.muted")
-        _disabled_bg = "#0A0E14"
+        _disabled_bg = get_color("colors.background.disabled", "#0A0E14")
 
         for i, pair in enumerate(pairs):
             is_enabled = pair.get("enabled", True)
@@ -559,7 +557,7 @@ class ArenaTool(ctk.CTkFrame):
 
             card_bg = _card_bg if is_enabled else _disabled_bg
             # Active pair gets a subtle glow border
-            border_color = "#A855F7" if is_active else card_bg
+            border_color = get_color("colors.accent.purple", "#A855F7") if is_active else card_bg
 
             row = ctk.CTkFrame(
                 self.list_frame, fg_color=card_bg,
@@ -704,7 +702,7 @@ class ArenaTool(ctk.CTkFrame):
                     color_str = "#2A3A2A" if j == 0 else "#1E2E1E"
 
                 tag = ctk.CTkFrame(
-                    bottom, fg_color="#0A1428",
+                    bottom, fg_color=get_color("colors.background.app", "#0A1428"),
                     corner_radius=10,
                     border_width=1,
                     border_color=color_str
@@ -805,7 +803,6 @@ class ArenaTool(ctk.CTkFrame):
             pairs.insert(idx + 1, clone)
             self._save_pairs(pairs)
             try:
-                from ui.components.toast import ToastManager
                 ToastManager.get_instance().show(
                     f"Cloned: {clone['teammate']}",
                     icon="⧉", theme="success"
@@ -820,7 +817,6 @@ class ArenaTool(ctk.CTkFrame):
             pairs.pop(idx)
             self._save_pairs(pairs)
             try:
-                from ui.components.toast import ToastManager
                 ToastManager.get_instance().show(
                     f"Removed {removed}",
                     icon="🗑️", theme="error"
@@ -844,7 +840,6 @@ class ArenaTool(ctk.CTkFrame):
         ))
 
         try:
-            from ui.components.toast import ToastManager
             ToastManager.get_instance().show("Undid last action", icon="↶", theme="success")
         except Exception:
             pass

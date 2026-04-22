@@ -43,6 +43,7 @@ class Omnibar(ctk.CTkFrame):
         self._filtered_commands = []
         self._selected_index = 0
         self._result_widgets = []
+        self._debounce_timer = None  # Item #144: Initialize in __init__ instead of hasattr guard
 
         # ⚡ Bolt: Precompute standard theme colors to avoid dynamic token resolution
         # overhead during high-frequency list navigation (_on_up, _on_down).
@@ -83,8 +84,8 @@ class Omnibar(ctk.CTkFrame):
             self,
             fg_color="transparent",
             height=300,
-            scrollbar_button_color="#1E2328",
-            scrollbar_button_hover_color="#3A4654",
+            scrollbar_button_color=get_color("colors.background.card"),
+            scrollbar_button_hover_color=get_color("colors.state.hover"),
         )
         self.results_frame.pack(fill="both", expand=True, padx=TOKENS.get("spacing.xs", 4), pady=TOKENS.get("spacing.sm", 8))
 
@@ -161,7 +162,7 @@ class Omnibar(ctk.CTkFrame):
             return
 
         # ⚡ Bolt: Debounce search input to reduce UI blocking on rapid keystrokes
-        if hasattr(self, "_debounce_timer") and self._debounce_timer is not None:
+        if self._debounce_timer is not None:
             self.after_cancel(self._debounce_timer)
 
         self._debounce_timer = self.after(150, self._perform_search)
