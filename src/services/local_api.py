@@ -47,6 +47,13 @@ class LeagueLoopAPIHandler(BaseHTTPRequestHandler):
                 "queue_mode": queue_mode
             }
             self.wfile.write(json.dumps(data).encode('utf-8'))
+        elif self.path == '/health':
+            # Item #49: Health check endpoint for external monitoring
+            self.send_response(200)
+            self._set_cors_headers()
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "ok"}).encode('utf-8'))
         else:
             self.send_response(404)
             self.end_headers()

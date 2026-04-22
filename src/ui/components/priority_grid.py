@@ -132,6 +132,15 @@ class PriorityIconGrid(ctk.CTkFrame):
         self.lbl_section.bind("<Enter>", lambda e: self.lbl_section.configure(text_color=get_color("colors.text.primary")))
         self.lbl_section.bind("<Leave>", lambda e: self.lbl_section.configure(text_color=get_color("colors.text.muted")))
 
+        # Item #141: Count badge
+        self.lbl_count = ctk.CTkLabel(
+            self.header, text="0", width=22, height=18,
+            corner_radius=9, fg_color=get_color("colors.accent.primary"),
+            text_color=get_color("colors.background.app"),
+            font=get_font("caption", "bold")
+        )
+        self.lbl_count.pack(side="left", padx=(4, 0))
+
         # Edit / Done
         self.btn_edit = ctk.CTkButton(
             self.header, text="Edit", width=40, height=20,
@@ -458,6 +467,15 @@ class PriorityIconGrid(ctk.CTkFrame):
         self._icon_widgets.clear()
 
         names = self._get_priority_list()
+
+        # Item #141: Update count badge
+        if hasattr(self, "lbl_count"):
+            count = len(names)
+            self.lbl_count.configure(text=str(count))
+            if count == 0:
+                self.lbl_count.configure(fg_color=get_color("colors.text.muted"))
+            else:
+                self.lbl_count.configure(fg_color=get_color("colors.accent.primary"))
 
         if not names:
             # 🔮 Malcolm's Infusion: Interactive Empty State
