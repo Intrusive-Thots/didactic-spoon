@@ -302,8 +302,8 @@ class LCUClient:
         if self._ws_connection:
             try:
                 self._ws_connection.close()
-            except Exception:
-                pass
+            except Exception as e:
+                Logger.debug("LCU_WS", f"WS close error (safe to ignore): {e}")
         # Item #181: Join thread with timeout for clean shutdown
         if self._ws_thread and self._ws_thread.is_alive():
             self._ws_thread.join(timeout=3)
@@ -351,8 +351,8 @@ class LCUClient:
                             try:
                                 msg = [5, ev]
                                 ws.send(json.dumps(msg))
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                Logger.debug("LCU_WS", f"WS subscribe send failed: {e}")
 
                     while self._ws_should_run:
                         # Item #180: Use timeout to prevent blocking forever on stale connections
@@ -376,8 +376,8 @@ class LCUClient:
                                 try:
                                     if isinstance(payload, dict) and 'data' in payload and 'eventType' in payload:
                                         payload = payload['data']  # Normalize nested WAMP payload to flat data
-                                except Exception:
-                                    pass
+                                except Exception as e:
+                                    Logger.debug("LCU_WS", f"WAMP payload normalization failed: {e}")
 
                                 # Find callbacks
                                 callbacks = []

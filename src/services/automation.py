@@ -119,8 +119,8 @@ class AutomationEngine:
         self._wake_event.set()
         try:
             self.lcu.stop_websocket()
-        except Exception:
-            pass
+        except Exception as e:
+            Logger.debug("Auto", f"WebSocket stop error (safe to ignore): {e}")
         self.discord_rpc.disconnect()
 
     def pause(self) -> None:
@@ -262,8 +262,8 @@ class AutomationEngine:
                 if not sess_req or sess_req.status_code in [404, 500]:
                     Logger.debug("AutoLoop", "Ghost ChampSelect phase detected. Correcting to Lobby.")
                     phase = "Lobby"
-            except Exception:
-                pass
+            except Exception as e:
+                Logger.debug("AutoLoop", f"Ghost ChampSelect check failed: {e}")
 
         # Cross-check: LCU says "None" but the game process is alive → correct to InProgress.
         # This catches race conditions during game launch / LCU restart transitions.
@@ -565,7 +565,8 @@ class AutomationEngine:
                     try:
                         from ui.components.toast import ToastManager
                         ToastManager.get_instance().show(f"Toxicity Warning: A teammate typed '{kw}'", theme="error")
-                    except Exception: pass
+                    except Exception as e:
+                        Logger.debug("Auto", f"Toast notification failed: {e}")
                     return
 
     def _perform_arena_synergy(self, session):

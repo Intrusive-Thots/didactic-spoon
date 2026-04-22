@@ -51,8 +51,8 @@ class DiscordPresenceManager:
         if self.rpc:
             try:
                 self.rpc.close()
-            except Exception:
-                pass
+            except Exception as e:
+                Logger.debug("Discord", f"RPC disconnect error (safe to ignore): {e}")
 
     def update_presence(self, state: str, details: Optional[str] = None, start_time: int = None, party_size: list = None):
         """Updates the discord profile status, respecting ratelimits (max 1 per 15s typically)."""

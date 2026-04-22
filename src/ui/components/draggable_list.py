@@ -23,7 +23,7 @@ class DraggableList(ctk.CTkScrollableFrame):
         self._row_frames.clear()
         
         if not self.items:
-            lbl_empty = ctk.CTkLabel(self, text="Build your ARAM priority list.\nClick '+ Add Champion' to start.", text_color="gray")
+            lbl_empty = ctk.CTkLabel(self, text="Build your ARAM priority list.\nClick '+ Add Champion' to start.", text_color=get_color("colors.text.muted", "gray"))
             lbl_empty.pack(pady=20)
             self._row_frames.append(lbl_empty)
             return
@@ -36,12 +36,12 @@ class DraggableList(ctk.CTkScrollableFrame):
         font_body = get_font("body")
 
         for i, item in enumerate(self.items):
-            frame = ctk.CTkFrame(self, fg_color=("gray85", "gray20"))
+            frame = ctk.CTkFrame(self, fg_color=get_color("colors.background.card", "gray20"))
             frame.pack(fill="x", pady=2, padx=5)
             self._row_frames.append(frame)
             
             # Priority Number
-            lbl_pri = ctk.CTkLabel(frame, text=f"#{i+1}", width=30, font=font_body, text_color="gold")
+            lbl_pri = ctk.CTkLabel(frame, text=f"#{i+1}", width=30, font=font_body, text_color=get_color("colors.accent.gold", "gold"))
             lbl_pri.pack(side="left", padx=5)
             
             # Champion Icon
@@ -70,26 +70,26 @@ class DraggableList(ctk.CTkScrollableFrame):
             # Up Button
             btn_up = ctk.CTkButton(
                 actions, text="▲", width=25, height=25,
-                fg_color="transparent", hover_color="gray30",
+                fg_color="transparent", hover_color=get_color("colors.state.hover", "gray30"),
                 command=lambda f=frame: self._move_item(f, -1),
                 cursor="hand2",
             )
             btn_up.pack(side="left", padx=2)
             CTkTooltip(btn_up, "Move Up")
             if i == 0:
-                btn_up.configure(state="disabled", text_color="gray40")
+                btn_up.configure(state="disabled", text_color=get_color("colors.text.disabled", "gray40"))
                 
             # Down Button
             btn_down = ctk.CTkButton(
                 actions, text="▼", width=25, height=25,
-                fg_color="transparent", hover_color="gray30",
+                fg_color="transparent", hover_color=get_color("colors.state.hover", "gray30"),
                 command=lambda f=frame: self._move_item(f, 1),
                 cursor="hand2",
             )
             btn_down.pack(side="left", padx=2)
             CTkTooltip(btn_down, "Move Down")
             if i == len(self.items) - 1:
-                btn_down.configure(state="disabled", text_color="gray40")
+                btn_down.configure(state="disabled", text_color=get_color("colors.text.disabled", "gray40"))
 
             # Remove Button
             btn_remove = ctk.CTkButton(
@@ -118,7 +118,7 @@ class DraggableList(ctk.CTkScrollableFrame):
                     f.configure(fg_color=card_hover_color)
             def on_leave(e, f=frame):
                 if f.winfo_exists() and f.cget("fg_color") != danger_color and f.cget("fg_color") != accent_color:
-                    f.configure(fg_color=("gray85", "gray20"))
+                    f.configure(fg_color=get_color("colors.background.card", "gray20"))
 
             frame.bind("<Enter>", on_enter)
             frame.bind("<Leave>", on_leave)
@@ -161,12 +161,12 @@ class DraggableList(ctk.CTkScrollableFrame):
                 btn_down = actions.winfo_children()[1]
 
                 if i == 0:
-                    btn_up.configure(state="disabled", text_color="gray40")
+                    btn_up.configure(state="disabled", text_color=get_color("colors.text.disabled", "gray40"))
                 else:
                     btn_up.configure(state="normal", text_color=get_color("colors.text.primary", "#F0E6D2"))
 
                 if i == len(self.items) - 1:
-                    btn_down.configure(state="disabled", text_color="gray40")
+                    btn_down.configure(state="disabled", text_color=get_color("colors.text.disabled", "gray40"))
                 else:
                     btn_down.configure(state="normal", text_color=get_color("colors.text.primary", "#F0E6D2"))
 

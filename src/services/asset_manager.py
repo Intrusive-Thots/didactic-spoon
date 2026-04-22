@@ -122,8 +122,8 @@ class ConfigManager:
             try:
                 with open(BUNDLED_CONFIG_FILE, "r", encoding="utf-8") as f:
                     self.cfg.update(json.load(f))
-            except Exception:
-                pass
+            except Exception as e:
+                Logger.debug("Assets", f"Bundled config load failed: {e}")
                 
         # 2. Override with the user's local runtime config
         if os.path.exists(USER_CONFIG_FILE):
@@ -427,8 +427,8 @@ class AssetManager:
                 if len(self.icons) > 300:
                     self.icons.popitem(last=False)
                 return img
-            except Exception:
-                pass  # Fall back to regenerating if the cached file is corrupt
+            except Exception as e:
+                Logger.debug("Assets", f"Cached icon corrupt, regenerating: {e}")
                 
         if os.path.exists(path):
             try:
@@ -457,8 +457,8 @@ class AssetManager:
                 # Save processed version to disk for future fast-loads
                 try:
                     pil_img.save(processed_path, "PNG")
-                except Exception:
-                    pass
+                except Exception as e:
+                    Logger.debug("Assets", f"Failed to cache processed icon: {e}")
 
                 img_size = size if size and size[1] is not None else pil_img.size
                 img = ctk.CTkImage(pil_img, size=img_size)
