@@ -94,8 +94,11 @@ class LeagueLoopApp(ctk.CTk, TkinterDnD.DnDWrapper):
         
         self.configure(fg_color=get_color("colors.background.app"))
 
-        # Apply acrylic blur after window is mapped (deferred to ensure HWND is ready)
-        self.after(100, lambda: apply_acrylic_blur(self, tint_color=0x50101820))
+        # NOTE: Acrylic blur disabled — Win32 SetWindowCompositionAttribute makes
+        # the entire CTk window translucent/unreadable. Actively remove any
+        # residual blur from prior sessions.
+        from utils.acrylic_blur import remove_blur
+        self.after(100, lambda: remove_blur(self))
 
         try:
             ToastManager.get_instance(self)
