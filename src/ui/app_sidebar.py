@@ -770,25 +770,26 @@ class SidebarWidget(ctk.CTkFrame):
         """Aggressive matchmaking: Stay in the lobby tab, just change the queue."""
         if not self.lcu: return
 
-        # 1. Check if already searching
-        state_req = self.lcu.request("GET", "/lol-lobby/v2/lobby/matchmaking/search-state")
-        state_data = state_req.json() if state_req and state_req.status_code == 200 else {}
-        
-        if state_data.get("searchState") == "Searching":
-            self.lcu.request("DELETE", "/lol-lobby/v2/lobby/matchmaking/search")
-            self.update_action_log("Matchmaking Cancelled.")
-            if getattr(self, "power_state", False):
-                self._on_power_click()
-            return
-
-        # 2. Resolve Queue ID
         mode = self.config.get("aram_mode", "ARAM")
-        target_q_id = self._get_queue_id_for_mode(mode)
         self.update_action_log(f"Initiating {mode}...")
 
         def _execute_sync():
             import time
-            # 1. Check current state
+            # 1. Check if already searching
+            state_req = self.lcu.request("GET", "/lol-lobby/v2/lobby/matchmaking/search-state")
+            state_data = state_req.json() if state_req and state_req.status_code == 200 else {}
+            
+            if state_data.get("searchState") == "Searching":
+                self.lcu.request("DELETE", "/lol-lobby/v2/lobby/matchmaking/search")
+                self.after(0, lambda: self.update_action_log("Matchmaking Cancelled."))
+                if getattr(self, "power_state", False):
+                    self.after(0, self._on_power_click)
+                return
+
+            # 2. Resolve Queue ID
+            target_q_id = self._get_queue_id_for_mode(mode)
+
+            # 3. Check current lobby
             lobby_req = self.lcu.request("GET", "/lol-lobby/v2/lobby")
             in_lobby = lobby_req and lobby_req.status_code == 200
 
@@ -799,19 +800,16 @@ class SidebarWidget(ctk.CTkFrame):
                     data = lobby_req.json()
                     current_q = data.get("gameConfig", {}).get("queueId")
 
-                    # If we are in the correct lobby already
                     if current_q == target_q_id:
                         should_create = False
                     else:
-                        # Wrong lobby - Quit it
                         self.lcu.request(
                             "DELETE", "/lol-lobby/v2/lobby/matchmaking/search"
-                        )  # Stop search if active
+                        )
                         time.sleep(0.5)
                         self.lcu.request("DELETE", "/lol-lobby/v2/lobby")
                         time.sleep(0.5)
                 except Exception:
-                    # Failsafe if json serialization fails
                     should_create = True
 
             if should_create:
@@ -820,7 +818,7 @@ class SidebarWidget(ctk.CTkFrame):
                 )
                 time.sleep(1)
 
-            # 2. Start Search
+            # 4. Start Search
             res = self.lcu.request("POST", "/lol-lobby/v2/lobby/matchmaking/search")
             
             def _update_ui():

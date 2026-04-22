@@ -135,6 +135,9 @@ class LCUClient:
                 if not process:
                     if not silent:
                         Logger.debug("LCU", "Client not found. Ensure League of Legends is running.")
+                    if self.is_connected:
+                        from core.events import EventBus
+                        EventBus.emit("lcu_connected", False)
                     self.is_connected = False
                     self._backoff = min(self._backoff * 1.5, 30.0)
                     return False
@@ -189,6 +192,8 @@ class LCUClient:
                     self.base_url = f"https://127.0.0.1:{self.port}"
                     self.is_connected = True
                     self._backoff = 1.0  # Reset backoff on success
+                    from core.events import EventBus
+                    EventBus.emit("lcu_connected", True)
                     Logger.debug("LCU", f"Connected to port {self.port}")
                     return True
 
@@ -196,9 +201,15 @@ class LCUClient:
 
             except psutil.AccessDenied as e:
                 Logger.warning("LCU", f"Access Denied during connection check (requires Admin?): {e}")
+                if self.is_connected:
+                    from core.events import EventBus
+                    EventBus.emit("lcu_connected", False)
                 self.is_connected = False
             except Exception as e:  # pylint: disable=broad-exception-caught
                 Logger.error("LCU", f"Connection Error: {e}")
+                if self.is_connected:
+                    from core.events import EventBus
+                    EventBus.emit("lcu_connected", False)
                 self.is_connected = False
 
             return False
@@ -377,6 +388,10 @@ class LCUClient:
                                         payload = payload['data']  # Normalize nested WAMP payload to flat data
                                 except Exception as e:
                                     Logger.debug("LCU_WS", f"WAMP payload normalization failed: {e}")
+
+                                # Emit to central EventBus (Phase 2 Rule)
+                                from core.events import EventBus
+                                EventBus.emit(event_name, payload)
 
                                 # Find callbacks
                                 callbacks = []
