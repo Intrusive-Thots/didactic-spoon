@@ -687,22 +687,24 @@ class AutomationEngine:
             if not mapped_my_id:
                 return
 
+            my_current_hover = my_action.get("championId", 0)
             my_current_pick = me.get("championId", 0)
-            my_current_intent = me.get("championPickIntent", 0)
 
-            if my_current_pick == mapped_my_id or (my_current_intent == mapped_my_id and teammate_champ_id == 0):
+            if my_current_pick == mapped_my_id:
                 return
-                
+
             try:
-                if now - self._last_synergy_patch > 0.5:
-                    self._log(f"Synergy: Teammate wants {teammate_champ_name}, selecting {mapped_me_champ}...")
+                if my_current_hover != mapped_my_id and (now - getattr(self, "_last_synergy_patch", 0) > 0.5):
+                    self._log(f"Arena: Teammate hovering/locked {teammate_champ_name}, selecting {mapped_me_champ}...")
                     self.lcu.request("PATCH", f"/lol-champ-select/v1/session/actions/{action_id}", data={"championId": mapped_my_id})
                     self._last_synergy_patch = now
-                
-                auto_lock = self.config.get("arena_auto_lock", False)
-                if auto_lock and teammate_champ_id != 0 and my_current_intent == mapped_my_id:
-                    self._log(f"Synergy: Teammate locked {teammate_champ_name}, locking {mapped_me_champ}!")
-                    self.lcu.request("POST", f"/lol-champ-select/v1/session/actions/{action_id}/complete")
+                elif my_current_hover == mapped_my_id:
+                    auto_lock = self.config.get("arena_auto_lock", False)
+                    if auto_lock and teammate_champ_id != 0:
+                        if now - getattr(self, "_last_synergy_patch", 0) > 0.5:
+                            self._log(f"Arena: Teammate locked {teammate_champ_name}, locking {mapped_me_champ}!")
+                            self.lcu.request("POST", f"/lol-champ-select/v1/session/actions/{action_id}/complete")
+                            self._last_synergy_patch = now
             except Exception as e:
                 Logger.error("Auto", f"Arena synergy error: {e}")
 
