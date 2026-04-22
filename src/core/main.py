@@ -204,7 +204,9 @@ class LeagueLoopApp(ctk.CTk, TkinterDnD.DnDWrapper):
                     try:
                         task(*args, **kwargs)
                     except Exception as e:
-                        Logger.error("UI_QUEUE", f"Error in UI task: {e}")
+                        # Suppress benign TclError from pack_forget'd widgets
+                        if "isn't packed" not in str(e):
+                            Logger.error("UI_QUEUE", f"Error in UI task: {e}")
             except queue.Empty:
                 pass
         super().after(16, self._process_ui_queue)

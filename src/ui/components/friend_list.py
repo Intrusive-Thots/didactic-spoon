@@ -221,7 +221,24 @@ class FriendPriorityList(ctk.CTkFrame):
     # ─────────── Data Fetching ───────────
 
     def _fetch_lcu_friends_loop(self):
-        if not self.winfo_exists() or not self.lcu:
+        try:
+            if not self.winfo_exists() or not self.lcu:
+                return
+        except Exception:
+            return
+
+        # Use root window for scheduling since this widget may be pack_forget'd
+        root = self.winfo_toplevel()
+
+        # Skip fetch entirely if widget is not currently visible (different tab)
+        try:
+            mapped = self.winfo_ismapped()
+        except Exception:
+            mapped = False
+
+        if not mapped:
+            # Still reschedule so we resume when user switches to Configure tab
+            root.after(5000, self._fetch_lcu_friends_loop)
             return
 
         def task():
@@ -241,22 +258,30 @@ class FriendPriorityList(ctk.CTkFrame):
 
                     friends.sort(key=sort_key)
                     self._friends_data = friends
-                    self.after(0, self._render_and_reschedule)
+                    root.after(0, self._render_and_reschedule)
             except Exception as e:
                 Logger.debug("FriendList", f"Fetch error: {e}")
-                self.after(0, self._schedule_next_fetch)
+                root.after(0, self._schedule_next_fetch)
 
         threading.Thread(target=task, daemon=True).start()
 
     def _render_and_reschedule(self):
         """Called on main thread: render the list then schedule next fetch."""
-        self._render_list()
+        try:
+            if self.winfo_exists() and self.winfo_ismapped():
+                self._render_list()
+        except Exception:
+            pass  # Widget not packed (different tab active) — skip silently
         self._schedule_next_fetch()
 
     def _schedule_next_fetch(self):
         """Schedule next friend fetch from the main thread."""
-        if self.winfo_exists():
-            self.after(5000, self._fetch_lcu_friends_loop)
+        try:
+            root = self.winfo_toplevel()
+            if self.winfo_exists():
+                root.after(5000, self._fetch_lcu_friends_loop)
+        except Exception:
+            pass
 
     # ─────────── Collapse ───────────
 
@@ -318,6 +343,12 @@ class FriendPriorityList(ctk.CTkFrame):
 
     def _render_list(self):
         if not self.winfo_exists():
+            return
+        # Skip rendering if the widget isn't currently packed/visible
+        try:
+            if not self.winfo_ismapped():
+                return
+        except Exception:
             return
 
         sig = self._get_render_signature()
@@ -384,7 +415,10 @@ class FriendPriorityList(ctk.CTkFrame):
                         )
                 return cb
 
-            icon_cb = make_icon_cb(assets, item.get("icon", 1))
+            icon_id = item.get("icon", 1)
+            if not isinstance(icon_id, int) or icon_id < 0:
+                icon_id = 1  # DDragon returns 403 for invalid icon IDs like -1
+            icon_cb = make_icon_cb(assets, icon_id)
 
             row = FriendRow(
                 self.list_parent,

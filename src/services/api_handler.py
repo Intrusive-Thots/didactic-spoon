@@ -357,8 +357,7 @@ class LCUClient:
                     while self._ws_should_run:
                         # Item #180: Use timeout to prevent blocking forever on stale connections
                         try:
-                            ws.settimeout(30)
-                            message = ws.recv()
+                            message = ws.recv(timeout=30)
                         except TimeoutError:
                             continue
                         if not message:
