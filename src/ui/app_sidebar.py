@@ -16,7 +16,11 @@ from ui.components.game_tools.draft_tool import DraftTool  # type: ignore
 from ui.components.settings_modal import SettingsModal  # type: ignore
 from ui.components.lol_toggle import LolToggle  # type: ignore
 from ui.components.friend_list import FriendPriorityList  # type: ignore
-from core.constants import SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL  # type: ignore
+from core.constants import (  # type: ignore
+    SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
+    SECTION_GAP, CARD_PAD, INNER_GAP, CARD_RADIUS, ROW_HEIGHT,
+    BTN_HEIGHT, HEADER_HEIGHT, FOOTER_HEIGHT
+)
 
 class SidebarWidget(ctk.CTkFrame):
     def __init__(self, master, toggle_callback, config, lcu=None, assets=None, scraper=None):
@@ -54,8 +58,9 @@ class SidebarWidget(ctk.CTkFrame):
 
     def _setup_ui(self):
         # ── Header / Drag Area ──
-        self.header = ctk.CTkFrame(self, fg_color="transparent", height=36)
-        self.header.pack(fill="x", pady=(SPACING_MD, SPACING_SM), padx=SPACING_MD)
+        self.header = ctk.CTkFrame(self, fg_color="transparent", height=HEADER_HEIGHT)
+        self.header.pack(fill="x", pady=(CARD_PAD, INNER_GAP), padx=CARD_PAD)
+        self.header.pack_propagate(False)
         
         self.lbl_title = ctk.CTkLabel(
             self.header, text="League Loop", 
@@ -98,7 +103,7 @@ class SidebarWidget(ctk.CTkFrame):
 
         # ── 5.1 Tab Navigation ──
         self.tab_frame = ctk.CTkFrame(self.main_body, fg_color="transparent", height=30)
-        self.tab_frame.pack(fill="x", pady=(0, 10))
+        self.tab_frame.pack(fill="x", pady=(0, SECTION_GAP))
         
         self._current_tab = "Play"
         
@@ -126,19 +131,19 @@ class SidebarWidget(ctk.CTkFrame):
             
             # Pack based on tab
             if tab_name == "Play":
-                self.session_frame.pack(fill="x", pady=(0, 8))
-                self.action_container.pack(fill="x", pady=(0, 8))
+                self.session_frame.pack(fill="x", pady=(0, SECTION_GAP))
+                self.action_container.pack(fill="x", pady=(0, SECTION_GAP))
                 if self._game_tool_visible:
-                    self.game_tool_container.pack(fill="x", pady=(0, 8))
+                    self.game_tool_container.pack(fill="x", pady=(0, SECTION_GAP))
                 if self._accounts_tool_visible and self.accounts_tool:
-                    self.accounts_tool.pack(fill="x", pady=(0, 8))
+                    self.accounts_tool.pack(fill="x", pady=(0, SECTION_GAP))
             elif tab_name == "Configure":
-                self.auto_container.pack(fill="x", pady=(0, 8))
-                self.friend_list.pack(fill="x", pady=(0, 8))
+                self.auto_container.pack(fill="x", pady=(0, SECTION_GAP))
+                self.friend_list.pack(fill="x", pady=(0, SECTION_GAP))
             elif tab_name == "Advanced":
-                self.profile_container.pack(fill="x", pady=(0, 8))
+                self.profile_container.pack(fill="x", pady=(0, SECTION_GAP))
                 if self._stats_visible:
-                    self.stats_frame.pack(fill="x", pady=(0, 8))
+                    self.stats_frame.pack(fill="x", pady=(0, SECTION_GAP))
                     
         self.switch_tab = _switch_tab
         
@@ -155,9 +160,9 @@ class SidebarWidget(ctk.CTkFrame):
             self.main_body,
             height=64,
             fg_color=get_color("colors.background.panel"),
-            corner_radius=get_radius("md")
+            corner_radius=CARD_RADIUS
         )
-        self.session_frame.pack(fill="x", pady=(0, SPACING_MD))
+        self.session_frame.pack(fill="x", pady=(0, SECTION_GAP))
         self.session_frame.pack_propagate(False)
         self.session_frame.grid_columnconfigure((0, 1, 2), weight=1)
 
@@ -168,7 +173,7 @@ class SidebarWidget(ctk.CTkFrame):
             text_color=get_color("colors.accent.gold", "#C8AA6E"),
             cursor="hand2"
         )
-        self.queue_label.grid(row=0, column=0, padx=SPACING_SM, pady=(SPACING_MD, 2), sticky="w")
+        self.queue_label.grid(row=0, column=0, padx=CARD_PAD, pady=(CARD_PAD, 2), sticky="w")
         self.queue_label.bind("<Button-1>", lambda e: self.master._open_settings() if hasattr(self.master, "_open_settings") else None)
         CTkTooltip(self.queue_label, "Click to change game mode")
 
@@ -183,7 +188,7 @@ class SidebarWidget(ctk.CTkFrame):
             height=24,
             command=self._on_power_click
         )
-        self.btn_power_status.grid(row=0, column=2, padx=SPACING_SM, pady=(SPACING_MD, 2), sticky="e")
+        self.btn_power_status.grid(row=0, column=2, padx=CARD_PAD, pady=(CARD_PAD, 2), sticky="e")
         hk_auto = self.config.get("hotkey_toggle_automation", "ctrl+shift+a").upper()
         CTkTooltip(self.btn_power_status, f"Toggle Automation ({hk_auto})")
 
@@ -193,7 +198,7 @@ class SidebarWidget(ctk.CTkFrame):
             font=get_font("caption"),
             text_color=get_color("colors.text.primary")
         )
-        self.time_label.grid(row=1, column=0, padx=SPACING_SM, pady=(0, SPACING_MD), sticky="w")
+        self.time_label.grid(row=1, column=0, padx=CARD_PAD, pady=(0, CARD_PAD), sticky="w")
 
         self.estimate_label = ctk.CTkLabel(
             self.session_frame,
@@ -201,7 +206,7 @@ class SidebarWidget(ctk.CTkFrame):
             font=get_font("caption"),
             text_color=get_color("colors.state.success", "#00C853")
         )
-        self.estimate_label.grid(row=1, column=1, padx=SPACING_SM, pady=(0, SPACING_MD), sticky="e")
+        self.estimate_label.grid(row=1, column=1, padx=CARD_PAD, pady=(0, CARD_PAD), sticky="e")
 
         self.session_separator = ctk.CTkFrame(
             self.session_frame,
@@ -220,11 +225,11 @@ class SidebarWidget(ctk.CTkFrame):
         self.progress_bar.place(relx=0, rely=0.98, relwidth=1.0, anchor="sw")
 
         # ── Action Buttons ──
-        self.action_container = ctk.CTkFrame(self.main_body, fg_color=get_color("colors.background.panel"), corner_radius=get_radius("md"))
-        self.action_container.pack(fill="x", pady=(0, SPACING_LG))
+        self.action_container = ctk.CTkFrame(self.main_body, fg_color=get_color("colors.background.panel"), corner_radius=CARD_RADIUS)
+        self.action_container.pack(fill="x", pady=(0, SECTION_GAP))
 
         self.btn_frame = ctk.CTkFrame(self.action_container, fg_color="transparent")
-        self.btn_frame.pack(fill="x", padx=SPACING_MD, pady=SPACING_MD)
+        self.btn_frame.pack(fill="x", padx=CARD_PAD, pady=CARD_PAD)
 
         # Session Block relocated above self.action_container
 
@@ -238,7 +243,7 @@ class SidebarWidget(ctk.CTkFrame):
             text="▶  Find Match",
             style="primary",
             font=get_font("body", "bold"), 
-            height=32,
+            height=BTN_HEIGHT,
             border_width=1,
             border_color=get_color("colors.accent.primary", "#F0E6D2"),
             command=self._find_match
@@ -250,7 +255,7 @@ class SidebarWidget(ctk.CTkFrame):
         # ── Quick Actions Row (2-column grid, fixed height) ──
         self.quick_actions_frame = ctk.CTkFrame(
             self.queue_actions_container,
-            height=32,
+            height=BTN_HEIGHT,
             fg_color="transparent"
         )
         # Starts hidden — revealed dynamically during Matchmaking/ChampSelect
@@ -262,7 +267,7 @@ class SidebarWidget(ctk.CTkFrame):
             text="Requeue",
             style="primary",
             font=get_font("body", "bold"),
-            height=32,
+            height=BTN_HEIGHT,
             border_width=1,
             border_color=get_color("colors.accent.primary", "#F0E6D2"),
             command=self._force_requeue,
@@ -287,24 +292,22 @@ class SidebarWidget(ctk.CTkFrame):
             text="🚀 Launch Client",
             style="secondary",
             font=get_font("body", "bold"),
-            height=32,
+            height=BTN_HEIGHT,
             command=lambda: self.master._hotkey_launch_client() if hasattr(self.master, "_hotkey_launch_client") else None
         )
-        self.btn_launch_client.pack(fill="x", pady=(SPACING_SM, 0))
+        self.btn_launch_client.pack(fill="x", pady=(INNER_GAP, 0))
         hk_launch = self.config.get("hotkey_launch_client", "ctrl+shift+l").upper()
         CTkTooltip(self.btn_launch_client, f"Open the Riot Client and start League ({hk_launch})")
 
-        # Divider after button
-        self.divider_btn = ctk.CTkFrame(self.main_body, height=1, fg_color=get_color("colors.border.subtle", "#1E2328"))
-        self.divider_btn.pack(fill="x", pady=SPACING_MD)
+        # (Divider removed — card containers provide visual separation)
 
         # ── Toggles Section ──
-        self.auto_container = ctk.CTkFrame(self.main_body, fg_color=get_color("colors.background.panel"), corner_radius=get_radius("md"))
-        self.auto_container.pack(fill="x", pady=(0, SPACING_LG))
+        self.auto_container = ctk.CTkFrame(self.main_body, fg_color=get_color("colors.background.panel"), corner_radius=CARD_RADIUS)
+        self.auto_container.pack(fill="x", pady=(0, SECTION_GAP))
 
         self.auto_expanded = False
         self.auto_header_frame = ctk.CTkFrame(self.auto_container, fg_color="transparent")
-        self.auto_header_frame.pack(fill="x", padx=SPACING_MD, pady=(SPACING_SM, SPACING_SM))
+        self.auto_header_frame.pack(fill="x", padx=CARD_PAD, pady=(CARD_PAD, INNER_GAP))
         
         self.lbl_auto_section = ctk.CTkLabel(
             self.auto_header_frame, text="▶  AUTOMATION",
@@ -340,7 +343,7 @@ class SidebarWidget(ctk.CTkFrame):
         # Auto Accept
         self.var_accept = ctk.BooleanVar(value=self.config.get("auto_accept", True))
         row1 = ctk.CTkFrame(self.automation_frame, fg_color="transparent", height=TOGGLE_ROW_HEIGHT)
-        row1.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
+        row1.pack(fill="x", padx=CARD_PAD, pady=(0, INNER_GAP))
         row1.pack_propagate(False)
         self.icon_accept = ctk.CTkLabel(row1, text="", width=24)
         self.icon_accept.pack(side="left")
@@ -356,7 +359,7 @@ class SidebarWidget(ctk.CTkFrame):
         # ARAM Picker
         self.var_priority = ctk.BooleanVar(value=self.config.get("priority_picker", {}).get("enabled", False))
         row3 = ctk.CTkFrame(self.automation_frame, fg_color="transparent", height=TOGGLE_ROW_HEIGHT)
-        row3.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
+        row3.pack(fill="x", padx=CARD_PAD, pady=(0, INNER_GAP))
         row3.pack_propagate(False)
         self.icon_priority = ctk.CTkLabel(row3, text="", width=24)
         self.icon_priority.pack(side="left")
@@ -372,7 +375,7 @@ class SidebarWidget(ctk.CTkFrame):
         # Friend Auto-Join
         self.var_auto_join = ctk.BooleanVar(value=self.config.get("auto_join_enabled", True))
         row4 = ctk.CTkFrame(self.automation_frame, fg_color="transparent", height=TOGGLE_ROW_HEIGHT)
-        row4.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
+        row4.pack(fill="x", padx=CARD_PAD, pady=(0, INNER_GAP))
         row4.pack_propagate(False)
         self.icon_auto_join = ctk.CTkLabel(row4, text="", width=24)
         self.icon_auto_join.pack(side="left")
@@ -388,7 +391,7 @@ class SidebarWidget(ctk.CTkFrame):
         # Auto Honor
         self.var_auto_honor = ctk.BooleanVar(value=self.config.get("auto_honor_enabled", False))
         row5 = ctk.CTkFrame(self.automation_frame, fg_color="transparent", height=TOGGLE_ROW_HEIGHT)
-        row5.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
+        row5.pack(fill="x", padx=CARD_PAD, pady=(0, CARD_PAD))
         row5.pack_propagate(False)
         self.icon_auto_honor = ctk.CTkLabel(row5, text="", width=24)
         self.icon_auto_honor.pack(side="left")
@@ -402,9 +405,7 @@ class SidebarWidget(ctk.CTkFrame):
         CTkTooltip(self.sw_auto_honor, "Automatically honors a teammate after each game")
         self._update_auto_header()
         
-        # Divider after automation
-        self.divider_auto = ctk.CTkFrame(self.main_body, height=1, fg_color=get_color("colors.border.subtle", "#1E2328"))
-        self.divider_auto.pack(fill="x", pady=SPACING_MD)
+        # (Divider removed — card containers provide visual separation)
 
         # ── Game Tool Module Container ──
         # This container holds the active game-mode-specific tool.
@@ -421,7 +422,7 @@ class SidebarWidget(ctk.CTkFrame):
         
         # ── Friend Auto-Join List ──
         self.friend_list = FriendPriorityList(self.main_body, config=self.config, lcu=self.lcu)
-        self.friend_list.pack(fill="x", pady=(0, SPACING_MD), padx=0)
+        self.friend_list.pack(fill="x", pady=(0, SECTION_GAP), padx=0)
 
         # Show game tool if mode warrants it on startup
         self._update_game_tool_visibility()
@@ -433,8 +434,8 @@ class SidebarWidget(ctk.CTkFrame):
         # UI status and dummy stats stripped for cleaner layout
 
         # ── Profile Section ──
-        self.profile_container = ctk.CTkFrame(self.main_body, fg_color=get_color("colors.background.panel"), corner_radius=get_radius("md"))
-        self.profile_container.pack(fill="x", pady=(0, SPACING_MD))
+        self.profile_container = ctk.CTkFrame(self.main_body, fg_color=get_color("colors.background.panel"), corner_radius=CARD_RADIUS)
+        self.profile_container.pack(fill="x", pady=(0, SECTION_GAP))
 
         self.profile_expanded = False
         self.lbl_profile_section = ctk.CTkLabel(
@@ -443,7 +444,7 @@ class SidebarWidget(ctk.CTkFrame):
             text_color=get_color("colors.text.muted"), anchor="w",
             cursor="hand2"
         )
-        self.lbl_profile_section.pack(fill="x", padx=SPACING_MD, pady=(SPACING_SM, SPACING_SM))
+        self.lbl_profile_section.pack(fill="x", padx=CARD_PAD, pady=(CARD_PAD, INNER_GAP))
         self.tooltip_profile = CTkTooltip(self.lbl_profile_section, "Toggle Profile")
         self.lbl_profile_section.bind("<Button-1>", self._toggle_profile_collapse)
         self.lbl_profile_section.bind("<Enter>", lambda e: self.lbl_profile_section.configure(text_color=get_color("colors.text.primary")))
@@ -453,7 +454,7 @@ class SidebarWidget(ctk.CTkFrame):
         # starts collapsed
 
         lbl_status = ctk.CTkLabel(self.profile_frame, text="Custom Status", font=get_font("caption"), text_color=get_color("colors.text.muted"), anchor="w")
-        lbl_status.pack(fill="x", padx=SPACING_MD, pady=(0, 2))
+        lbl_status.pack(fill="x", padx=CARD_PAD, pady=(0, 2))
 
         self.entry_status = ctk.CTkEntry(
             self.profile_frame,
@@ -464,13 +465,13 @@ class SidebarWidget(ctk.CTkFrame):
             border_color=get_color("colors.border.subtle"),
             height=30,
         )
-        self.entry_status.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
+        self.entry_status.pack(fill="x", padx=CARD_PAD, pady=(0, INNER_GAP))
         self.entry_status.bind("<Return>", self._on_status_submit)
         CTkTooltip(self.entry_status, "Press Enter to update your League Client status")
 
         # ── Quick Status Presets ──
         self.preset_frame = ctk.CTkFrame(self.profile_frame, fg_color="transparent")
-        self.preset_frame.pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_MD))
+        self.preset_frame.pack(fill="x", padx=CARD_PAD, pady=(0, CARD_PAD))
 
         presets = [
             ("🚀", "Grinding Ranked"),
@@ -503,18 +504,18 @@ class SidebarWidget(ctk.CTkFrame):
             self.stats_frame, text="LOBBY STATS", font=get_font("caption", "bold"),
             text_color=get_color("colors.accent.gold", "#C8AA6E"), anchor="w"
         )
-        self.lbl_stats_title.pack(fill="x", padx=SPACING_MD, pady=(SPACING_SM, 2))
+        self.lbl_stats_title.pack(fill="x", padx=CARD_PAD, pady=(CARD_PAD, 2))
         
-        ctk.CTkFrame(self.stats_frame, height=1, fg_color=get_color("colors.border.subtle")).pack(fill="x", padx=SPACING_MD, pady=(0, SPACING_SM))
+        ctk.CTkFrame(self.stats_frame, height=1, fg_color=get_color("colors.border.subtle")).pack(fill="x", padx=CARD_PAD, pady=(0, INNER_GAP))
         
         self.stats_content = ctk.CTkFrame(self.stats_frame, fg_color="transparent")
-        self.stats_content.pack(fill="x", padx=SPACING_MD)
+        self.stats_content.pack(fill="x", padx=CARD_PAD)
         # stats_frame is NOT packed yet — it appears only during ChampSelect
 
         # ── Fixed Footer (pinned to bottom of sidebar, never clips) ──
         # IMPORTANT: Footer must be packed BEFORE main_body to reserve bottom space
-        self.footer = ctk.CTkFrame(self, fg_color="transparent", height=42)
-        self.footer.pack(fill="x", side="bottom", padx=SPACING_MD, pady=(0, SPACING_SM))
+        self.footer = ctk.CTkFrame(self, fg_color="transparent", height=FOOTER_HEIGHT)
+        self.footer.pack(fill="x", side="bottom", padx=CARD_PAD, pady=(0, INNER_GAP))
         self.footer.pack_propagate(False)
 
         ctk.CTkFrame(self.footer, height=1, fg_color=get_color("colors.border.subtle")).pack(fill="x", side="top")
@@ -542,7 +543,7 @@ class SidebarWidget(ctk.CTkFrame):
         CTkTooltip(self.btn_clear_log, "Clear Log")
 
         # NOW pack main_body to fill remaining space between header and footer
-        self.main_body.pack(fill="both", expand=True, padx=SPACING_MD, pady=SPACING_MD)
+        self.main_body.pack(fill="both", expand=True, padx=CARD_PAD, pady=(0, INNER_GAP))
 
     # ── Account Manager Injection ──
     def set_account_manager(self, account_manager):

@@ -36,11 +36,15 @@ SIDEBAR_HEIGHT = 500
 # --- Layout System ---
 PADDING_X = 10
 PADDING_Y = 6
-SECTION_SPACING = 12
+SECTION_GAP = 10       # Vertical gap between card containers
+CARD_PAD = 10          # Internal card padding (all sides)
+INNER_GAP = 6          # Gap between elements inside a card
 CARD_RADIUS = 8
 ICON_SIZE = 36
-ROW_HEIGHT = 40
-FOOTER_HEIGHT = 50
+ROW_HEIGHT = 36        # Toggle rows, status rows
+BTN_HEIGHT = 36        # All action buttons
+HEADER_HEIGHT = 40     # Top header / drag area
+FOOTER_HEIGHT = 44     # Bottom footer (pinned)
 # --- LCU Request ---
 LCU_REQUEST_TIMEOUT = 2            # seconds
 
