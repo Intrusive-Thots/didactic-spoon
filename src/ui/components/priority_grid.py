@@ -41,6 +41,8 @@ class PriorityIconGrid(ctk.CTkFrame):
         self._delete_marked = set()      # indices marked for deletion
         self._icon_widgets = []
         self._undo_stack = []            # stack of previous priority lists for undo
+        self._tip = None                 # Item #133: Initialize tooltip ref in __init__
+        self._debounce_timer = None      # Item #23: Initialize debounce timer in __init__
 
         self._build_header()
         self._build_body()
@@ -552,7 +554,7 @@ class PriorityIconGrid(ctk.CTkFrame):
 
     # ───────────── tooltip ─────────────
     def _show_tooltip(self, event, name, idx=None):
-        if hasattr(self, "_tip") and self._tip:
+        if self._tip:
             self._tip.destroy()
         self._tip = tk.Toplevel(self)
         self._tip.wm_overrideredirect(True)
@@ -587,11 +589,11 @@ class PriorityIconGrid(ctk.CTkFrame):
 
         # Color-code the winrate
         if winrate >= 53.0:
-            wr_color = "#00C853"  # green — strong
+            wr_color = get_color("colors.state.success", "#00C853")  # green — strong
         elif winrate >= 50.0:
-            wr_color = "#F0E6D2"  # gold-white — neutral
+            wr_color = get_color("colors.text.primary", "#F0E6D2")  # gold-white — neutral
         else:
-            wr_color = "#ff4444"  # red — weak
+            wr_color = get_color("colors.state.danger", "#ff4444")  # red — weak
 
         _tip_bg = get_color("colors.background.card", "#1E2328")
         priority_label = "High" if idx is not None and idx < 3 else ("Medium" if idx is not None and idx < 7 else "Low")
@@ -605,7 +607,7 @@ class PriorityIconGrid(ctk.CTkFrame):
                      fg="#4da6ff", font=("Segoe UI", 8), padx=8, pady=4).pack(anchor="w")
 
     def _hide_tooltip(self):
-        if hasattr(self, "_tip") and self._tip:
+        if self._tip:
             self._tip.destroy()
             self._tip = None
 
@@ -1020,7 +1022,7 @@ class PriorityIconGrid(ctk.CTkFrame):
 
         # ⚡ Bolt: Debounce champion search input to prevent UI thread lag from
         # O(N) widget destruction and recreation on rapid keystrokes.
-        if hasattr(self, "_debounce_timer") and self._debounce_timer is not None:
+        if self._debounce_timer is not None:
             self.after_cancel(self._debounce_timer)
 
         self._debounce_timer = self.after(150, self._perform_add_search)

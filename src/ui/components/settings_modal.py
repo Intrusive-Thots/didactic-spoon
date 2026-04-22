@@ -314,7 +314,7 @@ class SettingsModal(ctk.CTkToplevel):
     # ──────────────────────────────────────────────
     def _setup_ui(self):
         # ── Header ──
-        header = ctk.CTkFrame(self, fg_color="#0A1428", corner_radius=0)
+        header = ctk.CTkFrame(self, fg_color=get_color("colors.background.app", "#0A1428"), corner_radius=0)
         header.pack(fill="x")
 
         ctk.CTkLabel(
@@ -604,7 +604,7 @@ class SettingsModal(ctk.CTkToplevel):
         ).pack(anchor="w", pady=(0, 8))
 
         # ── Footer buttons ──
-        btn_frame = ctk.CTkFrame(self, fg_color="#0A1428", corner_radius=0)
+        btn_frame = ctk.CTkFrame(self, fg_color=get_color("colors.background.app", "#0A1428"), corner_radius=0)
         btn_frame.pack(fill="x", side="bottom")
 
         # Malcolm's UI enhancement: Add a Reset button with inline confirmation

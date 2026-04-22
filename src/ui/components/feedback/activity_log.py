@@ -14,8 +14,8 @@ class ActivityLogPanel(Card):
 
         self.scroll = ctk.CTkScrollableFrame(
             self.content, fg_color="transparent",
-            scrollbar_button_color="#1E2328",
-            scrollbar_button_hover_color="#3A4654"
+            scrollbar_button_color=get_color("colors.background.card", "#1E2328"),
+            scrollbar_button_hover_color=get_color("colors.text.disabled", "#3A4654")
         )
         self.scroll.pack(fill="both", expand=True)
 

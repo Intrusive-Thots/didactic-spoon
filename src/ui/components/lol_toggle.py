@@ -1,11 +1,14 @@
 import tkinter as tk
 import customtkinter as ctk
 from ui.components.hover import apply_click_animation
+from ui.components.factory import get_color
 
 class LolToggle(tk.Canvas):
     """Custom Riot-style animated sliding toggle switch using pure Canvas for maximum fidelity."""
-    def __init__(self, master, width=32, height=16, variable=None, command=None, bg_color="#0A1428", **kwargs):
+    def __init__(self, master, width=32, height=16, variable=None, command=None, bg_color=None, **kwargs):
         # Palette: Enable keyboard focus by default for accessibility
+        if bg_color is None:
+            bg_color = get_color("colors.background.app", "#0A1428")
         kwargs.setdefault("takefocus", 1)
         super().__init__(master, width=width, height=height, highlightthickness=0, bg=bg_color, **kwargs)
         self.variable = variable
@@ -14,10 +17,10 @@ class LolToggle(tk.Canvas):
         if self.variable:
             self._state = self.variable.get()
 
-        self.color_inactive = "#1E2328"
+        self.color_inactive = get_color("colors.background.card", "#1E2328")
         self.color_active = "#A88A4E" # C8AA6E dimmed
-        self.color_knob = "#F0E6D2"
-        self.color_focus_ring = "#C8AA6E"
+        self.color_knob = get_color("colors.text.primary", "#F0E6D2")
+        self.color_focus_ring = get_color("colors.accent.gold", "#C8AA6E")
 
         self.pos_off = 2
         self.pos_on = 18 # 32 - 12 - 2

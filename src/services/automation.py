@@ -66,6 +66,9 @@ class AutomationEngine:
         self._honor_handled: bool = False
         self._runes_equipped: bool = False
         self._cached_search_state: Optional[dict] = None
+        # Item #40: Consecutive error killswitch
+        self._consecutive_errors: int = 0
+        self._first_error_time: float = 0.0
 
         # Synergy / Draft / Friend action throttles (Items #163-165)
         self._last_synergy_patch: float = 0.0
@@ -209,10 +212,23 @@ class AutomationEngine:
 
             try:
                 self._tick()
+                self._consecutive_errors = 0  # Reset on success
             except Exception as e:
+                # Item #40: Safety killswitch — auto-pause if 5+ errors within 10s
+                now = time.time()
+                if now - self._first_error_time > 10:
+                    self._consecutive_errors = 0
+                    self._first_error_time = now
+                self._consecutive_errors += 1
+                if self._consecutive_errors >= 5:
+                    Logger.error("AutoLoop", f"KILLSWITCH: {self._consecutive_errors} consecutive errors in 10s. Auto-pausing.")
+                    self._log("⚠ Automation paused (error killswitch).")
+                    self.paused = True
+                    self._consecutive_errors = 0
+                    continue
+
                 # Flood-suppress: only log identical errors once per 30s
                 err_key = str(e)
-                now = time.time()
                 last_time = self._last_error_times.get(err_key, 0)
                 if now - last_time > 30:
                     tb = traceback.format_exc()
