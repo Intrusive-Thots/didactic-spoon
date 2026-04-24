@@ -292,6 +292,24 @@ class TestAutomationEngineDraftAssistant(unittest.TestCase):
         self.assertEqual(engine._last_draft_action_time, 100)
 
     @patch("time.time", return_value=100)
+    def test_draft_assistant_teammate_respect_ban_champion_id(self, mock_time):
+        engine = self._make_engine()
+        engine.config.get.side_effect = lambda key, default="": {"ban_MIDDLE_1": "yasuo", "ban_MIDDLE_2": "teemo", "auto_lock_in": False}.get(key, default)
+
+        session = {
+            "localPlayerCellId": 1,
+            "myTeam": [{"cellId": 1, "assignedPosition": "middle"}, {"cellId": 2, "championId": 30}], # Teammate hovering Yasuo via championId
+            "bannedChampions": [],
+            "actions": [[{"actorCellId": 1, "isInProgress": True, "type": "ban", "id": 5, "championId": 0}]]
+        }
+
+        engine._perform_draft_assistant(session)
+
+        # Yasuo is hovered, so it should skip Yasuo and hover Teemo
+        engine.lcu.request.assert_called_once_with("PATCH", "/lol-champ-select/v1/session/actions/5", data={"championId": 20})
+        self.assertEqual(engine._last_draft_action_time, 100)
+
+    @patch("time.time", return_value=100)
     def test_draft_assistant_fallback_pick(self, mock_time):
         engine = self._make_engine()
         engine.config.get.side_effect = lambda key, default="": {"pick_MIDDLE_1": "garen", "pick_MIDDLE_2": "yasuo", "auto_lock_in": False}.get(key, default)

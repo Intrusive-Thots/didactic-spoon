@@ -722,7 +722,13 @@ class AutomationEngine:
 
         if action_type == "ban":
             my_cell_id = me.get("cellId")
-            teammate_hovers = {intent for p in my_team if p.get("cellId") != my_cell_id and (intent := p.get("championPickIntent", 0)) > 0}
+            teammate_hovers = {
+                champ_id
+                for p in my_team
+                if p.get("cellId") != my_cell_id
+                for champ_id in (p.get("championPickIntent", 0), p.get("championId", 0))
+                if champ_id > 0
+            }
             
             for i in range(1, 4):
                 ban_str = self.config.get(f"ban_{assigned}_{i}", "")
