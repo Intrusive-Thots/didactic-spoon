@@ -21,6 +21,7 @@ from core.constants import (
 )
 
 class AutomationEngine:
+    """Core engine for executing automation tasks like auto-accept, priority sniper, draft assistant, and arena synergy."""
     def __init__(
         self,
         lcu: LCUClient,
@@ -30,6 +31,7 @@ class AutomationEngine:
         stop_func=None,
         **kwargs
     ):
+        """Initializes the AutomationEngine with LCU client, asset manager, and config manager."""
         self.lcu = lcu
         self.assets = assets
         self.config = config
@@ -87,6 +89,7 @@ class AutomationEngine:
         self.discord_rpc = DiscordPresenceManager(self.config)
 
     def start(self, start_paused: bool = False) -> None:
+        """Starts the automation loop in a background thread."""
         if self.running: return
         self.running = True
         self.paused = start_paused
@@ -125,9 +128,11 @@ class AutomationEngine:
         self.discord_rpc.disconnect()
 
     def pause(self) -> None:
+        """Pauses automation actions without stopping the loop."""
         self.paused = True
 
     def resume(self) -> None:
+        """Resumes automation actions."""
         self.paused = False
 
     def _log(self, msg: str) -> None:

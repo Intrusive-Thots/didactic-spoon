@@ -1,3 +1,6 @@
+"""
+Sidebar navigation and main layout component.
+"""
 import tkinter as tk
 import customtkinter as ctk  # type: ignore
 import os
@@ -23,6 +26,7 @@ from core.constants import (  # type: ignore
 )
 
 class SidebarWidget(ctk.CTkFrame):
+    """The main layout component containing the sidebar navigation, header, and primary content area."""
     def __init__(self, master, toggle_callback, config, lcu=None, assets=None, scraper=None):
         self._account_manager = None  # Set externally by main.py
         super().__init__(  # type: ignore

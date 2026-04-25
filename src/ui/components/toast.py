@@ -14,6 +14,7 @@ class Toast(ctk.CTkFrame):
     """
     def __init__(self, parent, message, icon="✨", duration=3000, theme="primary", confetti=False):
         # Resolve colors based on theme
+        """Initializes the Toast component."""
         bg_hex = get_color("colors.background.panel")
         
         border_w, border_c = parse_border("subtle")
@@ -220,6 +221,7 @@ class ToastManager:
 
     @classmethod
     def get_instance(cls, root=None):
+        """Gets or creates the singleton ToastManager instance."""
         if cls._instance is None:
             if root is None:
                 raise ValueError("ToastManager requires a root window for initialization.")
@@ -227,6 +229,7 @@ class ToastManager:
         return cls._instance
 
     def __init__(self, root):
+        """Initializes the ToastManager component."""
         self.root = root
         self._toasts = []  # Item #184: Instance-level list, not class-level
         self.container = ctk.CTkFrame(self.root, fg_color="transparent")
