@@ -289,9 +289,13 @@ class AutomationEngine:
 
         # Auto-minimize/restore based on InProgress state
         wf = self.window_func
+        is_first = getattr(self, "_is_first_tick", True)
         if wf is not None and phase != self.last_phase:
             if phase == "InProgress":
-                wf("minimize")
+                if not is_first:
+                    wf("minimize")
+                else:
+                    Logger.info("AutoLoop", "Game already running on startup. Skipping auto-minimize.")
             elif self.last_phase == "InProgress" and phase in ["EndOfGame", "Lobby", "None"]:
                 if self.config.get("stealth_mode", False):
                     wf("restore_quiet")
@@ -300,6 +304,7 @@ class AutomationEngine:
                 self._game_pid = None
 
         self.last_phase = phase
+        self._is_first_tick = False
         self._update_discord_rpc(phase)
 
         lobby_data = None
