@@ -1,3 +1,6 @@
+"""
+Entry point for LeagueLoop application.
+"""
 import ctypes
 import os
 import random
@@ -68,6 +71,7 @@ def global_exception_handler(exc_type, exc_value, exc_traceback):
 sys.excepthook = global_exception_handler
 
 class LeagueLoopApp(ctk.CTk, TkinterDnD.DnDWrapper):
+    """Main application window and controller for LeagueLoop."""
     def __init__(self):
         super().__init__()
         self.TkdndVersion = TkinterDnD._require(self)

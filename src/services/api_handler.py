@@ -29,6 +29,7 @@ class LCUClient:
     """
 
     def __init__(self):
+        """Initializes the LCUClient with default values."""
         self._lock = threading.Lock()
         self.port: Optional[str] = None
         self.auth_token: Optional[str] = None

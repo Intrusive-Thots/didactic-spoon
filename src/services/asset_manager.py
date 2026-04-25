@@ -1,3 +1,6 @@
+"""
+Manages external assets, champions, and configurations.
+"""
 from utils.logger import Logger
 import json
 import os
@@ -115,6 +118,7 @@ class ConfigManager:
     """Manages application configuration."""
 
     def __init__(self):
+        """Initializes the ConfigManager."""
         self.cfg = DEFAULT_CONFIG.copy()
         
         # 1. Load bundled template first (transfers dev configurations to users)
@@ -166,6 +170,7 @@ class AssetManager:
     """Manages application assets (images, data)."""
 
     def __init__(self, log_func=None):
+        """Initializes the AssetManager."""
         self._log_func = log_func
 
         self.champ_data: Dict[str, Any] = {}

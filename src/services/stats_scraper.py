@@ -1,3 +1,6 @@
+"""
+Provides static and dynamic data related to champions and game stats.
+"""
 import threading
 import time
 import requests
@@ -77,6 +80,7 @@ class StatsScraper:
     """Provides base champion stats. Live web scraping legacy has been removed."""
 
     def __init__(self, mode="ARAM"):
+        """Initializes the StatsScraper."""
         self.mode = mode
         self.win_rates = dict()
         self.live_winrates = dict()

@@ -118,6 +118,7 @@ class FriendPriorityList(ctk.CTkFrame):
     """Rebuilt friend list with grid-based rows and separated scroll/input areas."""
 
     def __init__(self, master, config, lcu=None, **kw):
+        """Initializes the FriendPriorityList widget."""
         super().__init__(master, fg_color=get_color("colors.background.panel"), corner_radius=8, **kw)
 
         self.config = config
