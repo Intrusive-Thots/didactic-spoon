@@ -16,7 +16,7 @@ from ui.components.priority_grid import PriorityIconGrid  # type: ignore
 from ui.components.game_tools.arena_tool import ArenaTool  # type: ignore
 from ui.components.game_tools.accounts_tool import AccountsTool  # type: ignore
 from ui.components.game_tools.draft_tool import DraftTool  # type: ignore
-from ui.components.settings_modal import SettingsModal  # type: ignore
+
 from ui.components.lol_toggle import LolToggle  # type: ignore
 from ui.components.friend_list import FriendPriorityList  # type: ignore
 from core.constants import (  # type: ignore
@@ -42,7 +42,7 @@ class SidebarWidget(ctk.CTkFrame):
         self.assets = assets
         self.scraper = scraper
         self.power_state = False
-        self.settings_window = None
+
         self.img_on = None
         self.img_off = None
         self._queue_timer_job = None
@@ -83,17 +83,7 @@ class SidebarWidget(ctk.CTkFrame):
         self.btn_close.pack(side="right", padx=(4, 2))
         CTkTooltip(self.btn_close, "Close Application")
 
-        # ⚙ Settings
-        self.btn_settings = ctk.CTkButton(
-            self.header, text="⚙", width=20, height=20,
-            corner_radius=10, font=get_font("body"),
-            fg_color="transparent",
-            text_color=get_color("colors.text.muted"),
-            hover_color=get_color("colors.state.hover"),
-            command=self._open_settings, cursor="hand2",
-            )
-        self.btn_settings.pack(side="right", padx=(4, 1))
-        CTkTooltip(self.btn_settings, "Open Settings")
+
 
         self.drag_widgets = [self, self.header, self.lbl_title]
 
@@ -130,7 +120,7 @@ class SidebarWidget(ctk.CTkFrame):
             self.auto_container.pack_forget()
             self.friend_list.pack_forget()
             
-            self.profile_container.pack_forget()
+            self.advanced_scroll.pack_forget()
             self.stats_frame.pack_forget()
             
             # Pack based on tab
@@ -145,7 +135,7 @@ class SidebarWidget(ctk.CTkFrame):
                 self.auto_container.pack(fill="x", pady=(0, SECTION_GAP))
                 self.friend_list.pack(fill="x", pady=(0, SECTION_GAP))
             elif tab_name == "Advanced":
-                self.profile_container.pack(fill="x", pady=(0, SECTION_GAP))
+                self.advanced_scroll.pack(fill="both", expand=True, pady=(0, SECTION_GAP))
                 if self._stats_visible:
                     self.stats_frame.pack(fill="x", pady=(0, SECTION_GAP))
                     
@@ -178,8 +168,7 @@ class SidebarWidget(ctk.CTkFrame):
             cursor="hand2"
         )
         self.queue_label.grid(row=0, column=0, padx=CARD_PAD, pady=(CARD_PAD, 2), sticky="w")
-        self.queue_label.bind("<Button-1>", lambda e: self.master._open_settings() if hasattr(self.master, "_open_settings") else None)
-        CTkTooltip(self.queue_label, "Click to change game mode")
+
 
         # Power Status Button (Moved from Status Frame)
         self.btn_power_status = make_button(
@@ -437,8 +426,123 @@ class SidebarWidget(ctk.CTkFrame):
 
         # UI status and dummy stats stripped for cleaner layout
 
-        # ── Profile Section ──
-        self.profile_container = ctk.CTkFrame(self.main_body, fg_color=get_color("colors.background.panel"), corner_radius=CARD_RADIUS)
+        # ── Advanced Settings Tab Content ──
+        self.advanced_scroll = ctk.CTkScrollableFrame(self.main_body, fg_color="transparent")
+        
+        def _create_adv_card(parent, title):
+            card = ctk.CTkFrame(parent, fg_color=get_color("colors.background.panel"), corner_radius=CARD_RADIUS)
+            card.pack(fill="x", pady=(0, SECTION_GAP))
+            hdr = ctk.CTkLabel(card, text=title, font=get_font("caption", "bold"), text_color=get_color("colors.accent.gold", "#C8AA6E"), anchor="w")
+            hdr.pack(fill="x", padx=CARD_PAD, pady=(CARD_PAD, INNER_GAP))
+            return card
+
+        # LOBBY & QUEUE
+        card_lobby = _create_adv_card(self.advanced_scroll, "LOBBY & QUEUE")
+        
+        row_delay = ctk.CTkFrame(card_lobby, fg_color="transparent")
+        row_delay.pack(fill="x", padx=CARD_PAD, pady=(0, CARD_PAD))
+        ctk.CTkLabel(row_delay, text="Accept Delay", font=get_font("body"), text_color=get_color("colors.text.primary")).pack(side="left")
+        
+        delay_val = float(self.config.get("accept_delay", 2.0))
+        self.delay_var = ctk.DoubleVar(value=delay_val)
+        self.lbl_delay_val = ctk.CTkLabel(row_delay, text=f"{delay_val:.1f}s", font=get_font("body", "bold"), text_color=get_color("colors.accent.gold", "#C8AA6E"), width=40)
+        self.lbl_delay_val.pack(side="right")
+        
+        def _on_delay_slide(value):
+            self.lbl_delay_val.configure(text=f"{value:.1f}s")
+            self.config.set("accept_delay", round(value, 1))
+            
+        self.slider_delay = ctk.CTkSlider(row_delay, from_=0, to=8, number_of_steps=16, variable=self.delay_var, width=80, fg_color=get_color("colors.background.card"), progress_color=get_color("colors.accent.gold", "#C8AA6E"), button_color=get_color("colors.text.primary", "#F0E6D2"), button_hover_color="#FFFFFF", command=_on_delay_slide)
+        self.slider_delay.pack(side="right", padx=(4, 4))
+        CTkTooltip(self.slider_delay, "Delay before auto-accepting a match")
+
+        # AUTOMATION & BEHAVIOR
+        card_auto = _create_adv_card(self.advanced_scroll, "AUTOMATION & BEHAVIOR")
+        
+        row_honor = ctk.CTkFrame(card_auto, fg_color="transparent")
+        row_honor.pack(fill="x", padx=CARD_PAD, pady=(0, INNER_GAP))
+        ctk.CTkLabel(row_honor, text="Honor Strategy", font=get_font("body"), text_color=get_color("colors.text.primary")).pack(side="top", anchor="w")
+        
+        self.honor_var = ctk.StringVar(value=self.config.get("honor_strategy", "random"))
+        def _on_honor_change(val):
+            self.config.set("honor_strategy", val)
+        self.honor_select = ctk.CTkOptionMenu(row_honor, values=["random", "best_kda", "mvp"], variable=self.honor_var, font=get_font("body", "bold"), fg_color=get_color("colors.background.card"), button_color="#1A2733", button_hover_color=get_color("colors.state.hover"), dropdown_fg_color=get_color("colors.background.app"), dropdown_hover_color=get_color("colors.state.hover"), dropdown_font=get_font("caption"), command=_on_honor_change, height=24)
+        self.honor_select.pack(fill="x", pady=(4,0))
+        
+        row_tray = ctk.CTkFrame(card_auto, fg_color="transparent")
+        row_tray.pack(fill="x", padx=CARD_PAD, pady=(0, CARD_PAD))
+        ctk.CTkLabel(row_tray, text="Run in Tray", font=get_font("body"), text_color=get_color("colors.text.primary")).pack(side="left")
+        
+        self.tray_var = ctk.BooleanVar(value=bool(self.config.get("run_in_tray", True)))
+        def _on_tray_toggle():
+            self.config.set("run_in_tray", self.tray_var.get())
+        self.tray_switch = LolToggle(row_tray, variable=self.tray_var, command=_on_tray_toggle)
+        self.tray_switch.pack(side="right")
+
+        # SOCIAL & IDENTITY
+        card_social = _create_adv_card(self.advanced_scroll, "SOCIAL & IDENTITY")
+        
+        row_discord = ctk.CTkFrame(card_social, fg_color="transparent")
+        row_discord.pack(fill="x", padx=CARD_PAD, pady=(0, INNER_GAP))
+        ctk.CTkLabel(row_discord, text="Discord RPC", font=get_font("body"), text_color=get_color("colors.text.primary")).pack(side="left")
+        self.discord_var = ctk.BooleanVar(value=bool(self.config.get("discord_rpc_enabled", True)))
+        self.discord_switch = LolToggle(row_discord, variable=self.discord_var, command=lambda: self.config.set("discord_rpc_enabled", self.discord_var.get()))
+        self.discord_switch.pack(side="right")
+        
+        row_join_vip = ctk.CTkFrame(card_social, fg_color="transparent")
+        row_join_vip.pack(fill="x", padx=CARD_PAD, pady=(0, INNER_GAP))
+        ctk.CTkLabel(row_join_vip, text="VIP Invites Only", font=get_font("body"), text_color=get_color("colors.text.primary")).pack(side="left")
+        self.join_vip_var = ctk.BooleanVar(value=bool(self.config.get("auto_join_vip_only", False)))
+        self.join_vip_switch = LolToggle(row_join_vip, variable=self.join_vip_var, command=lambda: self.config.set("auto_join_vip_only", self.join_vip_var.get()))
+        self.join_vip_switch.pack(side="right")
+        
+        ctk.CTkLabel(card_social, text="VIP Invite List", font=get_font("caption"), text_color=get_color("colors.text.muted")).pack(anchor="w", padx=CARD_PAD, pady=(0, 2))
+        self.vip_var = ctk.StringVar(value=self.config.get("vip_invite_list", ""))
+        self.entry_vip = ctk.CTkEntry(card_social, textvariable=self.vip_var, font=get_font("body"), height=26, fg_color=get_color("colors.background.card"), border_color=get_color("colors.border.subtle"))
+        self.entry_vip.pack(fill="x", padx=CARD_PAD, pady=(0, CARD_PAD))
+        def _save_vip(*args): self.config.set("vip_invite_list", self.vip_var.get().strip())
+        self.entry_vip.bind("<KeyRelease>", _save_vip)
+        
+        # HOTKEYS
+        card_hotkeys = _create_adv_card(self.advanced_scroll, "HOTKEYS")
+        from ui.components.hotkey_recorder import HotkeyRecorder
+        hotkeys = [
+            ("Client Launch", "hotkey_launch_client", "ctrl+shift+l"),
+            ("Toggle Auto", "hotkey_toggle_automation", "ctrl+shift+a"),
+            ("Find Match", "hotkey_find_match", "ctrl+shift+f"),
+            ("Omnibar", "hotkey_omnibar", "ctrl+k"),
+        ]
+        self.recorders = {}
+        for i, (label_text, config_key, default_val) in enumerate(hotkeys):
+            row = ctk.CTkFrame(card_hotkeys, fg_color="transparent")
+            pad_bottom = CARD_PAD if i == len(hotkeys) - 1 else INNER_GAP
+            row.pack(fill="x", padx=CARD_PAD, pady=(0, pad_bottom))
+            ctk.CTkLabel(row, text=label_text, font=get_font("body"), text_color=get_color("colors.text.primary")).pack(side="top", anchor="w")
+            
+            def _save_hk(val, key=config_key):
+                self.config.set(key, val)
+                if hasattr(self.master, "on_settings_saved"):
+                    self.master.on_settings_saved()
+                    
+            recorder = HotkeyRecorder(row, initial_value=self.config.get(config_key, default_val), width=150, on_change=_save_hk)
+            recorder.pack(fill="x", pady=(2,0))
+            self.recorders[config_key] = recorder
+
+        # ABOUT
+        card_about = _create_adv_card(self.advanced_scroll, "ABOUT")
+        from core.version import __version__
+        ctk.CTkLabel(card_about, text="League Loop", font=("Beaufort for LOL", 13, "bold"), text_color=get_color("colors.text.primary")).pack(anchor="w", padx=CARD_PAD)
+        ctk.CTkLabel(card_about, text=f"Version {__version__}", font=get_font("caption"), text_color=get_color("colors.text.muted")).pack(anchor="w", padx=CARD_PAD, pady=(0, INNER_GAP))
+        
+        def _open_about():
+            from ui.components.about_page import AboutPage
+            AboutPage(self.master)
+        
+        btn_about = make_button(card_about, text="Info & Legal", style="ghost", font=get_font("caption", "bold"), width=100, height=24, command=_open_about)
+        btn_about.pack(anchor="w", padx=CARD_PAD, pady=(0, CARD_PAD))
+
+        # ── Profile Section (Moved into Advanced Scroll) ──
+        self.profile_container = ctk.CTkFrame(self.advanced_scroll, fg_color=get_color("colors.background.panel"), corner_radius=CARD_RADIUS)
         self.profile_container.pack(fill="x", pady=(0, SECTION_GAP))
 
         self.profile_expanded = False
@@ -549,6 +653,9 @@ class SidebarWidget(ctk.CTkFrame):
         # NOW pack main_body to fill remaining space between header and footer
         self.main_body.pack(fill="both", expand=True, padx=CARD_PAD, pady=(0, INNER_GAP))
 
+        # Initialize tab state — hide Configure and Advanced widgets
+        self.switch_tab("Play")
+
     # ── Account Manager Injection ──
     def set_account_manager(self, account_manager):
         """Called from main.py after sidebar is built to inject the AccountManager."""
@@ -601,7 +708,7 @@ class SidebarWidget(ctk.CTkFrame):
             self.header.pack_configure(fill="x", pady=(SPACING_SM, SPACING_MD), padx=SPACING_MD)
             self.lbl_title.pack(side="left")
             self.btn_close.pack(side="right", padx=(4, 2))
-            self.btn_settings.pack(side="right", padx=(4, 1))
+
             self.btn_minimize.pack(side="right", padx=(4, 1))
             self.btn_collapse.pack(side="right", padx=(4, 1))
             self.main_body.pack(fill="both", expand=True)
@@ -612,7 +719,7 @@ class SidebarWidget(ctk.CTkFrame):
         else:
             self.main_body.pack_forget()
             self.btn_close.pack_forget()
-            self.btn_settings.pack_forget()
+
             self.btn_minimize.pack_forget()
             self.lbl_title.pack_forget()
             
@@ -1193,9 +1300,3 @@ class SidebarWidget(ctk.CTkFrame):
             self.stats_frame.pack_forget()
 
 
-    def _open_settings(self):
-        if self.settings_window is None or not self.settings_window.winfo_exists():  # type: ignore
-            self.settings_window = SettingsModal(self.master, self.config, on_save_callback=self.master.on_settings_saved)
-        else:
-            self.settings_window.focus_force()  # type: ignore
-            self.settings_window.lift()  # type: ignore

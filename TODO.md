@@ -16,7 +16,6 @@
 - **UI Components (`src/ui/`)**:
   - `app_sidebar.py` (8% coverage)
   - `priority_grid.py` (9% coverage)
-  - `settings_modal.py` (10% coverage)
   - `friend_list.py` (10% coverage)
   - Various game tools (Arena Tool, Draft Tool) hover around 10-15% coverage.
 

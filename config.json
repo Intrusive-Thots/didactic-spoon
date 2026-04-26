@@ -23,7 +23,7 @@
     "pick_MIDDLE_3": "Lux",
     "pick_BOTTOM_1": "Ziggs",
     "pick_BOTTOM_2": "Jinx",
-    "pick_BOTTOM_3": "",
+    "pick_BOTTOM_3": "Ashe",
     "pick_UTILITY_1": "Braum",
     "pick_UTILITY_2": "Blitzcrank",
     "pick_UTILITY_3": "Nunu",
@@ -119,7 +119,7 @@
     "ban_BOTTOM": "",
     "ban_UTILITY": "",
     "auto_spells": true,
-    "aram_mode": "ARAM Mayhem",
+    "aram_mode": "Ranked Solo/Duo",
     "auto_join_friend_enabled": true,
     "auto_join_friend": "Palafu",
     "auto_join_list": [

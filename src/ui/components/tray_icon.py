@@ -82,8 +82,8 @@ class SystemTrayApp:
     def _open_settings(self, icon=None, item=None):
         try:
             if hasattr(self.app_root, "after") and hasattr(self.app_root, "sidebar"):
-                if getattr(self.app_root.sidebar, "_open_settings", None):
-                    self.app_root.after(0, self.app_root.sidebar._open_settings)
+                if hasattr(self.app_root.sidebar, "switch_tab"):
+                    self.app_root.after(0, lambda: self.app_root.sidebar.switch_tab("Advanced"))
                     self.app_root.after(50, self._sync_show)
         except Exception:
             pass
