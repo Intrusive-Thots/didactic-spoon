@@ -1,17 +1,17 @@
 {
     "accounts": [
         {
-            "label": "malcolm5",
-            "username": "themalcolm5",
-            "password_enc": "AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAM87HFfIspEyrahLEPtDBswAAAAAmAAAATABlAGEAZwB1AGUATABvAG8AcAAgAEEAYwBjAG8AdQBuAHQAAAAQZgAAAAEAACAAAABJ83PRs4RHxm8zY8McuO79HFhPvfM3HshdXMTn0CfwVwAAAAAOgAAAAAIAACAAAADJVmhKn1hv1SHPlQGpRZpOJXX8sGgII0BnRA4ovCQ+GRAAAAB3wMHpBd11V4V7j2EGKxVfQAAAAA1a4WK6Pd6s9lJ34cKzZFSP7W+JcBfoV1sbtd7mE4E3g4GQyPdeJnKqRHetQ3p/OAgeA7eAP1VADL+sQKPQ89Q=",
-            "tagline": "NA1",
-            "last_used": "2026-04-19T08:31:55.373640",
+            "label": "primary",
+            "username": "themalcolm3",
+            "password_enc": "AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAM87HFfIspEyrahLEPtDBswAAAAAmAAAATABlAGEAZwB1AGUATABvAG8AcAAgAEEAYwBjAG8AdQBuAHQAAAAQZgAAAAEAACAAAABeQBugJzvvhjkl7yLqik1W4Rp6heeNBTkWVlO45C2EZAAAAAAOgAAAAAIAACAAAAAsaU40ZzLcKI1cm/bn2X+WI1dDC3OyQxDLHj37WBlMxRAAAADunQTlIEdTeuhfmklaQxa5QAAAANbgBzF4IvsGp6q06ZbryvCNo9A1BFng3DxJXZRBI0nwSOmzS85K7JeIcl2ZhknWOoklFcts88lIAKJbpaRfhnc=",
+            "tagline": "IntrusiveThots\n#NTRSV",
+            "region": "NA1",
+            "last_used": "2026-04-26T11:39:14.932271",
             "wallet": {
                 "be": 0,
                 "rp": 0
-            },
-            "region": "NA1"
+            }
         }
     ],
-    "active_account_idx": -1
+    "active_account_idx": 0
 }

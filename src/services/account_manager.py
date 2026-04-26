@@ -588,6 +588,8 @@ class AccountManager:
         return killed_any
 
     # ─────────── Login Automation ───────────
+    _login_in_progress = False  # Class-level guard against concurrent logins
+
     def login_account(self, idx: int, log_func=None, completion_func=None):
         """
         Log into a specific account by relaunching the Riot Client
@@ -605,6 +607,12 @@ class AccountManager:
 
         Runs in a background thread. Calls completion_func(success) when done.
         """
+        # Concurrency guard — prevent multiple simultaneous login attempts
+        if AccountManager._login_in_progress:
+            if log_func:
+                log_func("Login already in progress...")
+            return
+
         if not (0 <= idx < len(self._accounts)):
             if log_func:
                 log_func("Invalid account index.")
@@ -622,6 +630,7 @@ class AccountManager:
         label = acct.get("label", username)
 
         def _execute():
+            AccountManager._login_in_progress = True
             try:
                 if log_func:
                     log_func(f"Switching to {label}...")
@@ -671,6 +680,8 @@ class AccountManager:
                     log_func(f"Login failed: {e}")
                 if completion_func:
                     completion_func(False)
+            finally:
+                AccountManager._login_in_progress = False
 
         threading.Thread(target=_execute, daemon=True).start()
 
@@ -735,10 +746,17 @@ class AccountManager:
         
         Caller (login_account) already killed all processes and cleaned lockfiles.
         This method just relaunches, waits for the window, types, and submits.
+        
+        Strategy: Use mouse clicks to target the username and password fields
+        at known pixel offsets within the Riot Client window, then type via keyboard.
+        This is more reliable than Tab navigation which breaks when Riot updates their UI.
         """
         try:
             import keyboard as kb
             import ctypes
+            from ctypes import wintypes
+
+            user32 = ctypes.windll.user32
 
             # Relaunch Riot Client
             if log_func:
@@ -749,7 +767,6 @@ class AccountManager:
             if log_func:
                 log_func("Waiting for login screen...")
 
-            user32 = ctypes.windll.user32
             deadline = time.time() + 45
             hwnd = 0
             while time.time() < deadline:
@@ -766,22 +783,51 @@ class AccountManager:
                 return
 
             # Give the UI time to fully render the login form
-            time.sleep(6)
+            if log_func:
+                log_func("Waiting for form to render...")
+            time.sleep(8)
 
             # Focus the window
             user32.SetForegroundWindow(hwnd)
             time.sleep(0.5)
 
+            # Get window position and size for coordinate-based clicking
+            class RECT(ctypes.Structure):
+                _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long),
+                            ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
+            
+            rect = RECT()
+            user32.GetWindowRect(hwnd, ctypes.byref(rect))
+            win_x = rect.left
+            win_y = rect.top
+            win_w = rect.right - rect.left
+            win_h = rect.bottom - rect.top
+
+            Logger.debug("AccountManager", f"Riot Client window: {win_w}x{win_h} at ({win_x},{win_y})")
+
             if log_func:
                 log_func(f"Typing credentials for {label}...")
 
-            # Navigate to username field and type
-            kb.press_and_release("tab")
-            time.sleep(0.15)
-            kb.press_and_release("shift+tab")
-            time.sleep(0.15)
+            # ── Click the USERNAME field ──
+            # The Riot Client login form has the username field at roughly:
+            # X: ~16% from left edge (center of the left panel input)
+            # Y: ~38% from top (below the Sign-in / QR Code tabs)
+            username_x = win_x + int(win_w * 0.16)
+            username_y = win_y + int(win_h * 0.38)
+            
+            # Move mouse and click to focus the username field
+            user32.SetCursorPos(username_x, username_y)
+            time.sleep(0.1)
+            # Left click down + up
+            user32.mouse_event(0x0002, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTDOWN
+            user32.mouse_event(0x0004, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTUP
+            time.sleep(0.3)
+
+            # Select all and clear existing text
             kb.press_and_release("ctrl+a")
-            time.sleep(0.05)
+            time.sleep(0.1)
+            kb.press_and_release("backspace")
+            time.sleep(0.1)
 
             # Type username character by character
             for char in username:
@@ -790,9 +836,22 @@ class AccountManager:
 
             time.sleep(0.3)
 
-            # Tab to password
-            kb.press_and_release("tab")
+            # ── Click the PASSWORD field ──
+            # Password field is below username, at roughly Y: ~48%
+            password_x = win_x + int(win_w * 0.16)
+            password_y = win_y + int(win_h * 0.48)
+
+            user32.SetCursorPos(password_x, password_y)
+            time.sleep(0.1)
+            user32.mouse_event(0x0002, 0, 0, 0, 0)
+            user32.mouse_event(0x0004, 0, 0, 0, 0)
             time.sleep(0.3)
+
+            # Select all and clear
+            kb.press_and_release("ctrl+a")
+            time.sleep(0.1)
+            kb.press_and_release("backspace")
+            time.sleep(0.1)
 
             # Type password character by character 
             for char in password:
@@ -806,7 +865,7 @@ class AccountManager:
 
             # ── Native Fault Detection ──
             # Riot Client will instantly update the local REST endpoint if login fails
-            fault_deadline = time.time() + 5
+            fault_deadline = time.time() + 8
             self.riot_client.connect()
             while time.time() < fault_deadline:
                 time.sleep(0.5)
@@ -827,7 +886,7 @@ class AccountManager:
                 self._save()
 
             if log_func:
-                log_func(f"Credentials entered for {label}!")
+                log_func(f"Logged in as {label}!")
             if completion_func:
                 completion_func(True)
 

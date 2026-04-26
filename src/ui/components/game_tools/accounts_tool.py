@@ -388,7 +388,10 @@ class AccountsTool(ctk.CTkFrame):
             ).pack(side="left", fill="x", expand=True)
 
             # Login / Sign-Out button
-            if not is_active:
+            # Check LCU connection — if disconnected, always show Login even for active account
+            lcu_connected = self.lcu.is_connected if self.lcu else False
+
+            if not is_active or not lcu_connected:
                 login_btn = ctk.CTkButton(
                     top, text="▶ Login", width=56, height=20,
                     corner_radius=get_radius("sm"),
@@ -401,7 +404,8 @@ class AccountsTool(ctk.CTkFrame):
                 )
                 login_btn.pack(side="right", padx=(4, 0))
                 CTkTooltip(login_btn, f"Log in as {label_text}")
-            else:
+
+            if is_active:
                 # Sign out button for active account
                 signout_btn = ctk.CTkButton(
                     top, text="⏻ Sign Out", width=68, height=20,

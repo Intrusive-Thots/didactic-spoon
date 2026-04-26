@@ -62,8 +62,8 @@ class SidebarWidget(ctk.CTkFrame):
 
     def _setup_ui(self):
         # ── Header / Drag Area ──
-        self.header = ctk.CTkFrame(self, fg_color="transparent", height=HEADER_HEIGHT)
-        self.header.pack(fill="x", pady=(CARD_PAD, INNER_GAP), padx=CARD_PAD)
+        self.header = ctk.CTkFrame(self, fg_color="transparent", height=32)
+        self.header.pack(fill="x", pady=(SPACING_XS, SPACING_XS), padx=CARD_PAD)
         self.header.pack_propagate(False)
         
         self.lbl_title = ctk.CTkLabel(
@@ -96,8 +96,8 @@ class SidebarWidget(ctk.CTkFrame):
         self.var_power = ctk.BooleanVar(value=True)
 
         # ── 5.1 Tab Navigation ──
-        self.tab_frame = ctk.CTkFrame(self.main_body, fg_color="transparent", height=30)
-        self.tab_frame.pack(fill="x", pady=(0, SECTION_GAP))
+        self.tab_frame = ctk.CTkFrame(self.main_body, fg_color="transparent", height=28)
+        self.tab_frame.pack(fill="x", pady=(0, INNER_GAP))
         
         self._current_tab = "Play"
         
@@ -122,6 +122,7 @@ class SidebarWidget(ctk.CTkFrame):
             
             self.advanced_scroll.pack_forget()
             self.stats_frame.pack_forget()
+            self.spacer.pack_forget()
             
             # Pack based on tab
             if tab_name == "Play":
@@ -131,11 +132,12 @@ class SidebarWidget(ctk.CTkFrame):
                     self.game_tool_container.pack(fill="x", pady=(0, SECTION_GAP))
                 if self._accounts_tool_visible and self.accounts_tool:
                     self.accounts_tool.pack(fill="x", pady=(0, SECTION_GAP))
+                self.spacer.pack(fill="both", expand=True)
             elif tab_name == "Configure":
                 self.auto_container.pack(fill="x", pady=(0, SECTION_GAP))
                 self.friend_list.pack(fill="x", pady=(0, SECTION_GAP))
             elif tab_name == "Advanced":
-                self.advanced_scroll.pack(fill="both", expand=True, pady=(0, SECTION_GAP))
+                self.advanced_scroll.pack(fill="both", expand=True, pady=(0, SPACING_XS))
                 if self._stats_visible:
                     self.stats_frame.pack(fill="x", pady=(0, SECTION_GAP))
                     
@@ -160,19 +162,22 @@ class SidebarWidget(ctk.CTkFrame):
         )
         self.session_frame.pack(fill="x", pady=(0, SECTION_GAP))
         self.session_frame.pack_propagate(False)
-        self.session_frame.grid_columnconfigure((0, 1, 2), weight=1)
+        # 2-column grid: col 0 gets most space for text, col 1 for compact controls
+        self.session_frame.grid_columnconfigure(0, weight=3)
+        self.session_frame.grid_columnconfigure(1, weight=1)
 
         self.queue_label = ctk.CTkLabel(
             self.session_frame,
             text=self.config.get("aram_mode", "ARAM"),
             font=get_font("body", "bold"),
             text_color=get_color("colors.accent.gold", "#C8AA6E"),
+            anchor="w",
             cursor="hand2"
         )
-        self.queue_label.grid(row=0, column=0, padx=CARD_PAD, pady=(CARD_PAD, 2), sticky="w")
+        self.queue_label.grid(row=0, column=0, padx=(CARD_PAD, 2), pady=(CARD_PAD, 2), sticky="w")
 
 
-        # Power Status Button (Moved from Status Frame)
+        # Power Status Button
         self.btn_power_status = make_button(
             self.session_frame, 
             text="▶ Active" if getattr(self, "power_state", False) else "⏸ Paused", 
@@ -183,7 +188,7 @@ class SidebarWidget(ctk.CTkFrame):
             height=24,
             command=self._on_power_click
         )
-        self.btn_power_status.grid(row=0, column=2, padx=CARD_PAD, pady=(CARD_PAD, 2), sticky="e")
+        self.btn_power_status.grid(row=0, column=1, padx=(2, CARD_PAD), pady=(CARD_PAD, 2), sticky="e")
         hk_auto = self.config.get("hotkey_toggle_automation", "ctrl+shift+a").upper()
         CTkTooltip(self.btn_power_status, f"Toggle Automation ({hk_auto})")
 
@@ -191,17 +196,19 @@ class SidebarWidget(ctk.CTkFrame):
             self.session_frame,
             text="Queue: Idle",
             font=get_font("caption"),
-            text_color=get_color("colors.text.primary")
+            text_color=get_color("colors.text.primary"),
+            anchor="w"
         )
-        self.time_label.grid(row=1, column=0, padx=CARD_PAD, pady=(0, CARD_PAD), sticky="w")
+        self.time_label.grid(row=1, column=0, padx=(CARD_PAD, 2), pady=(0, CARD_PAD), sticky="w")
 
         self.estimate_label = ctk.CTkLabel(
             self.session_frame,
             text="● Connected",
             font=get_font("caption"),
-            text_color=get_color("colors.state.success", "#00C853")
+            text_color=get_color("colors.state.success", "#00C853"),
+            anchor="e"
         )
-        self.estimate_label.grid(row=1, column=1, padx=CARD_PAD, pady=(0, CARD_PAD), sticky="e")
+        self.estimate_label.grid(row=1, column=1, padx=(2, CARD_PAD), pady=(0, CARD_PAD), sticky="e")
 
         self.session_separator = ctk.CTkFrame(
             self.session_frame,
@@ -658,7 +665,7 @@ class SidebarWidget(ctk.CTkFrame):
         CTkTooltip(self.btn_clear_log, "Clear Log")
 
         # NOW pack main_body to fill remaining space between header and footer
-        self.main_body.pack(fill="both", expand=True, padx=CARD_PAD, pady=(0, INNER_GAP))
+        self.main_body.pack(fill="both", expand=True, padx=CARD_PAD, pady=(0, SPACING_XS))
 
         # Initialize tab state — hide Configure and Advanced widgets
         self.switch_tab("Play")
