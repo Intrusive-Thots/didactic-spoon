@@ -7,7 +7,10 @@
         "background": {
             "app": "#091428",
             "panel": "#0A1428",
-            "card": "#0A1428",
+            "card": "#0F1923",
+            "card_hover": "#132030",
+            "card_active": "#162438",
+            "input": "#0A1220",
             "overlay": "rgba(0,0,0,0.6)"
         },
         "text": {
@@ -94,9 +97,11 @@
     },
     "borders": {
         "subtle": "1px solid #1E2328",
-        "soft": "1px solid #1E2328",
+        "soft": "1px solid #1A2332",
         "strong": "1px solid #3C3C41",
-        "gold": "1px solid #C8AA6E"
+        "gold": "1px solid #C8AA6E",
+        "card": "1px solid #1A2332",
+        "card_gold": "1px solid #1E1E2D"
     },
     "buttons": {
         "primary": {

@@ -174,3 +174,50 @@ def apply_card_hover(widget):
 
     widget.bind("<Enter>", on_enter, add="+")
     widget.bind("<Leave>", on_leave, add="+")
+
+
+def apply_queue_pulse(widget, color_a="#C8AA6E", color_b="#A98A48", interval=800):
+    """Pulse between two colors on a widget to indicate active queue state.
+    
+    Call stop_queue_pulse(widget) to stop the animation.
+    
+    Args:
+        widget: CTkFrame or RiotButton to pulse
+        color_a: First pulse color (bright)
+        color_b: Second pulse color (dim)
+        interval: Milliseconds per half-cycle
+    """
+    widget._pulse_active = True
+    widget._pulse_phase = True  # True = color_a, False = color_b
+    
+    def _tick():
+        if not getattr(widget, "_pulse_active", False):
+            return
+        if not widget.winfo_exists():
+            return
+        try:
+            c = color_a if widget._pulse_phase else color_b
+            # For RiotButton (CTkFrame with .inner), pulse the inner frame
+            if hasattr(widget, "inner"):
+                widget.inner.configure(fg_color=c)
+            else:
+                widget.configure(fg_color=c)
+            widget._pulse_phase = not widget._pulse_phase
+            widget.after(interval, _tick)
+        except Exception as e:
+            Logger.error("hover.py", f"Pulse animation error: {e}")
+    
+    _tick()
+
+
+def stop_queue_pulse(widget, restore_color=None):
+    """Stop a running queue pulse animation."""
+    widget._pulse_active = False
+    if restore_color and widget.winfo_exists():
+        try:
+            if hasattr(widget, "inner"):
+                widget.inner.configure(fg_color=restore_color)
+            else:
+                widget.configure(fg_color=restore_color)
+        except Exception:
+            pass

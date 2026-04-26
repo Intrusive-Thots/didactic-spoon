@@ -24,17 +24,32 @@ def get_radius(size="md"):
 
 @functools.lru_cache(maxsize=32)
 def get_font(type="body", weight=None):
-    """Retrieve font tuple. Weight can be 'bold', 'medium', or 'normal'."""
+    """Retrieve font tuple. Weight can be 'bold', 'medium', or 'normal'.
+    
+    Font chain: Beaufort for LOL > Cinzel > Segoe UI (headers)
+                Spiegel > Inter > Segoe UI (body/caption)
+    On this system only Segoe UI is available.
+    """
+    # Headers: larger, bolder
     if type == "header" or type == "title":
-        family = "Cinzel"
-        size = 14 if type == "header" else 16
+        family = "Beaufort for LOL"
+        size = 14 if type == "header" else 15
+        weight_val = "bold"
+    elif type == "section":
+        # Section headers inside cards (e.g. "LOBBY & QUEUE")
+        family = "Segoe UI"
+        size = 11
         weight_val = "bold"
     elif type == "caption":
-        family = "Inter"
+        family = "Segoe UI"
         size = 11
         weight_val = "normal"
-    else:
-        family = "Inter"
+    elif type == "small":
+        family = "Segoe UI"
+        size = 10
+        weight_val = "normal"
+    else:  # body
+        family = "Segoe UI"
         size = 12
         weight_val = "normal"
     
@@ -242,9 +257,64 @@ def make_input(parent, placeholder="", width=None, **kw):
     return entry
 
 
-
-
-
-
-
-
+def make_card(parent, title=None, fg_color=None, border_color=None, corner_radius=None,
+              padx=10, pady=10, inner_padx=10, inner_pady=8, collapsible=False):
+    """Create a standardized League-styled card frame.
+    
+    Returns the content frame (inside the card) where widgets should be packed.
+    If title is provided, a gold header label and divider are automatically added.
+    
+    Args:
+        parent: Parent widget
+        title: Optional gold header text (e.g. "LOBBY & QUEUE")
+        fg_color: Card background. Defaults to token card color.
+        border_color: Card border color. Defaults to token card border.
+        corner_radius: Corner radius. Defaults to token md radius.
+        padx/pady: External padding when packing the card
+        inner_padx/inner_pady: Internal content padding
+        collapsible: If True, title becomes a clickable toggle
+    
+    Returns:
+        content_frame: CTkFrame where child widgets should be packed
+    """
+    card_bg = fg_color or get_color("colors.background.card", "#0F1923")
+    card_border_w, card_border_c = parse_border("card")
+    border_c = border_color or card_border_c or "#1A2332"
+    radius = corner_radius or get_radius("md")
+    
+    card = ctk.CTkFrame(
+        parent,
+        fg_color=card_bg,
+        corner_radius=radius,
+        border_width=1,
+        border_color=border_c
+    )
+    card.pack(fill="x", padx=padx, pady=pady)
+    
+    # Optional hover effect on the entire card
+    _hover_bg = get_color("colors.background.card_hover", "#132030")
+    card.bind("<Enter>", lambda e: card.configure(fg_color=_hover_bg))
+    card.bind("<Leave>", lambda e: card.configure(fg_color=card_bg))
+    
+    if title:
+        title_label = ctk.CTkLabel(
+            card, text=title,
+            font=get_font("section", "bold"),
+            text_color=get_color("colors.accent.gold", "#C8AA6E"),
+            anchor="w"
+        )
+        title_label.pack(fill="x", padx=inner_padx, pady=(inner_pady, 2))
+        
+        # Gold-tinted divider
+        ctk.CTkFrame(
+            card, height=1,
+            fg_color=get_color("colors.border.subtle", "#1E2328")
+        ).pack(fill="x", padx=inner_padx, pady=(0, inner_pady - 2))
+    
+    content = ctk.CTkFrame(card, fg_color="transparent")
+    content.pack(fill="x", padx=inner_padx, pady=(0 if title else inner_pady, inner_pady))
+    
+    # Store reference to outer card on content frame for external access
+    content._card = card
+    
+    return content

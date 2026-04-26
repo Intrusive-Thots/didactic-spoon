@@ -1,4 +1,4 @@
-﻿import os
+import os
 import customtkinter as ctk
 
 from ui.components.factory import get_color, get_font, get_radius

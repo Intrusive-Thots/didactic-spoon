@@ -10,7 +10,7 @@ from PIL import Image  # type: ignore
 
 from utils.logger import Logger  # type: ignore
 from utils.path_utils import get_asset_path  # type: ignore
-from ui.components.factory import get_color, get_font, get_radius, TOKENS, make_button  # type: ignore
+from ui.components.factory import get_color, get_font, get_radius, TOKENS, make_button, make_card  # type: ignore
 from ui.ui_shared import CTkTooltip  # type: ignore
 from ui.components.priority_grid import PriorityIconGrid  # type: ignore
 from ui.components.game_tools.arena_tool import ArenaTool  # type: ignore
@@ -82,10 +82,10 @@ class SidebarWidget(ctk.CTkFrame):
             )
         self.btn_close.pack(side="right", padx=(4, 2))
         CTkTooltip(self.btn_close, "Close Application")
-
-
-
         self.drag_widgets = [self, self.header, self.lbl_title]
+
+        # Gold accent divider below header (pre-blended: #C8AA6E at ~12% on #091428)
+        ctk.CTkFrame(self, height=1, fg_color="#1E1E2D").pack(fill="x", padx=CARD_PAD)
 
         # ── Collapsible Body ──
         # NOTE: main_body is created here but packed AFTER the footer
@@ -153,8 +153,10 @@ class SidebarWidget(ctk.CTkFrame):
         self.session_frame = ctk.CTkFrame(
             self.main_body,
             height=64,
-            fg_color=get_color("colors.background.panel"),
-            corner_radius=CARD_RADIUS
+            fg_color=get_color("colors.background.card", "#0F1923"),
+            corner_radius=CARD_RADIUS,
+            border_width=1,
+            border_color="#1A2332"
         )
         self.session_frame.pack(fill="x", pady=(0, SECTION_GAP))
         self.session_frame.pack_propagate(False)
@@ -218,7 +220,13 @@ class SidebarWidget(ctk.CTkFrame):
         self.progress_bar.place(relx=0, rely=0.98, relwidth=1.0, anchor="sw")
 
         # ── Action Buttons ──
-        self.action_container = ctk.CTkFrame(self.main_body, fg_color=get_color("colors.background.panel"), corner_radius=CARD_RADIUS)
+        self.action_container = ctk.CTkFrame(
+            self.main_body,
+            fg_color=get_color("colors.background.card", "#0F1923"),
+            corner_radius=CARD_RADIUS,
+            border_width=1,
+            border_color="#1A2332"
+        )
         self.action_container.pack(fill="x", pady=(0, SECTION_GAP))
 
         self.btn_frame = ctk.CTkFrame(self.action_container, fg_color="transparent")
@@ -295,7 +303,13 @@ class SidebarWidget(ctk.CTkFrame):
         # (Divider removed — card containers provide visual separation)
 
         # ── Toggles Section ──
-        self.auto_container = ctk.CTkFrame(self.main_body, fg_color=get_color("colors.background.panel"), corner_radius=CARD_RADIUS)
+        self.auto_container = ctk.CTkFrame(
+            self.main_body,
+            fg_color=get_color("colors.background.card", "#0F1923"),
+            corner_radius=CARD_RADIUS,
+            border_width=1,
+            border_color="#1A2332"
+        )
         self.auto_container.pack(fill="x", pady=(0, SECTION_GAP))
 
         self.auto_expanded = False
@@ -429,18 +443,11 @@ class SidebarWidget(ctk.CTkFrame):
         # ── Advanced Settings Tab Content ──
         self.advanced_scroll = ctk.CTkScrollableFrame(self.main_body, fg_color="transparent")
         
-        def _create_adv_card(parent, title):
-            card = ctk.CTkFrame(parent, fg_color=get_color("colors.background.panel"), corner_radius=CARD_RADIUS)
-            card.pack(fill="x", pady=(0, SECTION_GAP))
-            hdr = ctk.CTkLabel(card, text=title, font=get_font("caption", "bold"), text_color=get_color("colors.accent.gold", "#C8AA6E"), anchor="w")
-            hdr.pack(fill="x", padx=CARD_PAD, pady=(CARD_PAD, INNER_GAP))
-            return card
-
         # LOBBY & QUEUE
-        card_lobby = _create_adv_card(self.advanced_scroll, "LOBBY & QUEUE")
+        card_lobby = make_card(self.advanced_scroll, title="LOBBY & QUEUE", padx=0, pady=(0, SECTION_GAP))
         
         row_delay = ctk.CTkFrame(card_lobby, fg_color="transparent")
-        row_delay.pack(fill="x", padx=CARD_PAD, pady=(0, CARD_PAD))
+        row_delay.pack(fill="x", pady=(0, INNER_GAP))
         ctk.CTkLabel(row_delay, text="Accept Delay", font=get_font("body"), text_color=get_color("colors.text.primary")).pack(side="left")
         
         delay_val = float(self.config.get("accept_delay", 2.0))
@@ -452,25 +459,25 @@ class SidebarWidget(ctk.CTkFrame):
             self.lbl_delay_val.configure(text=f"{value:.1f}s")
             self.config.set("accept_delay", round(value, 1))
             
-        self.slider_delay = ctk.CTkSlider(row_delay, from_=0, to=8, number_of_steps=16, variable=self.delay_var, width=80, fg_color=get_color("colors.background.card"), progress_color=get_color("colors.accent.gold", "#C8AA6E"), button_color=get_color("colors.text.primary", "#F0E6D2"), button_hover_color="#FFFFFF", command=_on_delay_slide)
+        self.slider_delay = ctk.CTkSlider(row_delay, from_=0, to=8, number_of_steps=16, variable=self.delay_var, width=80, fg_color=get_color("colors.background.app"), progress_color=get_color("colors.accent.gold", "#C8AA6E"), button_color=get_color("colors.text.primary", "#F0E6D2"), button_hover_color="#FFFFFF", command=_on_delay_slide)
         self.slider_delay.pack(side="right", padx=(4, 4))
         CTkTooltip(self.slider_delay, "Delay before auto-accepting a match")
 
         # AUTOMATION & BEHAVIOR
-        card_auto = _create_adv_card(self.advanced_scroll, "AUTOMATION & BEHAVIOR")
+        card_auto = make_card(self.advanced_scroll, title="AUTOMATION & BEHAVIOR", padx=0, pady=(0, SECTION_GAP))
         
         row_honor = ctk.CTkFrame(card_auto, fg_color="transparent")
-        row_honor.pack(fill="x", padx=CARD_PAD, pady=(0, INNER_GAP))
+        row_honor.pack(fill="x", pady=(0, INNER_GAP))
         ctk.CTkLabel(row_honor, text="Honor Strategy", font=get_font("body"), text_color=get_color("colors.text.primary")).pack(side="top", anchor="w")
         
         self.honor_var = ctk.StringVar(value=self.config.get("honor_strategy", "random"))
         def _on_honor_change(val):
             self.config.set("honor_strategy", val)
-        self.honor_select = ctk.CTkOptionMenu(row_honor, values=["random", "best_kda", "mvp"], variable=self.honor_var, font=get_font("body", "bold"), fg_color=get_color("colors.background.card"), button_color="#1A2733", button_hover_color=get_color("colors.state.hover"), dropdown_fg_color=get_color("colors.background.app"), dropdown_hover_color=get_color("colors.state.hover"), dropdown_font=get_font("caption"), command=_on_honor_change, height=24)
+        self.honor_select = ctk.CTkOptionMenu(row_honor, values=["random", "best_kda", "mvp"], variable=self.honor_var, font=get_font("body", "bold"), fg_color=get_color("colors.background.app"), button_color="#1A2733", button_hover_color=get_color("colors.state.hover"), dropdown_fg_color=get_color("colors.background.app"), dropdown_hover_color=get_color("colors.state.hover"), dropdown_font=get_font("caption"), command=_on_honor_change, height=24)
         self.honor_select.pack(fill="x", pady=(4,0))
         
         row_tray = ctk.CTkFrame(card_auto, fg_color="transparent")
-        row_tray.pack(fill="x", padx=CARD_PAD, pady=(0, CARD_PAD))
+        row_tray.pack(fill="x", pady=(INNER_GAP, 0))
         ctk.CTkLabel(row_tray, text="Run in Tray", font=get_font("body"), text_color=get_color("colors.text.primary")).pack(side="left")
         
         self.tray_var = ctk.BooleanVar(value=bool(self.config.get("run_in_tray", True)))
@@ -480,31 +487,31 @@ class SidebarWidget(ctk.CTkFrame):
         self.tray_switch.pack(side="right")
 
         # SOCIAL & IDENTITY
-        card_social = _create_adv_card(self.advanced_scroll, "SOCIAL & IDENTITY")
+        card_social = make_card(self.advanced_scroll, title="SOCIAL & IDENTITY", padx=0, pady=(0, SECTION_GAP))
         
         row_discord = ctk.CTkFrame(card_social, fg_color="transparent")
-        row_discord.pack(fill="x", padx=CARD_PAD, pady=(0, INNER_GAP))
+        row_discord.pack(fill="x", pady=(0, INNER_GAP))
         ctk.CTkLabel(row_discord, text="Discord RPC", font=get_font("body"), text_color=get_color("colors.text.primary")).pack(side="left")
         self.discord_var = ctk.BooleanVar(value=bool(self.config.get("discord_rpc_enabled", True)))
         self.discord_switch = LolToggle(row_discord, variable=self.discord_var, command=lambda: self.config.set("discord_rpc_enabled", self.discord_var.get()))
         self.discord_switch.pack(side="right")
         
         row_join_vip = ctk.CTkFrame(card_social, fg_color="transparent")
-        row_join_vip.pack(fill="x", padx=CARD_PAD, pady=(0, INNER_GAP))
+        row_join_vip.pack(fill="x", pady=(0, INNER_GAP))
         ctk.CTkLabel(row_join_vip, text="VIP Invites Only", font=get_font("body"), text_color=get_color("colors.text.primary")).pack(side="left")
         self.join_vip_var = ctk.BooleanVar(value=bool(self.config.get("auto_join_vip_only", False)))
         self.join_vip_switch = LolToggle(row_join_vip, variable=self.join_vip_var, command=lambda: self.config.set("auto_join_vip_only", self.join_vip_var.get()))
         self.join_vip_switch.pack(side="right")
         
-        ctk.CTkLabel(card_social, text="VIP Invite List", font=get_font("caption"), text_color=get_color("colors.text.muted")).pack(anchor="w", padx=CARD_PAD, pady=(0, 2))
+        ctk.CTkLabel(card_social, text="VIP Invite List", font=get_font("caption"), text_color=get_color("colors.text.muted")).pack(anchor="w", pady=(0, 2))
         self.vip_var = ctk.StringVar(value=self.config.get("vip_invite_list", ""))
-        self.entry_vip = ctk.CTkEntry(card_social, textvariable=self.vip_var, font=get_font("body"), height=26, fg_color=get_color("colors.background.card"), border_color=get_color("colors.border.subtle"))
-        self.entry_vip.pack(fill="x", padx=CARD_PAD, pady=(0, CARD_PAD))
+        self.entry_vip = ctk.CTkEntry(card_social, textvariable=self.vip_var, font=get_font("body"), height=26, fg_color=get_color("colors.background.input", "#0A1220"), border_color=get_color("colors.border.subtle"))
+        self.entry_vip.pack(fill="x", pady=(0, 0))
         def _save_vip(*args): self.config.set("vip_invite_list", self.vip_var.get().strip())
         self.entry_vip.bind("<KeyRelease>", _save_vip)
         
         # HOTKEYS
-        card_hotkeys = _create_adv_card(self.advanced_scroll, "HOTKEYS")
+        card_hotkeys = make_card(self.advanced_scroll, title="HOTKEYS", padx=0, pady=(0, SECTION_GAP))
         from ui.components.hotkey_recorder import HotkeyRecorder
         hotkeys = [
             ("Client Launch", "hotkey_launch_client", "ctrl+shift+l"),
@@ -515,8 +522,8 @@ class SidebarWidget(ctk.CTkFrame):
         self.recorders = {}
         for i, (label_text, config_key, default_val) in enumerate(hotkeys):
             row = ctk.CTkFrame(card_hotkeys, fg_color="transparent")
-            pad_bottom = CARD_PAD if i == len(hotkeys) - 1 else INNER_GAP
-            row.pack(fill="x", padx=CARD_PAD, pady=(0, pad_bottom))
+            pad_bottom = INNER_GAP if i < len(hotkeys) - 1 else 0
+            row.pack(fill="x", pady=(0, pad_bottom))
             ctk.CTkLabel(row, text=label_text, font=get_font("body"), text_color=get_color("colors.text.primary")).pack(side="top", anchor="w")
             
             def _save_hk(val, key=config_key):
@@ -529,17 +536,17 @@ class SidebarWidget(ctk.CTkFrame):
             self.recorders[config_key] = recorder
 
         # ABOUT
-        card_about = _create_adv_card(self.advanced_scroll, "ABOUT")
+        card_about = make_card(self.advanced_scroll, title="ABOUT", padx=0, pady=(0, SECTION_GAP))
         from core.version import __version__
-        ctk.CTkLabel(card_about, text="League Loop", font=("Beaufort for LOL", 13, "bold"), text_color=get_color("colors.text.primary")).pack(anchor="w", padx=CARD_PAD)
-        ctk.CTkLabel(card_about, text=f"Version {__version__}", font=get_font("caption"), text_color=get_color("colors.text.muted")).pack(anchor="w", padx=CARD_PAD, pady=(0, INNER_GAP))
+        ctk.CTkLabel(card_about, text="League Loop", font=get_font("title", "bold"), text_color=get_color("colors.text.primary")).pack(anchor="w")
+        ctk.CTkLabel(card_about, text=f"Version {__version__}", font=get_font("caption"), text_color=get_color("colors.text.muted")).pack(anchor="w", pady=(0, INNER_GAP))
         
         def _open_about():
             from ui.components.about_page import AboutPage
             AboutPage(self.master)
         
         btn_about = make_button(card_about, text="Info & Legal", style="ghost", font=get_font("caption", "bold"), width=100, height=24, command=_open_about)
-        btn_about.pack(anchor="w", padx=CARD_PAD, pady=(0, CARD_PAD))
+        btn_about.pack(anchor="w")
 
         # ── Profile Section (Moved into Advanced Scroll) ──
         self.profile_container = ctk.CTkFrame(self.advanced_scroll, fg_color=get_color("colors.background.panel"), corner_radius=CARD_RADIUS)
