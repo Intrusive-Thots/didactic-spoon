@@ -46,12 +46,12 @@
     "poro_snacks": 0,
     "stealth_mode": true,
     "hotkey_launch_client": "ctrl+alt+win+c",
-    "hotkey_toggle_automation": "ctrl+alt+win+x",
-    "hotkey_find_match": "down",
+    "hotkey_toggle_automation": "ctrl+shift+x",
+    "hotkey_find_match": "1+2+3+4",
     "hotkey_compact_mode": "alt+esc",
     "hotkey_omnibar": "ctrl+alt+a",
     "priority_picker": {
-        "enabled": true,
+        "enabled": false,
         "list": [
             "Fizz",
             "Singed",
@@ -119,7 +119,7 @@
     "ban_BOTTOM": "",
     "ban_UTILITY": "",
     "auto_spells": true,
-    "aram_mode": "Ranked Solo/Duo",
+    "aram_mode": "ARAM Mayhem",
     "auto_join_friend_enabled": true,
     "auto_join_friend": "Palafu",
     "auto_join_list": [
@@ -281,5 +281,6 @@
     "honor_strategy": "best_kda",
     "vip_invite_list": "",
     "startup_status": "",
-    "arena_ban": ""
+    "arena_ban": "",
+    "auto_join_vip_only": true
 }

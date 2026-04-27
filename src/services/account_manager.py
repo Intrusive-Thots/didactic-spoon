@@ -591,23 +591,11 @@ class AccountManager:
     _login_in_progress = False  # Class-level guard against concurrent logins
 
     def login_account(self, idx: int, log_func=None, completion_func=None):
+        """Log into a specific account.
+
+        As requested: dead simple. No killing processes, no reloading.
+        Just focus the window, tab, and type the keystrokes.
         """
-        Log into a specific account by relaunching the Riot Client
-        and typing credentials into the login form.
-
-        NOTE: The Riot Client API requires hCaptcha for authentication,
-        making API-only login impossible. We use keyboard simulation
-        to type into the Riot Client's login screen instead.
-
-        Flow:
-          1. Kill ALL Riot/League processes (clean slate)
-          2. Relaunch RiotClientServices.exe (shows fresh login screen)
-          3. Wait for the Riot Client window to appear
-          4. Type username/password into the login form and submit
-
-        Runs in a background thread. Calls completion_func(success) when done.
-        """
-        # Concurrency guard — prevent multiple simultaneous login attempts
         if AccountManager._login_in_progress:
             if log_func:
                 log_func("Login already in progress...")
@@ -635,43 +623,7 @@ class AccountManager:
                 if log_func:
                     log_func(f"Switching to {label}...")
 
-                # ── PHASE 1: Kill ALL processes for a clean restart ──
-                if log_func:
-                    log_func("Closing Riot Client...")
-                for proc_name in ["LeagueClient.exe", "LeagueClientUx.exe",
-                                  "RiotClientUx.exe", "Riot Client.exe"]:
-                    try:
-                        subprocess.run(
-                            ["taskkill", "/IM", proc_name, "/F"],
-                            capture_output=True,
-                            creationflags=subprocess.CREATE_NO_WINDOW,
-                        )
-                    except Exception:
-                        pass
-
-                time.sleep(1)
-
-                # Kill RiotClientServices last
-                try:
-                    subprocess.run(
-                        ["taskkill", "/IM", "RiotClientServices.exe", "/F"],
-                        capture_output=True,
-                        creationflags=subprocess.CREATE_NO_WINDOW,
-                    )
-                except Exception:
-                    pass
-
-                time.sleep(2)
-
-                # Delete stale lockfile
-                for lf_path in _RC_LOCKFILE_PATHS:
-                    try:
-                        if os.path.exists(lf_path):
-                            os.remove(lf_path)
-                    except Exception:
-                        pass
-
-                # ── PHASE 2: Relaunch and wait for login window ──
+                # Just run the macro.
                 self._keyboard_login(username, password, label, log_func, completion_func, idx)
 
             except Exception as e:
@@ -684,6 +636,8 @@ class AccountManager:
                 AccountManager._login_in_progress = False
 
         threading.Thread(target=_execute, daemon=True).start()
+
+    # ─────────── Sign Out ───────────
 
     def sign_out(self, log_func=None, completion_func=None):
         """Sign out the current account. Kills League Client first (required by API)."""
@@ -705,7 +659,6 @@ class AccountManager:
                 self._kill_game_processes(log_func)
                 time.sleep(2)
 
-                # Connect to Riot Client API
                 if not self.riot_client.is_connected:
                     self.riot_client.connect()
 
@@ -740,155 +693,65 @@ class AccountManager:
 
         threading.Thread(target=_execute, daemon=True).start()
 
-    # ─────────── Keyboard Login ───────────
+    # ─────────── Keyboard Login (Fallback) ───────────
+
     def _keyboard_login(self, username, password, label, log_func, completion_func, idx):
-        """Login by typing credentials into the Riot Client login form.
-        
-        Caller (login_account) already killed all processes and cleaned lockfiles.
-        This method just relaunches, waits for the window, types, and submits.
-        
-        Strategy: Use mouse clicks to target the username and password fields
-        at known pixel offsets within the Riot Client window, then type via keyboard.
-        This is more reliable than Tab navigation which breaks when Riot updates their UI.
+        """Fallback: type credentials into the Riot Client login form.
+
+        The Riot Client auto-focuses the username field on launch.
+        So the entire login is just: type username → Tab → type password → Enter.
+        No mouse clicks, no pixel coordinates, no window position math.
         """
         try:
-            import keyboard as kb
+            import pyautogui
             import ctypes
-            from ctypes import wintypes
 
             user32 = ctypes.windll.user32
 
-            # Relaunch Riot Client
-            if log_func:
-                log_func("Launching Riot Client...")
-            self._launch_riot_client()
-
             # Wait for the Riot Client window
-            if log_func:
-                log_func("Waiting for login screen...")
-
-            deadline = time.time() + 45
-            hwnd = 0
-            while time.time() < deadline:
-                hwnd = user32.FindWindowW(None, "Riot Client")
-                if hwnd != 0:
-                    break
-                time.sleep(0.5)
-
-            if hwnd == 0:
+            hwnd = self._find_riot_client_window(timeout=30)
+            if not hwnd:
                 if log_func:
                     log_func("Riot Client window not found.")
                 if completion_func:
                     completion_func(False)
                 return
 
-            # Give the UI time to fully render the login form
+            # Wait for the login form to fully render
             if log_func:
-                log_func("Waiting for form to render...")
-            time.sleep(8)
-
-            # Focus the window
-            user32.SetForegroundWindow(hwnd)
+                log_func("Waiting for login form...")
             time.sleep(0.5)
 
-            # Get window position and size for coordinate-based clicking
-            class RECT(ctypes.Structure):
-                _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long),
-                            ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
-            
-            rect = RECT()
-            user32.GetWindowRect(hwnd, ctypes.byref(rect))
-            win_x = rect.left
-            win_y = rect.top
-            win_w = rect.right - rect.left
-            win_h = rect.bottom - rect.top
-
-            Logger.debug("AccountManager", f"Riot Client window: {win_w}x{win_h} at ({win_x},{win_y})")
+            # Ensure window is visible and un-minimized
+            user32.ShowWindow(hwnd, 9)  # SW_RESTORE
+            user32.SetForegroundWindow(hwnd)
+            time.sleep(0.5)
 
             if log_func:
                 log_func(f"Typing credentials for {label}...")
 
-            # ── Click the USERNAME field ──
-            # The Riot Client login form has the username field at roughly:
-            # X: ~16% from left edge (center of the left panel input)
-            # Y: ~38% from top (below the Sign-in / QR Code tabs)
-            username_x = win_x + int(win_w * 0.16)
-            username_y = win_y + int(win_h * 0.38)
-            
-            # Move mouse and click to focus the username field
-            user32.SetCursorPos(username_x, username_y)
+            # Username field is auto-focused on fresh launch.
+            # Clear any existing text, type username.
+            pyautogui.hotkey('ctrl', 'a')
             time.sleep(0.1)
-            # Left click down + up
-            user32.mouse_event(0x0002, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTDOWN
-            user32.mouse_event(0x0004, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTUP
-            time.sleep(0.3)
+            pyautogui.write(username, interval=0.03)
+            time.sleep(0.2)
 
-            # Select all and clear existing text
-            kb.press_and_release("ctrl+a")
-            time.sleep(0.1)
-            kb.press_and_release("backspace")
-            time.sleep(0.1)
+            # Tab to password field
+            pyautogui.press('tab')
+            time.sleep(0.2)
 
-            # Type username character by character
-            for char in username:
-                kb.write(char, delay=0)
-                time.sleep(0.03)
-
-            time.sleep(0.3)
-
-            # ── Click the PASSWORD field ──
-            # Password field is below username, at roughly Y: ~48%
-            password_x = win_x + int(win_w * 0.16)
-            password_y = win_y + int(win_h * 0.48)
-
-            user32.SetCursorPos(password_x, password_y)
-            time.sleep(0.1)
-            user32.mouse_event(0x0002, 0, 0, 0, 0)
-            user32.mouse_event(0x0004, 0, 0, 0, 0)
-            time.sleep(0.3)
-
-            # Select all and clear
-            kb.press_and_release("ctrl+a")
-            time.sleep(0.1)
-            kb.press_and_release("backspace")
-            time.sleep(0.1)
-
-            # Type password character by character 
-            for char in password:
-                kb.write(char, delay=0)
-                time.sleep(0.03)
-
-            time.sleep(0.3)
+            # Type password
+            pyautogui.write(password, interval=0.03)
+            time.sleep(0.2)
 
             # Submit
-            kb.press_and_release("enter")
+            pyautogui.press('enter')
 
-            # ── Native Fault Detection ──
-            # Riot Client will instantly update the local REST endpoint if login fails
-            fault_deadline = time.time() + 8
-            self.riot_client.connect()
-            while time.time() < fault_deadline:
-                time.sleep(0.5)
-                session = self.riot_client.get_session()
-                if session:
-                    err = session.get("error", "")
-                    if err:
-                        if log_func: log_func(f"Login fault: {err}")
-                        if completion_func: completion_func(False)
-                        return
-                    if session.get("type", "") == "authenticated":
-                        break
-
-            # Record success
-            with self._lock:
-                self._accounts[idx]["last_used"] = datetime.now().isoformat()
-                self._active_idx = idx
-                self._save()
-
+            # Wait for auth result via API
             if log_func:
-                log_func(f"Logged in as {label}!")
-            if completion_func:
-                completion_func(True)
+                log_func("Waiting for authentication...")
+            self._wait_for_auth_result(idx, label, log_func, completion_func, timeout=15)
 
         except Exception as e:
             Logger.error("AccountManager", f"Keyboard login failed: {e}")
@@ -896,6 +759,135 @@ class AccountManager:
                 log_func(f"Keyboard login failed: {e}")
             if completion_func:
                 completion_func(False)
+
+    # ─────────── Login Helpers ───────────
+
+    def _kill_all_riot_processes(self, log_func=None):
+        """Kill ALL Riot/League processes for a clean restart."""
+        if log_func:
+            log_func("Closing Riot Client...")
+
+        # Kill UI processes first, then the service
+        for proc_name in ["LeagueClient.exe", "LeagueClientUx.exe",
+                          "RiotClientUx.exe", "Riot Client.exe"]:
+            try:
+                subprocess.run(
+                    ["taskkill", "/IM", proc_name, "/F"],
+                    capture_output=True,
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
+            except Exception:
+                pass
+
+        time.sleep(1)
+
+        try:
+            subprocess.run(
+                ["taskkill", "/IM", "RiotClientServices.exe", "/F"],
+                capture_output=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
+        except Exception:
+            pass
+
+        time.sleep(2)
+
+        # Delete stale lockfile
+        for lf_path in _RC_LOCKFILE_PATHS:
+            try:
+                if os.path.exists(lf_path):
+                    os.remove(lf_path)
+            except Exception:
+                pass
+
+    def _wait_for_riot_client_api(self, timeout=30) -> bool:
+        """Poll until the Riot Client API is reachable."""
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if self.riot_client.connect():
+                return True
+            time.sleep(1)
+        return False
+
+    def _find_riot_client_window(self, timeout=30) -> int:
+        """Find the VISIBLE Riot Client window handle."""
+        import ctypes
+        import ctypes.wintypes
+        user32 = ctypes.windll.user32
+        deadline = time.time() + timeout
+
+        WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.wintypes.BOOL, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM)
+
+        while time.time() < deadline:
+            found_hwnd = []
+            def callback(hwnd, extra):
+                if not user32.IsWindowVisible(hwnd):
+                    return True
+                length = user32.GetWindowTextLengthW(hwnd)
+                if length > 0:
+                    buff = ctypes.create_unicode_buffer(length + 1)
+                    user32.GetWindowTextW(hwnd, buff, length + 1)
+                    if buff.value == "Riot Client":
+                        found_hwnd.append(hwnd)
+                        return False  # Stop enumerating
+                return True
+
+            user32.EnumWindows(WNDENUMPROC(callback), 0)
+            if found_hwnd:
+                return found_hwnd[0]
+            time.sleep(0.5)
+        return 0
+
+    @staticmethod
+    def _get_window_position(hwnd) -> tuple:
+        """Return (x, y) of the window's top-left corner."""
+        import ctypes
+
+        class RECT(ctypes.Structure):
+            _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long),
+                        ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
+
+        rect = RECT()
+        ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rect))
+        return rect.left, rect.top
+
+    def _wait_for_auth_result(self, idx, label, log_func, completion_func, timeout=15):
+        """Poll the Riot Client API for authentication result after form submission."""
+        deadline = time.time() + timeout
+        self.riot_client.connect()
+
+        while time.time() < deadline:
+            time.sleep(0.5)
+            session = self.riot_client.get_session()
+            if session:
+                err = session.get("error", "")
+                if err:
+                    if log_func:
+                        log_func(f"Login fault: {err}")
+                    if completion_func:
+                        completion_func(False)
+                    return
+                if session.get("type", "") == "authenticated":
+                    self._record_login_success(idx, label, log_func, completion_func)
+                    return
+
+        # Timed out — could still be processing
+        if log_func:
+            log_func("Login timed out. Check the Riot Client.")
+        if completion_func:
+            completion_func(False)
+
+    def _record_login_success(self, idx, label, log_func, completion_func):
+        """Mark login as successful and update account metadata."""
+        with self._lock:
+            self._accounts[idx]["last_used"] = datetime.now().isoformat()
+            self._active_idx = idx
+            self._save()
+
+        if log_func:
+            log_func(f"Logged in as {label}!")
+        if completion_func:
+            completion_func(True)
 
     # ─────────── Helpers ───────────
     def _launch_riot_client(self):

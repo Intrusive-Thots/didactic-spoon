@@ -176,6 +176,22 @@ class SidebarWidget(ctk.CTkFrame):
         )
         self.queue_label.grid(row=0, column=0, padx=(CARD_PAD, 2), pady=(CARD_PAD, 2), sticky="w")
 
+        # Left-click: cycle through modes via dropdown menu
+        def _show_mode_menu(event):
+            menu = tk.Menu(self, tearoff=0, bg="#1A2332", fg="#F0E6D2",
+                           activebackground="#C8AA6E", activeforeground="#0A1428",
+                           font=("Segoe UI", 9))
+            modes = [
+                "Quickplay", "Draft Pick", "Ranked Solo/Duo", "Ranked Flex",
+                "ARAM", "ARAM Mayhem", "Arena", "Brawl", "URF", "ARURF",
+                "Nexus Blitz", "One For All", "Ultimate Spellbook",
+                "TFT Normal", "TFT Ranked"
+            ]
+            for mode in modes:
+                menu.add_command(label=mode, command=lambda m=mode: self._on_mode_change(m))
+            menu.tk_popup(event.x_root, event.y_root)
+
+        self.queue_label.bind("<Button-1>", _show_mode_menu)
 
         # Power Status Button
         self.btn_power_status = make_button(
