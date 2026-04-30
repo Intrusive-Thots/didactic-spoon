@@ -27,18 +27,28 @@ if (!(Test-Path "dist\LeagueLoop\LeagueLoop.exe")) { throw "BUILD FAILED: League
 [math]::Round((Get-Item "dist\LeagueLoop\LeagueLoop.exe").Length/1MB, 2)
 ```
 
-4. Compile the Inno Setup installer:
+4. Sign the executable:
+```powershell
+& "C:\Program Files (x86)\Microsoft SDKs\ClickOnce\SignTool\signtool.exe" sign /f "C:\Users\Administrator\Desktop\LeagueLoop\LeagueLoop_Cert.pfx" /p "LeagueLoop" /fd SHA256 /tr "http://timestamp.digicert.com" /td SHA256 "c:\Users\Administrator\Desktop\LeagueLoop\dist\LeagueLoop\LeagueLoop.exe"
+```
+
+5. Compile the Inno Setup installer:
 ```powershell
 & "C:\InnoSetup\ISCC.exe" "c:\Users\Administrator\Desktop\LeagueLoop\installer.iss" 2>&1
 ```
 
-5. Verify the installer was created:
+6. Verify the installer was created:
 ```powershell
 if (!(Test-Path "dist\LeagueLoop_Installer.exe")) { throw "INSTALLER FAILED: LeagueLoop_Installer.exe not found" }
 Write-Output "Installer size: $([math]::Round((Get-Item 'dist\LeagueLoop_Installer.exe').Length/1MB, 2)) MB"
 ```
 
-6. Push source code changes to the LeagueLoop-Lock repo:
+7. Sign the installer:
+```powershell
+& "C:\Program Files (x86)\Microsoft SDKs\ClickOnce\SignTool\signtool.exe" sign /f "C:\Users\Administrator\Desktop\LeagueLoop\LeagueLoop_Cert.pfx" /p "LeagueLoop" /fd SHA256 /tr "http://timestamp.digicert.com" /td SHA256 "c:\Users\Administrator\Desktop\LeagueLoop\dist\LeagueLoop_Installer.exe"
+```
+
+8. Push source code changes to the LeagueLoop-Lock repo:
 ```powershell
 cd c:\Users\Administrator\Desktop\LeagueLoop
 git add -A
@@ -46,7 +56,7 @@ git commit -m "release: build $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
 git push origin master
 ```
 
-7. Copy the new installer to the Installer repo and push:
+9. Copy the new installer to the Installer repo and push:
 ```powershell
 Copy-Item "c:\Users\Administrator\Desktop\LeagueLoop\dist\LeagueLoop_Installer.exe" "C:\Users\Administrator\Desktop\LeagueLoop-Installer\LeagueLoop_Installer.exe" -Force
 cd C:\Users\Administrator\Desktop\LeagueLoop-Installer
@@ -55,7 +65,7 @@ git commit -m "release: update installer $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
 git push origin master
 ```
 
-8. Report final status:
+10. Report final status:
 ```powershell
 Write-Output "=== RELEASE COMPLETE ==="
 Write-Output "Source:    https://github.com/Intrusive-Thots/LeagueLoop-Lock"
