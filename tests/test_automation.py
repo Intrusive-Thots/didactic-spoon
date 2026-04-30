@@ -129,6 +129,7 @@ class TestAutomationEngineWindowState(unittest.TestCase):
         engine._last_search_state_time = 0.0
         engine._cached_search_state = None
         engine._accept_timer = None
+        engine._honor_handled = False
         return engine
 
     def test_stealth_off_sends_restore(self):
@@ -144,6 +145,8 @@ class TestAutomationEngineWindowState(unittest.TestCase):
         mock_future.result.return_value = mock_response
         engine.executor.submit.return_value = mock_future
 
+        engine._is_first_tick = False
+        engine._game_pid = None
         engine._tick()
 
         engine.window_func.assert_called_with("restore")
@@ -160,6 +163,8 @@ class TestAutomationEngineWindowState(unittest.TestCase):
         mock_future.result.return_value = mock_response
         engine.executor.submit.return_value = mock_future
 
+        engine._is_first_tick = False
+        engine._game_pid = None
         engine._tick()
 
         engine.window_func.assert_called_with("restore_quiet")
@@ -348,7 +353,7 @@ class TestAutomationEngineDraftAssistant(unittest.TestCase):
         engine._perform_draft_assistant(session)
 
         # Should lock in Yasuo
-        engine.lcu.request.assert_called_once_with("POST", "/lol-champ-select/v1/session/actions/5/complete")
+        engine.lcu.request.assert_called_once_with("PATCH", "/lol-champ-select/v1/session/actions/5", data={"championId": 30, "completed": True})
         self.assertEqual(engine._last_draft_action_time, 100)
 
 
@@ -421,6 +426,7 @@ class TestAutomationEngineArenaSynergy(unittest.TestCase):
         engine = self._make_engine()
         engine.config.get.side_effect = lambda key, default="": {"arena_pairs": [{"enabled": True, "teammate": "yasuo", "me": ["yone"]}], "arena_auto_lock": True}.get(key, default)
         engine._last_synergy_patch = 0.0
+        engine._synergy_patch_time = 0.0
 
         session = {
             "localPlayerCellId": 1,
@@ -432,7 +438,7 @@ class TestAutomationEngineArenaSynergy(unittest.TestCase):
         engine._perform_arena_synergy(session)
 
         # Should auto lock Yone
-        engine.lcu.request.assert_called_once_with("POST", "/lol-champ-select/v1/session/actions/5/complete")
+        engine.lcu.request.assert_called_once_with("PATCH", "/lol-champ-select/v1/session/actions/5", data={"championId": 40, "completed": True})
         self.assertEqual(engine._last_synergy_patch, 100)
 
 
@@ -449,14 +455,14 @@ class TestAutomationEngineAutoHonor(unittest.TestCase):
     def test_auto_honor_disabled(self):
         engine = self._make_engine()
         engine.config.get.return_value = False
-        engine._handle_auto_honor("EndOfGame")
+        engine._handle_end_of_game("EndOfGame")
         engine.lcu.request.assert_not_called()
 
     def test_auto_honor_handled(self):
         engine = self._make_engine()
         engine.config.get.return_value = True
         engine._honor_handled = True
-        engine._handle_auto_honor("EndOfGame")
+        engine._handle_end_of_game("EndOfGame")
         engine.lcu.request.assert_not_called()
 
     def test_auto_honor_no_teammates(self):
@@ -475,7 +481,7 @@ class TestAutomationEngineAutoHonor(unittest.TestCase):
         }
         engine.lcu.request.return_value = mock_eog
 
-        engine._handle_auto_honor("EndOfGame")
+        engine._handle_end_of_game("EndOfGame")
         self.assertTrue(engine._honor_handled)
 
         # Only EOG fetched, no honor posted
@@ -509,7 +515,7 @@ class TestAutomationEngineAutoHonor(unittest.TestCase):
 
         engine.lcu.request.side_effect = mock_request
 
-        engine._handle_auto_honor("EndOfGame")
+        engine._handle_end_of_game("EndOfGame")
 
         engine.lcu.request.assert_any_call("POST", "/lol-honor-v2/v1/honor-player", {
             "gameId": 1234,
@@ -544,7 +550,7 @@ class TestAutomationEngineAutoHonor(unittest.TestCase):
 
         engine.lcu.request.side_effect = mock_request
 
-        engine._handle_auto_honor("EndOfGame")
+        engine._handle_end_of_game("EndOfGame")
 
         # It should honor the friend despite having lower MVP score
         engine.lcu.request.assert_any_call("POST", "/lol-honor-v2/v1/honor-player", {
