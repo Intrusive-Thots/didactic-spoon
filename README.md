@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/app.ico" alt="LeagueLoop Icon" width="128"/>
+  <img src="assets/app.png" alt="LeagueLoop Icon" width="128"/>
   <h1>LeagueLoop-Lock</h1>
   <p><strong>Advanced Automation, Overlaid Elegance, and Ultimate Matchmaking Control for League of Legends</strong></p>
 </div>
