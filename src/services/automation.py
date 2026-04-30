@@ -620,6 +620,11 @@ class AutomationEngine:
             self._handle_arena_ban(session, my_action, banned_ids)
         elif action_type == "pick":
             self._handle_arena_pick(session, me, my_action, banned_ids)
+        else:
+            # Fallback for empty or unknown action types
+            if my_action.get("isAllyAction", True) and not my_action.get("completed"):
+                self._log(f"Arena: Unknown action type '{action_type}'. Assuming pick.")
+                self._handle_arena_pick(session, me, my_action, banned_ids)
 
     def _handle_arena_ban(self, session, action, banned_ids):
         arena_ban = self.config.get("arena_ban", "")
@@ -655,41 +660,40 @@ class AutomationEngine:
                 self._last_synergy_patch = now
 
     def _handle_arena_pick(self, session, me, action, banned_ids):
-        pairs = self.config.get("arena_pairs", [])
+        action_id = action.get("id", 0)
+        current_hover = action.get("championId", 0)
+        now = time.time()
         
         my_team = session.get("myTeam", [])
         teammate = next((p for p in my_team if p.get("cellId") != me.get("cellId")), None)
-        if not teammate:
-            return
-
-        teammate_champ_id = teammate.get("championId", 0)
-        target_id = teammate_champ_id if teammate_champ_id != 0 else teammate.get("championPickIntent", 0)
         
-        teammate_champ_name = ""
-        teammate_champ_name_lower = ""
+        target_id = 0
+        if teammate:
+            teammate_champ_id = teammate.get("championId", 0)
+            teammate_intent = teammate.get("championPickIntent", 0)
+            target_id = teammate_champ_id if teammate_champ_id != 0 else teammate_intent
+        
+        pairs = self.config.get("arena_pairs", [])
+        mapped_me_list = []
+        
         if target_id != 0:
             teammate_champ_name = self.assets.get_champ_name(target_id)
             if teammate_champ_name:
-                teammate_champ_name_lower = teammate_champ_name.lower()
+                teammate_name_lower = teammate_champ_name.lower()
+                for pair in pairs:
+                    if pair.get("enabled", True) and pair.get("teammate", "").lower() == teammate_name_lower:
+                        val = pair.get("me", [])
+                        mapped_me_list = val if isinstance(val, list) else [val]
+                        break
 
-        mapped_me_list = []
-        if teammate_champ_name_lower:
-            for idx, pair in enumerate(pairs):
-                if pair.get("enabled", True) and pair.get("teammate", "").lower() == teammate_champ_name_lower:
-                    val = pair.get("me", [])
-                    mapped_me_list = val if isinstance(val, list) else [val]
-                    self._active_arena_pair_idx = idx
-                    break
-
-        is_fallback = False
         if not mapped_me_list:
             fallback = self.config.get("arena_fallback_pick", "")
+            if not fallback:
+                fallback = self.config.get("auto_pick", "") # Try legacy auto_pick
+                
             if fallback:
                 mapped_me_list = [fallback]
-                is_fallback = True
-            else:
-                return
-
+                
         mapped_my_id, mapped_me_champ = 0, ""
         for champ_name in mapped_me_list:
             cid = self.assets.name_to_id.get(champ_name.lower())
@@ -698,37 +702,31 @@ class AutomationEngine:
                 mapped_me_champ = champ_name
                 break
                 
-        if not mapped_my_id or me.get("championId", 0) == mapped_my_id:
-            return
-
-        now = time.time()
-        action_id = action.get("id", 0)
-        current_hover = action.get("championId", 0)
         timer = session.get("timer", {})
         time_left_ms = timer.get("adjustedTimeLeftInPhase", 15000)
+        teammate_locked = (target_id != 0 and teammate and teammate.get("championId", 0) != 0)
 
-        try:
-            # A teammate is officially locked in ONLY when their "championId" is > 0.
-            # While they are hovering, it is 0 and only "championPickIntent" is populated.
-            teammate_locked = teammate.get("championId", 0) != 0
-
-            if current_hover != mapped_my_id and (now - getattr(self, "_last_synergy_patch", 0) > 0.5):
-                self._log(f"Arena: Teammate hovering {teammate_champ_name}, selecting {mapped_me_champ}...")
+        # Handle Hovering
+        if mapped_my_id != 0 and current_hover != mapped_my_id:
+            if now - getattr(self, "_last_synergy_patch", 0) > 0.5:
+                self._log(f"Arena: Selecting {mapped_me_champ}...")
                 self.lcu.request("PATCH", f"/lol-champ-select/v1/session/actions/{action_id}", data={"championId": mapped_my_id})
                 self._last_synergy_patch = now
                 self._synergy_patch_time = now
+        else:
+            # Handle Locking
+            if self.config.get("arena_auto_lock", False):
+                # Lock if we are hovering something valid, AND (it's our target OR we have no target)
+                lock_target = mapped_my_id if mapped_my_id != 0 else current_hover
                 
-            elif current_hover == mapped_my_id and (self.config.get("arena_auto_lock", False) or is_fallback):
-                time_since_patch = now - getattr(self, "_synergy_patch_time", 0)
-                if time_since_patch > 0.5 and (time_left_ms <= 2000 or teammate_locked) and (now - getattr(self, "_last_synergy_patch", 0) > 0.5):
-                    log_msg = "(Teammate Locked)" if teammate_locked else "(<2s left)"
-                    self._log(f"Arena: Locking {mapped_me_champ} {log_msg}!")
-                    res = self.lcu.request("PATCH", f"/lol-champ-select/v1/session/actions/{action_id}", data={"championId": mapped_my_id, "completed": True})
-                    if res and res.status_code not in (200, 204):
-                        Logger.error("Auto", f"Arena pick lock FAILED: {res.status_code} {res.text[:200]}")
-                    self._last_synergy_patch = now
-        except Exception as e:
-            Logger.error("Auto", f"Arena synergy error: {e}")
+                if lock_target != 0 and current_hover == lock_target:
+                    time_since_patch = now - getattr(self, "_synergy_patch_time", 0)
+                    if time_since_patch > 0.5 and (time_left_ms <= 2000 or teammate_locked) and (now - getattr(self, "_last_synergy_patch", 0) > 0.5):
+                        champ_str = mapped_me_champ if mapped_my_id != 0 else self.assets.get_champ_name(current_hover)
+                        log_msg = "(Teammate Locked)" if teammate_locked else "(<2s left)"
+                        self._log(f"Arena: Locking Pick {champ_str} {log_msg}")
+                        self.lcu.request("PATCH", f"/lol-champ-select/v1/session/actions/{action_id}", data={"championId": lock_target, "completed": True})
+                        self._last_synergy_patch = now
 
     def _perform_draft_assistant(self, session):
         me = self._get_local_player(session)
